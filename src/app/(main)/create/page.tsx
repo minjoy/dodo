@@ -26,6 +26,7 @@ export default function CreateMeetingPage() {
     meetingTime: '',
     placeName: '',
     maxParticipants: 8,
+    password: '',
   })
 
   const handleInputChange = (
@@ -47,7 +48,7 @@ export default function CreateMeetingPage() {
         `${formData.meetingDate}T${formData.meetingTime}`
       ).toISOString()
 
-      const input: CreateMeetingInput = {
+      const input: CreateMeetingInput & { password?: string } = {
         title: formData.title,
         description: formData.description || undefined,
         gameType: formData.gameType,
@@ -60,6 +61,7 @@ export default function CreateMeetingPage() {
         longitude: 126.978,
         maxParticipants: formData.maxParticipants,
         minLevel: 1,
+        password: formData.password || undefined,
       }
 
       const res = await fetch('/api/meetings', {
@@ -210,6 +212,24 @@ export default function CreateMeetingPage() {
               </svg>
             </button>
           </div>
+        </div>
+
+        {/* 비밀번호 (선택) */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            비밀번호 (선택)
+          </label>
+          <input
+            type="text"
+            name="password"
+            value={formData.password}
+            onChange={handleInputChange}
+            placeholder="비공개 모임인 경우 입력"
+            className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+          />
+          <p className="mt-1 text-xs text-gray-400">
+            비밀번호를 설정하면 링크 공유 시 비밀번호 입력이 필요합니다
+          </p>
         </div>
 
         {/* 상세 설명 */}

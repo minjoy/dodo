@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { generateShareCode } from '@/lib/nickname'
 
 // GET /api/meetings - 모임 목록 조회
 export async function GET(request: NextRequest) {
@@ -94,6 +95,7 @@ export async function POST(request: NextRequest) {
       longitude,
       maxParticipants,
       minLevel,
+      password,
     } = body
 
     // 유효성 검사
@@ -125,6 +127,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // 고유한 공유 코드 생성
+    let shareCode = generateShareCode()
+    let attempts = 0
+    while (attempts < 10) {
+      const existing = await prisma.meeting.findUnique({ where: { shareCode } })
+      if (!existing) break
+      shareCode = generateShareCode()
+      attempts++
+    }
+
     const meeting = await prisma.meeting.create({
       data: {
         title,
@@ -140,6 +152,8 @@ export async function POST(request: NextRequest) {
         maxParticipants,
         minLevel: minLevel || 1,
         hostId: session.user.id,
+        shareCode,
+        password: password || null,
       },
       include: {
         host: {

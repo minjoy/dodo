@@ -14,7 +14,7 @@ model User {
   id            String    @id @default(cuid())
   kakaoId       String    @unique
   email         String?
-  nickname      String
+  nickname      String    @unique
   profileImage  String?
   bio           String?   @db.Text
 
@@ -49,6 +49,7 @@ model User {
 // 모임
 model Meeting {
   id            String    @id @default(cuid())
+  shareCode     String    @unique  // 6자리 공유 코드 (예: "ABC123")
 
   // 기본 정보
   title         String
@@ -69,6 +70,7 @@ model Meeting {
   // 모집
   maxParticipants   Int
   minLevel          Int       @default(1)
+  password          String?   // 비밀번호 (선택)
 
   // 상태
   status        MeetingStatus @default(RECRUITING)

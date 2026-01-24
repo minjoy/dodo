@@ -25,6 +25,7 @@ export interface User {
 
 export interface Meeting {
   id: string
+  shareCode: string
   title: string
   description?: string | null
   gameType: GameType
@@ -37,6 +38,7 @@ export interface Meeting {
   longitude: number
   maxParticipants: number
   minLevel: number
+  password?: string | null
   status: MeetingStatus
   createdAt: Date
   updatedAt: Date

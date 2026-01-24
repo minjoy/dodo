@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
+import { validateNickname } from '@/lib/nickname'
 
 const POPULAR_REGIONS = [
   { name: '성수동', emoji: '🏭' },
@@ -13,182 +14,229 @@ const POPULAR_REGIONS = [
   { name: '건대', emoji: '🎪' },
   { name: '잠실', emoji: '🏟️' },
   { name: '여의도', emoji: '🌆' },
-  { name: '망원동', emoji: '☕' },
-  { name: '연남동', emoji: '🌳' },
-  { name: '합정', emoji: '🎨' },
-  { name: '압구정', emoji: '✨' },
 ]
 
 export default function OnboardingPage() {
   const { data: session, update } = useSession()
   const router = useRouter()
+  const [step, setStep] = useState(1)
+  const [nickname, setNickname] = useState('')
+  const [nicknameError, setNicknameError] = useState('')
+  const [isCheckingNickname, setIsCheckingNickname] = useState(false)
   const [selectedRegion, setSelectedRegion] = useState('')
   const [customRegion, setCustomRegion] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+
+  // 닉네임 유효성 검사
+  useEffect(() => {
+    if (!nickname) {
+      setNicknameError('')
+      return
+    }
+
+    const validation = validateNickname(nickname)
+    if (!validation.isValid) {
+      setNicknameError(validation.error || '')
+      return
+    }
+
+    // 중복 검사 (디바운스)
+    const timer = setTimeout(async () => {
+      setIsCheckingNickname(true)
+      try {
+        const res = await fetch(`/api/users/check-nickname?nickname=${encodeURIComponent(nickname)}`)
+        const data = await res.json()
+        if (!data.available) {
+          setNicknameError('이미 사용 중인 닉네임입니다')
+        } else {
+          setNicknameError('')
+        }
+      } catch {
+        // 에러 무시
+      } finally {
+        setIsCheckingNickname(false)
+      }
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [nickname])
 
   const handleRegionSelect = (region: string) => {
     setSelectedRegion(region)
     setCustomRegion('')
   }
 
-  const handleCustomRegionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCustomRegion(e.target.value)
-    setSelectedRegion('')
-  }
-
   const handleSubmit = async () => {
     const region = selectedRegion || customRegion
-    if (!region) return
+    if (!region || !nickname || nicknameError) return
 
     setIsLoading(true)
     try {
       const res = await fetch('/api/users/me', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ region }),
+        body: JSON.stringify({ region, nickname }),
       })
 
       if (res.ok) {
         await update({ region })
         router.push('/home')
+      } else {
+        const error = await res.json()
+        if (error.message?.includes('닉네임')) {
+          setNicknameError(error.message)
+          setStep(1)
+        }
       }
     } catch (error) {
-      console.error('Failed to update region:', error)
+      console.error('Failed to update:', error)
     } finally {
       setIsLoading(false)
     }
   }
 
   const currentRegion = selectedRegion || customRegion
+  const isNicknameValid = nickname.length >= 2 && !nicknameError && !isCheckingNickname
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col">
       {/* 헤더 */}
-      <div className="px-6 pt-12 pb-6">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary-dark rounded-2xl flex items-center justify-center shadow-lg">
-            <span className="text-2xl">📍</span>
+      <header className="px-4 pt-12 pb-6">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-2xl">{step === 1 ? '👤' : '📍'}</span>
+          <h1 className="text-xl font-bold text-gray-900">
+            {step === 1 ? '닉네임 설정' : '동네 설정'}
+          </h1>
+        </div>
+        <p className="text-gray-500">
+          {step === 1 ? '경도에서 사용할 닉네임을 정해주세요' : '활동할 동네를 선택해주세요'}
+        </p>
+
+        {/* Progress */}
+        <div className="flex gap-2 mt-4">
+          <div className={`flex-1 h-1 rounded-full ${step >= 1 ? 'bg-primary' : 'bg-gray-200'}`} />
+          <div className={`flex-1 h-1 rounded-full ${step >= 2 ? 'bg-primary' : 'bg-gray-200'}`} />
+        </div>
+      </header>
+
+      {step === 1 ? (
+        /* Step 1: 닉네임 설정 */
+        <main className="flex-1 px-4 pb-32">
+          <div className="mt-4">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              닉네임
+            </label>
+            <input
+              type="text"
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+              placeholder="2~10자, 한글/영문/숫자"
+              className={`w-full px-4 py-4 border-2 rounded-xl text-lg focus:outline-none transition-colors ${
+                nicknameError
+                  ? 'border-red-400 focus:border-red-500'
+                  : nickname && !nicknameError
+                    ? 'border-green-400 focus:border-green-500'
+                    : 'border-gray-200 focus:border-primary'
+              }`}
+            />
+            {nicknameError && (
+              <p className="mt-2 text-sm text-red-500">{nicknameError}</p>
+            )}
+            {nickname && !nicknameError && !isCheckingNickname && (
+              <p className="mt-2 text-sm text-green-500">사용 가능한 닉네임입니다</p>
+            )}
+            {isCheckingNickname && (
+              <p className="mt-2 text-sm text-gray-400">확인 중...</p>
+            )}
           </div>
+
+          <div className="mt-6 p-4 bg-gray-50 rounded-xl">
+            <p className="text-sm text-gray-600">
+              <span className="font-semibold">닉네임 규칙</span>
+            </p>
+            <ul className="mt-2 text-sm text-gray-500 space-y-1">
+              <li>• 2~10자 이내</li>
+              <li>• 한글, 영문, 숫자만 사용 가능</li>
+              <li>• 욕설, 비속어 사용 불가</li>
+              <li>• 다른 사용자와 중복 불가</li>
+            </ul>
+          </div>
+        </main>
+      ) : (
+        /* Step 2: 동네 설정 */
+        <main className="flex-1 px-4 pb-32 overflow-y-auto">
+          {/* 검색 */}
+          <div className="mb-6">
+            <input
+              type="text"
+              placeholder="동네 이름 검색"
+              value={customRegion}
+              onChange={(e) => {
+                setCustomRegion(e.target.value)
+                setSelectedRegion('')
+              }}
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-primary"
+            />
+          </div>
+
+          {/* 인기 동네 */}
           <div>
-            <p className="text-sm text-gray-500">Step 1 of 1</p>
-            <h1 className="text-xl font-bold text-gray-900">동네 설정</h1>
+            <p className="text-sm font-semibold text-gray-500 mb-3">인기 동네</p>
+            <div className="grid grid-cols-2 gap-2">
+              {POPULAR_REGIONS.map((region) => (
+                <button
+                  key={region.name}
+                  onClick={() => handleRegionSelect(region.name)}
+                  className={`flex items-center gap-2 p-3 rounded-xl text-left transition-colors ${
+                    selectedRegion === region.name
+                      ? 'bg-primary text-white'
+                      : 'bg-gray-50 text-gray-700 active:bg-gray-100'
+                  }`}
+                >
+                  <span>{region.emoji}</span>
+                  <span className="font-medium">{region.name}</span>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        </main>
+      )}
 
-        <div className="bg-gradient-to-r from-primary/10 to-accent/10 rounded-2xl p-4 mb-6">
-          <p className="text-gray-700">
-            <span className="font-semibold text-primary">{session?.user?.name || '회원'}</span>님, 반가워요! 👋
-          </p>
-          <p className="text-gray-600 text-sm mt-1">
-            활동할 동네를 설정하면 근처 모임을 찾아드릴게요
-          </p>
-        </div>
-      </div>
-
-      {/* 검색 입력 */}
-      <div className="px-6 mb-6">
-        <div className="relative">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center">
-            <svg
-              className="w-5 h-5 text-gray-500"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-          </div>
-          <input
-            type="text"
-            placeholder="동네 이름을 검색하세요"
-            value={customRegion}
-            onChange={handleCustomRegionChange}
-            className="w-full pl-16 pr-4 py-4 bg-white border-2 border-gray-100 rounded-2xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all"
-          />
-        </div>
-      </div>
-
-      {/* 인기 동네 */}
-      <div className="px-6 flex-1 overflow-y-auto">
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-lg">🔥</span>
-          <h2 className="text-sm font-bold text-gray-900">인기 동네</h2>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          {POPULAR_REGIONS.map((region) => (
+      {/* 하단 버튼 */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 safe-bottom">
+        {step === 1 ? (
+          <button
+            onClick={() => setStep(2)}
+            disabled={!isNicknameValid}
+            className={`w-full py-4 rounded-xl font-semibold text-lg transition-colors ${
+              isNicknameValid
+                ? 'bg-primary text-white active:bg-primary-dark'
+                : 'bg-gray-200 text-gray-400'
+            }`}
+          >
+            다음
+          </button>
+        ) : (
+          <div className="flex gap-3">
             <button
-              key={region.name}
-              onClick={() => handleRegionSelect(region.name)}
-              className={`flex items-center gap-3 p-4 rounded-2xl text-left transition-all ${
-                selectedRegion === region.name
-                  ? 'bg-primary text-white shadow-lg shadow-primary/30 scale-[1.02]'
-                  : 'bg-white border-2 border-gray-100 text-gray-700 hover:border-primary/30 hover:bg-primary/5'
+              onClick={() => setStep(1)}
+              className="flex-1 py-4 rounded-xl font-semibold bg-gray-100 text-gray-600"
+            >
+              이전
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={!currentRegion || isLoading}
+              className={`flex-[2] py-4 rounded-xl font-semibold text-lg transition-colors ${
+                currentRegion && !isLoading
+                  ? 'bg-primary text-white active:bg-primary-dark'
+                  : 'bg-gray-200 text-gray-400'
               }`}
             >
-              <span className="text-2xl">{region.emoji}</span>
-              <span className="font-semibold">{region.name}</span>
+              {isLoading ? '설정 중...' : '시작하기'}
             </button>
-          ))}
-        </div>
-      </div>
-
-      {/* 선택된 동네 & 버튼 */}
-      <div className="p-6 bg-white border-t border-gray-100 safe-bottom">
-        {currentRegion && (
-          <div className="flex items-center gap-3 mb-4 p-4 bg-gradient-to-r from-primary/10 to-accent/10 rounded-2xl">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-              <svg
-                className="w-5 h-5 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500">선택한 동네</p>
-              <p className="font-bold text-gray-900">{currentRegion}</p>
-            </div>
           </div>
         )}
-
-        <button
-          onClick={handleSubmit}
-          disabled={!currentRegion || isLoading}
-          className={`w-full py-4 px-6 rounded-2xl font-bold text-lg transition-all flex items-center justify-center gap-2 ${
-            currentRegion && !isLoading
-              ? 'bg-gradient-to-r from-primary to-primary-dark text-white shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 active:scale-[0.98]'
-              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-          }`}
-        >
-          {isLoading ? (
-            <>
-              <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-              </svg>
-              설정 중...
-            </>
-          ) : (
-            <>
-              시작하기
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
-            </>
-          )}
-        </button>
       </div>
     </div>
   )

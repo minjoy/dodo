@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { validateNickname } from '@/lib/nickname'
 
 // GET /api/users/me - 내 정보 조회
 export async function GET() {
@@ -47,10 +48,29 @@ export async function PUT(request: NextRequest) {
     const body = await request.json()
     const { nickname, bio, region, regionCode, profileImage } = body
 
+    // 닉네임 유효성 검사
+    if (nickname) {
+      const validation = validateNickname(nickname)
+      if (!validation.isValid) {
+        return NextResponse.json({ message: validation.error }, { status: 400 })
+      }
+
+      // 중복 검사 (본인 제외)
+      const existing = await prisma.user.findFirst({
+        where: {
+          nickname: nickname.trim(),
+          NOT: { id: session.user.id }
+        }
+      })
+      if (existing) {
+        return NextResponse.json({ message: '이미 사용 중인 닉네임입니다' }, { status: 400 })
+      }
+    }
+
     const updatedUser = await prisma.user.update({
       where: { id: session.user.id },
       data: {
-        ...(nickname && { nickname }),
+        ...(nickname && { nickname: nickname.trim() }),
         ...(bio !== undefined && { bio }),
         ...(region && { region }),
         ...(regionCode && { regionCode }),

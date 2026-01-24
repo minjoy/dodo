@@ -24,6 +24,8 @@ export default function MeetingDetailPage() {
   const [meeting, setMeeting] = useState<MeetingWithDetails | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isJoining, setIsJoining] = useState(false)
+  const [showShareModal, setShowShareModal] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   const meetingId = params.id as string
 
@@ -83,6 +85,21 @@ export default function MeetingDetailPage() {
     }
   }
 
+  const handleCopyLink = () => {
+    if (!meeting?.shareCode) return
+    const url = `${window.location.origin}/join/${meeting.shareCode}`
+    navigator.clipboard.writeText(url)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  const handleCopyCode = () => {
+    if (!meeting?.shareCode) return
+    navigator.clipboard.writeText(meeting.shareCode)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-gray-50 to-white">
@@ -135,7 +152,10 @@ export default function MeetingDetailPage() {
             </svg>
           </button>
           <h1 className="font-bold text-gray-900">모임 상세</h1>
-          <button className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
+          <button
+            onClick={() => setShowShareModal(true)}
+            className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+          >
             <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
             </svg>
@@ -433,6 +453,61 @@ export default function MeetingDetailPage() {
           </button>
         )}
       </div>
+
+      {/* 공유 모달 */}
+      {showShareModal && meeting?.shareCode && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl p-6 mx-4 w-full max-w-sm">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">모임 공유하기</h3>
+
+            {/* 공유 코드 */}
+            <div className="mb-4">
+              <p className="text-sm text-gray-500 mb-2">모임 코드</p>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 bg-gray-100 rounded-xl px-4 py-3 text-center">
+                  <span className="text-2xl font-bold tracking-widest font-mono">
+                    {meeting.shareCode}
+                  </span>
+                </div>
+                <button
+                  onClick={handleCopyCode}
+                  className="px-4 py-3 bg-primary text-white font-semibold rounded-xl"
+                >
+                  복사
+                </button>
+              </div>
+            </div>
+
+            {/* 링크 복사 */}
+            <button
+              onClick={handleCopyLink}
+              className="w-full py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl mb-4 flex items-center justify-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+              </svg>
+              링크 복사하기
+            </button>
+
+            {copied && (
+              <p className="text-center text-sm text-green-500 mb-4">복사되었습니다!</p>
+            )}
+
+            {meeting.password && (
+              <p className="text-sm text-gray-500 text-center mb-4">
+                이 모임은 비밀번호가 필요합니다
+              </p>
+            )}
+
+            <button
+              onClick={() => setShowShareModal(false)}
+              className="w-full py-3 text-gray-500 font-semibold"
+            >
+              닫기
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

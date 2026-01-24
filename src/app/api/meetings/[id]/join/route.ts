@@ -16,6 +16,8 @@ export async function POST(
 
     const { id: meetingId } = await params
     const userId = session.user.id
+    const body = await request.json().catch(() => ({}))
+    const { password } = body
 
     // 모임 조회
     const meeting = await prisma.meeting.findUnique({
@@ -37,6 +39,14 @@ export async function POST(
 
     if (!meeting) {
       return NextResponse.json({ message: '모임을 찾을 수 없습니다' }, { status: 404 })
+    }
+
+    // 비밀번호 확인
+    if (meeting.password && meeting.password !== password) {
+      return NextResponse.json(
+        { message: '비밀번호가 올바르지 않습니다' },
+        { status: 400 }
+      )
     }
 
     // 호스트는 참여 불가

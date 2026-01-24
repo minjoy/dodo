@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { MeetingCard } from '@/components/meeting'
 import type { Meeting, User } from '@/types'
@@ -22,13 +23,36 @@ const GAME_TYPES = [
 
 export default function HomePage() {
   const { data: session } = useSession()
+  const router = useRouter()
   const [meetings, setMeetings] = useState<MeetingWithDetails[]>([])
   const [selectedGameType, setSelectedGameType] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [showCodeInput, setShowCodeInput] = useState(false)
+  const [meetingCode, setMeetingCode] = useState('')
+  const [codeError, setCodeError] = useState('')
 
   useEffect(() => {
     fetchMeetings()
   }, [session?.user?.region, selectedGameType])
+
+  const handleCodeSearch = async () => {
+    if (meetingCode.length !== 6) {
+      setCodeError('6자리 코드를 입력해주세요')
+      return
+    }
+
+    setCodeError('')
+    try {
+      const res = await fetch(`/api/meetings/code/${meetingCode.toUpperCase()}`)
+      if (res.ok) {
+        router.push(`/join/${meetingCode.toUpperCase()}`)
+      } else {
+        setCodeError('모임을 찾을 수 없습니다')
+      }
+    } catch {
+      setCodeError('오류가 발생했습니다')
+    }
+  }
 
   const fetchMeetings = async () => {
     if (!session?.user?.region) return
@@ -67,14 +91,22 @@ export default function HomePage() {
                 {session?.user?.region || '동네 설정'}
               </h1>
             </div>
-            <Link
-              href="/my"
-              className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center"
-            >
-              <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            </Link>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowCodeInput(true)}
+                className="px-3 py-2 bg-gray-100 rounded-lg text-sm font-medium text-gray-600 active:bg-gray-200"
+              >
+                코드 입력
+              </button>
+              <Link
+                href="/my"
+                className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center"
+              >
+                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </Link>
+            </div>
           </div>
         </div>
 
@@ -142,6 +174,43 @@ export default function HomePage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
           </svg>
         </Link>
+      )}
+
+      {/* 코드 입력 모달 */}
+      {showCodeInput && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl p-6 mx-4 w-full max-w-sm">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">모임 코드 입력</h3>
+            <input
+              type="text"
+              value={meetingCode}
+              onChange={(e) => setMeetingCode(e.target.value.toUpperCase().slice(0, 6))}
+              placeholder="6자리 코드"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl text-center text-xl tracking-widest font-mono uppercase focus:outline-none focus:border-primary"
+            />
+            {codeError && (
+              <p className="mt-2 text-sm text-red-500">{codeError}</p>
+            )}
+            <div className="flex gap-3 mt-4">
+              <button
+                onClick={() => {
+                  setShowCodeInput(false)
+                  setMeetingCode('')
+                  setCodeError('')
+                }}
+                className="flex-1 py-3 bg-gray-100 text-gray-600 font-semibold rounded-xl"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleCodeSearch}
+                className="flex-1 py-3 bg-primary text-white font-semibold rounded-xl"
+              >
+                입장
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
