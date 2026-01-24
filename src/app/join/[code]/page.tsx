@@ -18,6 +18,8 @@ interface Meeting {
   placeName: string
   maxParticipants: number
   hasPassword: boolean
+  isHost: boolean
+  isParticipant: boolean
   host: {
     nickname: string
   }
@@ -38,7 +40,7 @@ export default function JoinPage({ params }: { params: Promise<{ code: string }>
 
   useEffect(() => {
     fetchMeeting()
-  }, [code])
+  }, [code, status])
 
   const fetchMeeting = async () => {
     try {
@@ -46,6 +48,12 @@ export default function JoinPage({ params }: { params: Promise<{ code: string }>
       if (res.ok) {
         const data = await res.json()
         setMeeting(data)
+
+        // 이미 참가자이거나 호스트면 모임 상세 페이지로 이동
+        if (data.isHost || data.isParticipant) {
+          router.replace(`/meeting/${data.id}`)
+          return
+        }
       } else {
         setError('모임을 찾을 수 없습니다')
       }

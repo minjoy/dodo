@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { validateNickname } from '@/lib/nickname'
+import ImageCropper from '@/components/ImageCropper'
 
 const POPULAR_REGIONS = [
   { name: '성수동', emoji: '🏭' },
@@ -21,17 +22,20 @@ const POPULAR_REGIONS = [
 export default function OnboardingPage() {
   const { data: session, status, update } = useSession()
   const router = useRouter()
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [step, setStep] = useState(1)
   const [nickname, setNickname] = useState('')
   const [nicknameError, setNicknameError] = useState('')
   const [isCheckingNickname, setIsCheckingNickname] = useState(false)
   const [selectedRegion, setSelectedRegion] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [profileImage, setProfileImage] = useState<string | null>(null)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [showCropper, setShowCropper] = useState(false)
 
   // 로그인 상태 체크
   useEffect(() => {
     if (status === 'unauthenticated') {
-      // 로그인 안 되어 있으면 게이트 페이지로
       router.push('/')
     }
   }, [status, router])
@@ -49,7 +53,6 @@ export default function OnboardingPage() {
       return
     }
 
-    // 중복 검사 (디바운스)
     const timer = setTimeout(async () => {
       setIsCheckingNickname(true)
       try {
@@ -70,6 +73,42 @@ export default function OnboardingPage() {
     return () => clearTimeout(timer)
   }, [nickname])
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // 이미지 파일만 허용
+    if (!file.type.startsWith('image/')) {
+      alert('이미지 파일만 선택할 수 있습니다')
+      return
+    }
+
+    // 10MB 제한
+    if (file.size > 10 * 1024 * 1024) {
+      alert('10MB 이하의 이미지만 선택할 수 있습니다')
+      return
+    }
+
+    setSelectedFile(file)
+    setShowCropper(true)
+
+    // input 초기화 (같은 파일 다시 선택 가능하도록)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
+  const handleCropComplete = (croppedDataUrl: string) => {
+    setProfileImage(croppedDataUrl)
+    setShowCropper(false)
+    setSelectedFile(null)
+  }
+
+  const handleCropCancel = () => {
+    setShowCropper(false)
+    setSelectedFile(null)
+  }
+
   const handleSubmit = async (region: string) => {
     if (!nickname || nicknameError || isCheckingNickname) return
 
@@ -78,14 +117,17 @@ export default function OnboardingPage() {
       const res = await fetch('/api/users/me', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ region, nickname }),
+        body: JSON.stringify({
+          region,
+          nickname,
+          profileImage: profileImage || undefined,
+        }),
       })
 
       if (res.ok) {
         await update({ region })
         router.push('/home')
       } else if (res.status === 401) {
-        // 세션 만료 - 게이트 페이지로 이동
         alert('로그인이 만료되었습니다. 다시 로그인해주세요.')
         router.push('/')
       } else {
@@ -105,7 +147,6 @@ export default function OnboardingPage() {
 
   const isNicknameValid = nickname.length >= 2 && !nicknameError && !isCheckingNickname
 
-  // 세션 로딩 중이거나 미인증 상태면 로딩 표시
   if (status === 'loading' || status === 'unauthenticated') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
@@ -124,11 +165,11 @@ export default function OnboardingPage() {
         <div className="flex items-center gap-2 mb-2">
           <span className="text-2xl">{step === 1 ? '👤' : '📍'}</span>
           <h1 className="text-xl font-bold text-gray-900">
-            {step === 1 ? '닉네임 설정' : '동네 설정'}
+            {step === 1 ? '프로필 설정' : '동네 설정'}
           </h1>
         </div>
         <p className="text-gray-500">
-          {step === 1 ? '경도에서 사용할 닉네임을 정해주세요' : '활동할 동네를 선택해주세요'}
+          {step === 1 ? '경도에서 사용할 프로필을 설정해주세요' : '활동할 동네를 선택해주세요'}
         </p>
 
         {/* Progress */}
@@ -139,11 +180,44 @@ export default function OnboardingPage() {
       </header>
 
       {step === 1 ? (
-        /* Step 1: 닉네임 설정 */
+        /* Step 1: 프로필 설정 */
         <main className="flex-1 px-4 pb-32">
+          {/* 프로필 이미지 */}
+          <div className="flex flex-col items-center mb-6">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="relative w-28 h-28 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden group"
+            >
+              {profileImage ? (
+                <img src={profileImage} alt="프로필" className="w-full h-full object-cover" />
+              ) : (
+                <svg className="w-12 h-12 text-gray-300" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                </svg>
+              )}
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-active:opacity-100 transition-opacity">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+            </button>
+            <p className="mt-2 text-sm text-gray-400">
+              {profileImage ? '탭하여 변경' : '탭하여 사진 추가 (선택)'}
+            </p>
+          </div>
+
+          {/* 닉네임 */}
           <div className="mt-4">
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              닉네임
+              닉네임 <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -186,7 +260,6 @@ export default function OnboardingPage() {
         <main className="flex-1 px-4 pb-32 overflow-y-auto">
           <p className="text-sm text-gray-500 mb-4">동네를 선택하면 해당 지역 모임을 볼 수 있어요</p>
 
-          {/* 인기 동네 */}
           <div className="grid grid-cols-2 gap-2">
             {POPULAR_REGIONS.map((region) => (
               <button
@@ -205,7 +278,6 @@ export default function OnboardingPage() {
             ))}
           </div>
 
-          {/* 동네 설정 없이 이용하기 */}
           <button
             onClick={() => handleSubmit('전체')}
             disabled={isLoading}
@@ -253,6 +325,15 @@ export default function OnboardingPage() {
           </div>
         )}
       </div>
+
+      {/* 이미지 크롭 모달 */}
+      {showCropper && selectedFile && (
+        <ImageCropper
+          imageFile={selectedFile}
+          onCrop={handleCropComplete}
+          onCancel={handleCropCancel}
+        />
+      )}
     </div>
   )
 }
