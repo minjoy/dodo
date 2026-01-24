@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSession, signIn } from 'next-auth/react'
+import { useSession } from 'next-auth/react'
 import { validateNickname } from '@/lib/nickname'
 
 const POPULAR_REGIONS = [
@@ -31,10 +31,10 @@ export default function OnboardingPage() {
   // 로그인 상태 체크
   useEffect(() => {
     if (status === 'unauthenticated') {
-      // 로그인 안 되어 있으면 로그인 페이지로
-      signIn('kakao', { callbackUrl: '/onboarding' })
+      // 로그인 안 되어 있으면 게이트 페이지로
+      router.push('/')
     }
-  }, [status])
+  }, [status, router])
 
   // 닉네임 유효성 검사
   useEffect(() => {
@@ -85,9 +85,9 @@ export default function OnboardingPage() {
         await update({ region })
         router.push('/home')
       } else if (res.status === 401) {
-        // 세션 만료 - 다시 로그인
+        // 세션 만료 - 게이트 페이지로 이동
         alert('로그인이 만료되었습니다. 다시 로그인해주세요.')
-        signIn('kakao', { callbackUrl: '/onboarding' })
+        router.push('/')
       } else {
         const error = await res.json()
         alert(error.message || '오류가 발생했습니다')
