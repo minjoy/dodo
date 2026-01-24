@@ -33,12 +33,15 @@ export default function OnboardingPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [showCropper, setShowCropper] = useState(false)
 
-  // 로그인 상태 체크
+  // 로그인 상태 및 온보딩 완료 여부 체크
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/')
+    } else if (status === 'authenticated' && session?.user?.region) {
+      // 이미 온보딩을 완료한 사용자는 홈으로 리다이렉트
+      router.replace('/home')
     }
-  }, [status, router])
+  }, [status, session, router])
 
   // 닉네임 유효성 검사
   useEffect(() => {
@@ -147,12 +150,13 @@ export default function OnboardingPage() {
 
   const isNicknameValid = nickname.length >= 2 && !nicknameError && !isCheckingNickname
 
-  if (status === 'loading' || status === 'unauthenticated') {
+  // 로딩 중이거나, 미인증이거나, 이미 온보딩 완료한 경우 로딩 표시
+  if (status === 'loading' || status === 'unauthenticated' || session?.user?.region) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-gray-200 border-t-primary rounded-full animate-spin mx-auto" />
-          <p className="mt-4 text-gray-500">로그인 확인 중...</p>
+          <p className="mt-4 text-gray-500">확인 중...</p>
         </div>
       </div>
     )
