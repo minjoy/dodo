@@ -32,6 +32,10 @@ model User {
   likeReceived  Int       @default(0)  // 받은 좋아요
   noShowCount   Int       @default(0)  // 노쇼 횟수
 
+  // 대표 뱃지
+  representativeBadgeId String?
+  representativeBadge   Badge?    @relation("RepresentativeBadge", fields: [representativeBadgeId], references: [id])
+
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -41,6 +45,8 @@ model User {
   reviewsGiven      Review[]        @relation("ReviewsGiven")
   reviewsReceived   Review[]        @relation("ReviewsReceived")
   badges            UserBadge[]
+  reportsGiven      Report[]        @relation("ReportsGiven")
+  reportsReceived   Report[]        @relation("ReportsReceived")
 
   @@index([region])
   @@index([level])
@@ -166,8 +172,10 @@ model Badge {
   name        String
   description String
   icon        String
+  category    String    @default("general")  // general, meeting, host, social
 
-  userBadges  UserBadge[]
+  userBadges        UserBadge[]
+  representedBy     User[]      @relation("RepresentativeBadge")
 }
 
 // 사용자 배지 (획득)
@@ -182,4 +190,45 @@ model UserBadge {
   badge       Badge     @relation(fields: [badgeId], references: [id])
 
   @@unique([userId, badgeId])
+}
+
+// 신고
+model Report {
+  id          String    @id @default(cuid())
+
+  reason      ReportReason
+  description String?   @db.Text
+  status      ReportStatus  @default(PENDING)
+
+  createdAt   DateTime  @default(now())
+  processedAt DateTime?
+
+  reporterId  String
+  reporter    User      @relation("ReportsGiven", fields: [reporterId], references: [id])
+
+  reportedId  String
+  reported    User      @relation("ReportsReceived", fields: [reportedId], references: [id])
+
+  meetingId   String?   // 관련 모임 (선택)
+
+  @@index([reporterId])
+  @@index([reportedId])
+}
+
+// 신고 사유
+enum ReportReason {
+  INAPPROPRIATE_BEHAVIOR  // 부적절한 행동
+  NO_SHOW                 // 노쇼
+  HARASSMENT              // 괴롭힘
+  SPAM                    // 스팸
+  FAKE_PROFILE            // 허위 프로필
+  OTHER                   // 기타
+}
+
+// 신고 처리 상태
+enum ReportStatus {
+  PENDING     // 대기중
+  REVIEWED    // 검토됨
+  RESOLVED    // 해결됨
+  DISMISSED   // 기각됨
 }

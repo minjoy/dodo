@@ -149,8 +149,24 @@ export async function DELETE(
       return NextResponse.json({ message: '권한이 없습니다' }, { status: 403 })
     }
 
-    await prisma.meeting.delete({
-      where: { id },
+    // 트랜잭션으로 모임 삭제 및 hostCount 차감
+    await prisma.$transaction(async (tx) => {
+      // 모임 삭제
+      await tx.meeting.delete({
+        where: { id },
+      })
+
+      // 완료되지 않은 모임이면 hostCount 차감
+      if (meeting.status !== 'COMPLETED') {
+        await tx.user.update({
+          where: { id: session.user.id },
+          data: {
+            hostCount: {
+              decrement: 1,
+            },
+          },
+        })
+      }
     })
 
     return NextResponse.json({ message: '모임이 삭제되었습니다' })

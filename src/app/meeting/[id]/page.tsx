@@ -257,7 +257,10 @@ export default function MeetingDetailPage() {
         {/* 호스트 정보 */}
         <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+            <button
+              onClick={() => router.push(`/profile/${meeting.host.id}`)}
+              className="flex items-center gap-4 text-left"
+            >
               <div className="relative">
                 <div className="w-14 h-14 rounded-2xl bg-gray-100 p-0.5 shadow-sm">
                   <Avatar
@@ -286,7 +289,7 @@ export default function MeetingDetailPage() {
                   </span>
                 </div>
               </div>
-            </div>
+            </button>
             <div className="bg-gradient-to-r from-primary to-primary-dark text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-sm shadow-primary/30">
               호스트
             </div>
@@ -354,8 +357,9 @@ export default function MeetingDetailPage() {
               {meeting.participants
                 .filter((p) => p.status !== 'CANCELLED')
                 .map((participant) => (
-                  <div
+                  <button
                     key={participant.id}
+                    onClick={() => router.push(`/profile/${participant.user.id}`)}
                     className="flex items-center gap-2 bg-gray-50 hover:bg-gray-100 rounded-xl px-3 py-2 transition-colors"
                   >
                     <Avatar
@@ -370,7 +374,7 @@ export default function MeetingDetailPage() {
                     <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded font-semibold">
                       Lv.{participant.user.level}
                     </span>
-                  </div>
+                  </button>
                 ))}
               {meeting._count.participants < meeting.maxParticipants && (
                 <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-4 py-2 border-2 border-dashed border-gray-200">

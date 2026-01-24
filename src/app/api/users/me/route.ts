@@ -19,7 +19,11 @@ export async function GET() {
           include: {
             badge: true,
           },
+          orderBy: {
+            earnedAt: 'desc',
+          },
         },
+        representativeBadge: true,
       },
     })
 
@@ -46,7 +50,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { nickname, bio, region, regionCode, profileImage } = body
+    const { nickname, bio, region, regionCode, profileImage, representativeBadgeId } = body
 
     // 닉네임 유효성 검사
     if (nickname) {
@@ -67,6 +71,19 @@ export async function PUT(request: NextRequest) {
       }
     }
 
+    // 대표 뱃지 설정 시 본인 소유 뱃지인지 확인
+    if (representativeBadgeId) {
+      const userBadge = await prisma.userBadge.findFirst({
+        where: {
+          userId: session.user.id,
+          badgeId: representativeBadgeId,
+        },
+      })
+      if (!userBadge) {
+        return NextResponse.json({ message: '소유하지 않은 뱃지입니다' }, { status: 400 })
+      }
+    }
+
     const updatedUser = await prisma.user.update({
       where: { id: session.user.id },
       data: {
@@ -75,6 +92,10 @@ export async function PUT(request: NextRequest) {
         ...(region && { region }),
         ...(regionCode && { regionCode }),
         ...(profileImage && { profileImage }),
+        ...(representativeBadgeId !== undefined && { representativeBadgeId }),
+      },
+      include: {
+        representativeBadge: true,
       },
     })
 
