@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { Button, Card, Badge, Avatar } from '@/components/common'
+import KakaoMap from '@/components/KakaoMap'
 import {
   formatDate,
   formatTime,
@@ -172,23 +173,13 @@ export default function MeetingDetailPage() {
         </div>
       </header>
 
-      {/* 지도 영역 (플레이스홀더) */}
-      <div className="h-52 bg-gradient-to-br from-secondary/10 to-primary/10 flex items-center justify-center relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiMyMjIiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-50" />
-        <div className="text-center relative z-10">
-          <div className="w-16 h-16 bg-white/90 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg">
-            <svg
-              className="w-8 h-8 text-primary"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-            </svg>
-          </div>
-          <p className="text-gray-700 font-semibold">{meeting.placeName}</p>
-          <p className="text-gray-500 text-sm">{meeting.address}</p>
-        </div>
-      </div>
+      {/* 지도 영역 */}
+      <KakaoMap
+        latitude={meeting.latitude}
+        longitude={meeting.longitude}
+        placeName={meeting.placeName}
+        className="h-52"
+      />
 
       {/* 메인 콘텐츠 */}
       <div className="px-4 py-6 space-y-4">

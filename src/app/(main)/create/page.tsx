@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
+import AddressSearch from '@/components/AddressSearch'
+import KakaoMap from '@/components/KakaoMap'
 import type { GameType, CreateMeetingInput } from '@/types'
 
 const GAME_TYPES: { value: GameType; label: string }[] = [
@@ -13,10 +15,19 @@ const GAME_TYPES: { value: GameType; label: string }[] = [
   { value: 'OTHER', label: '🎯 기타' },
 ]
 
+interface PlaceInfo {
+  placeName: string
+  address: string
+  latitude: number
+  longitude: number
+}
+
 export default function CreateMeetingPage() {
   const router = useRouter()
   const { data: session } = useSession()
   const [isLoading, setIsLoading] = useState(false)
+  const [showAddressSearch, setShowAddressSearch] = useState(false)
+  const [selectedPlace, setSelectedPlace] = useState<PlaceInfo | null>(null)
 
   const [formData, setFormData] = useState({
     gameType: 'GYEONGDO' as GameType,
@@ -24,7 +35,6 @@ export default function CreateMeetingPage() {
     description: '',
     meetingDate: '',
     meetingTime: '',
-    placeName: '',
     maxParticipants: 8,
     password: '',
   })
@@ -36,11 +46,16 @@ export default function CreateMeetingPage() {
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
-  const isValid = formData.title.length >= 2 && formData.meetingDate && formData.meetingTime && formData.placeName
+  const handlePlaceSelect = (place: PlaceInfo) => {
+    setSelectedPlace(place)
+    setShowAddressSearch(false)
+  }
+
+  const isValid = formData.title.length >= 2 && formData.meetingDate && formData.meetingTime && selectedPlace
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!isValid || !session?.user?.region) return
+    if (!isValid || !session?.user?.region || !selectedPlace) return
 
     setIsLoading(true)
     try {
@@ -55,10 +70,10 @@ export default function CreateMeetingPage() {
         meetingDate: meetingDateTime,
         duration: 120,
         region: session.user.region,
-        placeName: formData.placeName,
-        address: formData.placeName,
-        latitude: 37.5665,
-        longitude: 126.978,
+        placeName: selectedPlace.placeName,
+        address: selectedPlace.address,
+        latitude: selectedPlace.latitude,
+        longitude: selectedPlace.longitude,
         maxParticipants: formData.maxParticipants,
         minLevel: 1,
         password: formData.password || undefined,
@@ -174,14 +189,29 @@ export default function CreateMeetingPage() {
           <label className="block text-sm font-semibold text-gray-700 mb-2">
             장소 <span className="text-red-500">*</span>
           </label>
-          <input
-            type="text"
-            name="placeName"
-            value={formData.placeName}
-            onChange={handleInputChange}
-            placeholder="예: 서울숲 잔디광장"
-            className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-          />
+          <button
+            type="button"
+            onClick={() => setShowAddressSearch(true)}
+            className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-left focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+          >
+            {selectedPlace ? (
+              <span className="text-gray-900">{selectedPlace.placeName}</span>
+            ) : (
+              <span className="text-gray-400">장소를 검색하세요</span>
+            )}
+          </button>
+
+          {/* 선택된 장소 정보 및 지도 미리보기 */}
+          {selectedPlace && (
+            <div className="mt-3 space-y-3">
+              <p className="text-sm text-gray-500">{selectedPlace.address}</p>
+              <KakaoMap
+                latitude={selectedPlace.latitude}
+                longitude={selectedPlace.longitude}
+                placeName={selectedPlace.placeName}
+              />
+            </div>
+          )}
         </div>
 
         {/* 모집 인원 */}
@@ -260,6 +290,14 @@ export default function CreateMeetingPage() {
           {isLoading ? '생성 중...' : '모임 만들기'}
         </button>
       </form>
+
+      {/* 주소 검색 모달 */}
+      {showAddressSearch && (
+        <AddressSearch
+          onSelect={handlePlaceSelect}
+          onCancel={() => setShowAddressSearch(false)}
+        />
+      )}
     </div>
   )
 }
