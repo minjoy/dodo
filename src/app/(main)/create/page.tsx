@@ -88,7 +88,7 @@ export default function CreateMeetingPage() {
   const today = new Date().toISOString().split('T')[0]
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="min-h-screen bg-gray-50 pb-32">
       {/* 헤더 */}
       <header className="bg-white sticky top-0 z-40 shadow-sm">
         <div className="px-4 py-3 flex items-center gap-4">

@@ -388,7 +388,7 @@ export default function MeetingDetailPage() {
       </div>
 
       {/* 하단 고정 버튼 */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-t border-gray-100 p-4 safe-bottom">
+      <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-t border-gray-100 px-4 pt-4 pb-8 safe-bottom">
         {isHost ? (
           <button className="w-full py-4 px-6 rounded-2xl font-bold text-lg bg-secondary text-white shadow-lg shadow-secondary/30 hover:shadow-xl transition-all flex items-center justify-center gap-2">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

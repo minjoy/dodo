@@ -186,7 +186,7 @@ export default function JoinPage({ params }: { params: Promise<{ code: string }>
       </main>
 
       {/* 하단 버튼 */}
-      <div className="p-4 bg-white border-t border-gray-100 safe-bottom">
+      <div className="px-4 pt-4 pb-8 bg-white border-t border-gray-100 safe-bottom">
         {status === 'loading' ? (
           <div className="py-4 text-center text-gray-500">로딩 중...</div>
         ) : !session ? (

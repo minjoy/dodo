@@ -67,7 +67,7 @@ export default function LandingPage() {
       </main>
 
       {/* 하단 버튼 */}
-      <div className="px-6 pb-8">
+      <div className="px-6 pb-10 safe-bottom">
         <button
           onClick={() => signIn('kakao', { callbackUrl: '/onboarding' })}
           className="w-full bg-[#FEE500] text-[#191919] font-bold py-4 rounded-xl flex items-center justify-center gap-3 active:bg-[#FDD835] transition-colors"

@@ -95,6 +95,31 @@ export default function OnboardingPage() {
     }
   }
 
+  const handleSkip = async () => {
+    if (!nickname || nicknameError) {
+      setStep(1)
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      const res = await fetch('/api/users/me', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ region: '전체', nickname }),
+      })
+
+      if (res.ok) {
+        await update({ region: '전체' })
+        router.push('/home')
+      }
+    } catch (error) {
+      console.error('Failed to skip:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const currentRegion = selectedRegion || customRegion
   const isNicknameValid = nickname.length >= 2 && !nicknameError && !isCheckingNickname
 
@@ -199,11 +224,19 @@ export default function OnboardingPage() {
               ))}
             </div>
           </div>
+
+          {/* 동네 설정 없이 이용하기 */}
+          <button
+            onClick={handleSkip}
+            className="w-full mt-6 py-3 text-gray-400 text-sm underline"
+          >
+            동네 설정 없이 이용하기
+          </button>
         </main>
       )}
 
       {/* 하단 버튼 */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 safe-bottom">
+      <div className="fixed bottom-0 left-0 right-0 px-4 pt-4 pb-8 bg-white border-t border-gray-100 safe-bottom">
         {step === 1 ? (
           <button
             onClick={() => setStep(2)}
