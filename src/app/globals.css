@@ -47,8 +47,3 @@ button, a {
 .safe-top {
   padding-top: env(safe-area-inset-top);
 }
-
-/* Custom utilities */
-.h-18 {
-  height: 4.5rem;
-}
