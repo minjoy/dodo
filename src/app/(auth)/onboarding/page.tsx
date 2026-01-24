@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSession } from 'next-auth/react'
+import { useSession, signIn } from 'next-auth/react'
 import { validateNickname } from '@/lib/nickname'
 
 const POPULAR_REGIONS = [
@@ -19,7 +19,7 @@ const POPULAR_REGIONS = [
 ]
 
 export default function OnboardingPage() {
-  const { update } = useSession()
+  const { data: session, status, update } = useSession()
   const router = useRouter()
   const [step, setStep] = useState(1)
   const [nickname, setNickname] = useState('')
@@ -27,6 +27,14 @@ export default function OnboardingPage() {
   const [isCheckingNickname, setIsCheckingNickname] = useState(false)
   const [selectedRegion, setSelectedRegion] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+
+  // 로그인 상태 체크
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      // 로그인 안 되어 있으면 로그인 페이지로
+      signIn('kakao', { callbackUrl: '/onboarding' })
+    }
+  }, [status])
 
   // 닉네임 유효성 검사
   useEffect(() => {
@@ -76,6 +84,10 @@ export default function OnboardingPage() {
       if (res.ok) {
         await update({ region })
         router.push('/home')
+      } else if (res.status === 401) {
+        // 세션 만료 - 다시 로그인
+        alert('로그인이 만료되었습니다. 다시 로그인해주세요.')
+        signIn('kakao', { callbackUrl: '/onboarding' })
       } else {
         const error = await res.json()
         alert(error.message || '오류가 발생했습니다')
@@ -92,6 +104,18 @@ export default function OnboardingPage() {
   }
 
   const isNicknameValid = nickname.length >= 2 && !nicknameError && !isCheckingNickname
+
+  // 세션 로딩 중이거나 미인증 상태면 로딩 표시
+  if (status === 'loading' || status === 'unauthenticated') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-gray-200 border-t-primary rounded-full animate-spin mx-auto" />
+          <p className="mt-4 text-gray-500">로그인 확인 중...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
