@@ -13,6 +13,16 @@ type MeetingWithDetails = Meeting & {
   _count: { participants: number }
 }
 
+const LEVEL_COLORS = {
+  1: 'from-green-400 to-emerald-500',
+  2: 'from-blue-400 to-indigo-500',
+  3: 'from-purple-400 to-pink-500',
+  4: 'from-orange-400 to-red-500',
+  5: 'from-yellow-400 to-amber-500',
+}
+
+const LEVEL_EMOJIS = ['🌱', '👋', '⭐', '👑', '🏆']
+
 export default function MyPage() {
   const { data: session } = useSession()
   const [user, setUser] = useState<User | null>(null)
@@ -66,23 +76,29 @@ export default function MyPage() {
     ? ((user.exp - currentLevelExp) / (nextLevelExp - currentLevelExp)) * 100
     : 0
 
+  const userLevel = (user?.level || 1) as 1 | 2 | 3 | 4 | 5
+
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-gray-50 to-white">
+        <div className="relative">
+          <div className="w-16 h-16 border-4 border-primary/20 rounded-full animate-pulse" />
+          <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-t-primary rounded-full animate-spin" />
+        </div>
+        <p className="mt-4 text-gray-400 font-medium">프로필 로딩 중...</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       {/* 헤더 */}
-      <header className="bg-white border-b border-gray-100">
+      <header className="bg-white/80 backdrop-blur-lg border-b border-gray-100/50 sticky top-0 z-40">
         <div className="px-4 py-4 flex items-center justify-between">
           <h1 className="text-xl font-bold text-gray-900">마이페이지</h1>
-          <button className="p-2">
+          <button className="p-2.5 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
             <svg
-              className="w-6 h-6 text-gray-600"
+              className="w-5 h-5 text-gray-600"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -104,208 +120,223 @@ export default function MyPage() {
         </div>
       </header>
 
-      <div className="px-4 py-4 space-y-4">
+      <div className="px-4 py-6 space-y-6">
         {/* 프로필 카드 */}
-        <Card className="bg-gradient-to-br from-secondary to-secondary/80 text-white">
-          <div className="flex items-center gap-4 mb-4">
-            <Avatar
-              src={user?.profileImage || session?.user?.profileImage}
-              alt={user?.nickname || session?.user?.nickname || ''}
-              size="xl"
-              fallback={user?.nickname || session?.user?.nickname || ''}
-            />
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <h2 className="text-xl font-bold">
-                  {user?.nickname || session?.user?.nickname}
-                </h2>
-                <Badge
-                  variant="level"
-                  level={(user?.level || 1) as 1 | 2 | 3 | 4 | 5}
-                  size="sm"
+        <div className={`bg-gradient-to-br ${LEVEL_COLORS[userLevel]} rounded-3xl p-6 text-white shadow-xl relative overflow-hidden`}>
+          {/* 배경 장식 */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
+
+          <div className="relative">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="relative">
+                <div className="w-20 h-20 rounded-2xl bg-white/20 p-1 shadow-lg">
+                  <Avatar
+                    src={user?.profileImage || session?.user?.profileImage}
+                    alt={user?.nickname || session?.user?.nickname || ''}
+                    size="xl"
+                    fallback={user?.nickname || session?.user?.nickname || ''}
+                  />
+                </div>
+                <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg">
+                  <span className="text-xl">{LEVEL_EMOJIS[userLevel - 1]}</span>
+                </div>
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <h2 className="text-2xl font-bold">
+                    {user?.nickname || session?.user?.nickname}
+                  </h2>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">
+                    <span className="text-sm font-semibold">Lv.{userLevel} {getLevelName(userLevel)}</span>
+                  </div>
+                </div>
+                <p className="text-white/80 text-sm flex items-center gap-1 mt-2">
+                  <svg
+                    className="w-4 h-4"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                  </svg>
+                  {user?.region || session?.user?.region}
+                </p>
+              </div>
+            </div>
+
+            {/* 경험치 바 */}
+            <div className="mb-6">
+              <div className="flex justify-between text-sm mb-2">
+                <span className="font-medium">다음 레벨까지</span>
+                <span className="font-bold">
+                  {user?.exp || 0} / {nextLevelExp} EXP
+                </span>
+              </div>
+              <div className="h-3 bg-white/20 rounded-full overflow-hidden shadow-inner">
+                <div
+                  className="h-full bg-white rounded-full transition-all duration-500 shadow-sm"
+                  style={{ width: `${Math.min(expProgress, 100)}%` }}
                 />
               </div>
-              <p className="text-white/70 text-sm flex items-center gap-1">
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                </svg>
-                {user?.region || session?.user?.region}
-              </p>
             </div>
-          </div>
 
-          {/* 경험치 바 */}
-          <div className="mb-4">
-            <div className="flex justify-between text-sm mb-1">
-              <span>
-                {getLevelName(user?.level || 1)} Lv.{user?.level || 1}
-              </span>
-              <span>
-                {user?.exp || 0} / {nextLevelExp} EXP
-              </span>
-            </div>
-            <div className="h-2 bg-white/20 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-accent rounded-full transition-all"
-                style={{ width: `${Math.min(expProgress, 100)}%` }}
-              />
-            </div>
-          </div>
-
-          {/* 통계 */}
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div>
-              <p className="text-2xl font-bold">{user?.meetingCount || 0}</p>
-              <p className="text-sm text-white/70">참여</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{user?.hostCount || 0}</p>
-              <p className="text-sm text-white/70">개설</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{user?.likeReceived || 0}</p>
-              <p className="text-sm text-white/70">좋아요</p>
+            {/* 통계 */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 text-center">
+                <p className="text-3xl font-bold">{user?.meetingCount || 0}</p>
+                <p className="text-sm text-white/80 font-medium">참여</p>
+              </div>
+              <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 text-center">
+                <p className="text-3xl font-bold">{user?.hostCount || 0}</p>
+                <p className="text-sm text-white/80 font-medium">개설</p>
+              </div>
+              <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 text-center">
+                <p className="text-3xl font-bold">{user?.likeReceived || 0}</p>
+                <p className="text-sm text-white/80 font-medium">좋아요</p>
+              </div>
             </div>
           </div>
-        </Card>
+        </div>
 
         {/* 모임 탭 */}
-        <div>
-          <div className="flex border-b border-gray-200 mb-4">
+        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="flex border-b border-gray-100">
             <button
               onClick={() => setActiveTab('upcoming')}
-              className={`flex-1 py-3 text-center font-medium transition-colors ${
+              className={`flex-1 py-4 text-center font-bold transition-all relative ${
                 activeTab === 'upcoming'
-                  ? 'text-primary border-b-2 border-primary'
-                  : 'text-gray-500'
+                  ? 'text-primary'
+                  : 'text-gray-400 hover:text-gray-600'
               }`}
             >
-              참여 예정 ({upcomingMeetings.length})
+              <span className="flex items-center justify-center gap-2">
+                <span>📅</span>
+                참여 예정
+                <span className={`inline-flex items-center justify-center min-w-[20px] h-5 text-xs font-bold rounded-full px-1.5 ${
+                  activeTab === 'upcoming' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-600'
+                }`}>
+                  {upcomingMeetings.length}
+                </span>
+              </span>
+              {activeTab === 'upcoming' && (
+                <div className="absolute bottom-0 left-1/4 right-1/4 h-0.5 bg-primary rounded-full" />
+              )}
             </button>
             <button
               onClick={() => setActiveTab('past')}
-              className={`flex-1 py-3 text-center font-medium transition-colors ${
+              className={`flex-1 py-4 text-center font-bold transition-all relative ${
                 activeTab === 'past'
-                  ? 'text-primary border-b-2 border-primary'
-                  : 'text-gray-500'
+                  ? 'text-primary'
+                  : 'text-gray-400 hover:text-gray-600'
               }`}
             >
-              지난 모임 ({pastMeetings.length})
+              <span className="flex items-center justify-center gap-2">
+                <span>📚</span>
+                지난 모임
+                <span className={`inline-flex items-center justify-center min-w-[20px] h-5 text-xs font-bold rounded-full px-1.5 ${
+                  activeTab === 'past' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-600'
+                }`}>
+                  {pastMeetings.length}
+                </span>
+              </span>
+              {activeTab === 'past' && (
+                <div className="absolute bottom-0 left-1/4 right-1/4 h-0.5 bg-primary rounded-full" />
+              )}
             </button>
           </div>
 
-          {activeTab === 'upcoming' ? (
-            upcomingMeetings.length > 0 ? (
-              upcomingMeetings.map((meeting) => (
-                <MeetingCard key={meeting.id} meeting={meeting} />
-              ))
-            ) : (
-              <div className="text-center py-12 text-gray-500">
-                <p className="mb-4">참여 예정인 모임이 없어요</p>
-                <Link href="/home">
-                  <Button variant="outline" size="sm">
-                    모임 찾아보기
-                  </Button>
-                </Link>
+          <div className="p-4">
+            {activeTab === 'upcoming' ? (
+              upcomingMeetings.length > 0 ? (
+                <div className="space-y-3">
+                  {upcomingMeetings.map((meeting) => (
+                    <MeetingCard key={meeting.id} meeting={meeting} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="w-20 h-20 bg-gray-100 rounded-3xl flex items-center justify-center mx-auto mb-4">
+                    <span className="text-4xl">📭</span>
+                  </div>
+                  <p className="text-gray-500 font-medium mb-4">참여 예정인 모임이 없어요</p>
+                  <Link href="/home">
+                    <button className="inline-flex items-center gap-2 bg-primary/10 text-primary font-bold py-3 px-6 rounded-xl hover:bg-primary/20 transition-colors">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                      모임 찾아보기
+                    </button>
+                  </Link>
+                </div>
+              )
+            ) : pastMeetings.length > 0 ? (
+              <div className="space-y-3">
+                {pastMeetings.map((meeting) => (
+                  <MeetingCard key={meeting.id} meeting={meeting} />
+                ))}
               </div>
-            )
-          ) : pastMeetings.length > 0 ? (
-            pastMeetings.map((meeting) => (
-              <MeetingCard key={meeting.id} meeting={meeting} />
-            ))
-          ) : (
-            <div className="text-center py-12 text-gray-500">
-              <p>아직 참여한 모임이 없어요</p>
-            </div>
-          )}
+            ) : (
+              <div className="text-center py-12">
+                <div className="w-20 h-20 bg-gray-100 rounded-3xl flex items-center justify-center mx-auto mb-4">
+                  <span className="text-4xl">🏃</span>
+                </div>
+                <p className="text-gray-500 font-medium">아직 참여한 모임이 없어요</p>
+                <p className="text-gray-400 text-sm mt-1">첫 경도를 시작해보세요!</p>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* 메뉴 */}
-        <Card padding="none">
-          <button className="w-full flex items-center justify-between px-4 py-4 border-b border-gray-100">
-            <span className="text-gray-700">알림 설정</span>
-            <svg
-              className="w-5 h-5 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 5l7 7-7 7"
-              />
+        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+          <button className="w-full flex items-center gap-4 px-5 py-4 border-b border-gray-50 hover:bg-gray-50 transition-colors">
+            <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+            </div>
+            <span className="flex-1 text-left font-medium text-gray-800">알림 설정</span>
+            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
-          <button className="w-full flex items-center justify-between px-4 py-4 border-b border-gray-100">
-            <span className="text-gray-700">동네 변경</span>
-            <svg
-              className="w-5 h-5 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 5l7 7-7 7"
-              />
+          <button className="w-full flex items-center gap-4 px-5 py-4 border-b border-gray-50 hover:bg-gray-50 transition-colors">
+            <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+              <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </div>
+            <span className="flex-1 text-left font-medium text-gray-800">동네 변경</span>
+            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
-          <button className="w-full flex items-center justify-between px-4 py-4 border-b border-gray-100">
-            <span className="text-gray-700">고객센터</span>
-            <svg
-              className="w-5 h-5 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 5l7 7-7 7"
-              />
+          <button className="w-full flex items-center gap-4 px-5 py-4 border-b border-gray-50 hover:bg-gray-50 transition-colors">
+            <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+              <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <span className="flex-1 text-left font-medium text-gray-800">고객센터</span>
+            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
           <button
             onClick={handleSignOut}
-            className="w-full flex items-center justify-between px-4 py-4 text-red-500"
+            className="w-full flex items-center gap-4 px-5 py-4 hover:bg-red-50 transition-colors"
           >
-            <span>로그아웃</span>
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-              />
-            </svg>
+            <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
+              <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </div>
+            <span className="flex-1 text-left font-medium text-red-600">로그아웃</span>
           </button>
-        </Card>
+        </div>
       </div>
     </div>
   )

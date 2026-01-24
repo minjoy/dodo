@@ -3,21 +3,20 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
-import { Button, Card } from '@/components/common'
 
 const POPULAR_REGIONS = [
-  '성수동',
-  '홍대',
-  '강남',
-  '신촌',
-  '이태원',
-  '건대',
-  '잠실',
-  '여의도',
-  '망원동',
-  '연남동',
-  '합정',
-  '압구정',
+  { name: '성수동', emoji: '🏭' },
+  { name: '홍대', emoji: '🎸' },
+  { name: '강남', emoji: '💼' },
+  { name: '신촌', emoji: '🎓' },
+  { name: '이태원', emoji: '🌍' },
+  { name: '건대', emoji: '🎪' },
+  { name: '잠실', emoji: '🏟️' },
+  { name: '여의도', emoji: '🌆' },
+  { name: '망원동', emoji: '☕' },
+  { name: '연남동', emoji: '🌳' },
+  { name: '합정', emoji: '🎨' },
+  { name: '압구정', emoji: '✨' },
 ]
 
 export default function OnboardingPage() {
@@ -60,110 +59,136 @@ export default function OnboardingPage() {
     }
   }
 
+  const currentRegion = selectedRegion || customRegion
+
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex flex-col">
       {/* 헤더 */}
       <div className="px-6 pt-12 pb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          동네를 설정해주세요
-        </h1>
-        <p className="text-gray-500">
-          {session?.user?.nickname || '회원'}님 근처의 경도 모임을 찾아드릴게요
-        </p>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary-dark rounded-2xl flex items-center justify-center shadow-lg">
+            <span className="text-2xl">📍</span>
+          </div>
+          <div>
+            <p className="text-sm text-gray-500">Step 1 of 1</p>
+            <h1 className="text-xl font-bold text-gray-900">동네 설정</h1>
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-r from-primary/10 to-accent/10 rounded-2xl p-4 mb-6">
+          <p className="text-gray-700">
+            <span className="font-semibold text-primary">{session?.user?.name || '회원'}</span>님, 반가워요! 👋
+          </p>
+          <p className="text-gray-600 text-sm mt-1">
+            활동할 동네를 설정하면 근처 모임을 찾아드릴게요
+          </p>
+        </div>
       </div>
 
       {/* 검색 입력 */}
       <div className="px-6 mb-6">
         <div className="relative">
-          <svg
-            className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center">
+            <svg
+              className="w-5 h-5 text-gray-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+          </div>
           <input
             type="text"
-            placeholder="동네 이름을 입력하세요"
+            placeholder="동네 이름을 검색하세요"
             value={customRegion}
             onChange={handleCustomRegionChange}
-            className="w-full pl-12 pr-4 py-4 bg-gray-100 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full pl-16 pr-4 py-4 bg-white border-2 border-gray-100 rounded-2xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all"
           />
         </div>
       </div>
 
       {/* 인기 동네 */}
-      <div className="px-6 flex-1">
-        <h2 className="text-sm font-medium text-gray-500 mb-3">인기 동네</h2>
-        <div className="flex flex-wrap gap-2">
+      <div className="px-6 flex-1 overflow-y-auto">
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-lg">🔥</span>
+          <h2 className="text-sm font-bold text-gray-900">인기 동네</h2>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
           {POPULAR_REGIONS.map((region) => (
             <button
-              key={region}
-              onClick={() => handleRegionSelect(region)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                selectedRegion === region
-                  ? 'bg-primary text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              key={region.name}
+              onClick={() => handleRegionSelect(region.name)}
+              className={`flex items-center gap-3 p-4 rounded-2xl text-left transition-all ${
+                selectedRegion === region.name
+                  ? 'bg-primary text-white shadow-lg shadow-primary/30 scale-[1.02]'
+                  : 'bg-white border-2 border-gray-100 text-gray-700 hover:border-primary/30 hover:bg-primary/5'
               }`}
             >
-              {region}
+              <span className="text-2xl">{region.emoji}</span>
+              <span className="font-semibold">{region.name}</span>
             </button>
           ))}
         </div>
-
-        {/* 선택된 동네 표시 */}
-        {(selectedRegion || customRegion) && (
-          <Card className="mt-6 bg-primary/5 border border-primary/20">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                <svg
-                  className="w-5 h-5 text-primary"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                </svg>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">선택된 동네</p>
-                <p className="font-semibold text-gray-900">
-                  {selectedRegion || customRegion}
-                </p>
-              </div>
-            </div>
-          </Card>
-        )}
       </div>
 
-      {/* 하단 버튼 */}
-      <div className="p-6 safe-bottom">
-        <Button
-          fullWidth
-          size="lg"
-          disabled={!selectedRegion && !customRegion}
-          isLoading={isLoading}
+      {/* 선택된 동네 & 버튼 */}
+      <div className="p-6 bg-white border-t border-gray-100 safe-bottom">
+        {currentRegion && (
+          <div className="flex items-center gap-3 mb-4 p-4 bg-gradient-to-r from-primary/10 to-accent/10 rounded-2xl">
+            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
+              <svg
+                className="w-5 h-5 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">선택한 동네</p>
+              <p className="font-bold text-gray-900">{currentRegion}</p>
+            </div>
+          </div>
+        )}
+
+        <button
           onClick={handleSubmit}
+          disabled={!currentRegion || isLoading}
+          className={`w-full py-4 px-6 rounded-2xl font-bold text-lg transition-all flex items-center justify-center gap-2 ${
+            currentRegion && !isLoading
+              ? 'bg-gradient-to-r from-primary to-primary-dark text-white shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 active:scale-[0.98]'
+              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+          }`}
         >
-          시작하기
-        </Button>
+          {isLoading ? (
+            <>
+              <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+              설정 중...
+            </>
+          ) : (
+            <>
+              시작하기
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </>
+          )}
+        </button>
       </div>
     </div>
   )
