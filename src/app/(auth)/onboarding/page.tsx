@@ -14,17 +14,18 @@ const POPULAR_REGIONS = [
   { name: '건대', emoji: '🎪' },
   { name: '잠실', emoji: '🏟️' },
   { name: '여의도', emoji: '🌆' },
+  { name: '망원동', emoji: '☕' },
+  { name: '연남동', emoji: '🌳' },
 ]
 
 export default function OnboardingPage() {
-  const { data: session, update } = useSession()
+  const { update } = useSession()
   const router = useRouter()
   const [step, setStep] = useState(1)
   const [nickname, setNickname] = useState('')
   const [nicknameError, setNicknameError] = useState('')
   const [isCheckingNickname, setIsCheckingNickname] = useState(false)
   const [selectedRegion, setSelectedRegion] = useState('')
-  const [customRegion, setCustomRegion] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
   // 닉네임 유효성 검사
@@ -61,14 +62,8 @@ export default function OnboardingPage() {
     return () => clearTimeout(timer)
   }, [nickname])
 
-  const handleRegionSelect = (region: string) => {
-    setSelectedRegion(region)
-    setCustomRegion('')
-  }
-
-  const handleSubmit = async () => {
-    const region = selectedRegion || customRegion
-    if (!region || !nickname || nicknameError) return
+  const handleSubmit = async (region: string) => {
+    if (!nickname || nicknameError || isCheckingNickname) return
 
     setIsLoading(true)
     try {
@@ -83,44 +78,19 @@ export default function OnboardingPage() {
         router.push('/home')
       } else {
         const error = await res.json()
+        alert(error.message || '오류가 발생했습니다')
         if (error.message?.includes('닉네임')) {
-          setNicknameError(error.message)
           setStep(1)
         }
       }
     } catch (error) {
       console.error('Failed to update:', error)
+      alert('오류가 발생했습니다')
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleSkip = async () => {
-    if (!nickname || nicknameError) {
-      setStep(1)
-      return
-    }
-
-    setIsLoading(true)
-    try {
-      const res = await fetch('/api/users/me', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ region: '전체', nickname }),
-      })
-
-      if (res.ok) {
-        await update({ region: '전체' })
-        router.push('/home')
-      }
-    } catch (error) {
-      console.error('Failed to skip:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const currentRegion = selectedRegion || customRegion
   const isNicknameValid = nickname.length >= 2 && !nicknameError && !isCheckingNickname
 
   return (
@@ -190,45 +160,32 @@ export default function OnboardingPage() {
       ) : (
         /* Step 2: 동네 설정 */
         <main className="flex-1 px-4 pb-32 overflow-y-auto">
-          {/* 검색 */}
-          <div className="mb-6">
-            <input
-              type="text"
-              placeholder="동네 이름 검색"
-              value={customRegion}
-              onChange={(e) => {
-                setCustomRegion(e.target.value)
-                setSelectedRegion('')
-              }}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-primary"
-            />
-          </div>
+          <p className="text-sm text-gray-500 mb-4">동네를 선택하면 해당 지역 모임을 볼 수 있어요</p>
 
           {/* 인기 동네 */}
-          <div>
-            <p className="text-sm font-semibold text-gray-500 mb-3">인기 동네</p>
-            <div className="grid grid-cols-2 gap-2">
-              {POPULAR_REGIONS.map((region) => (
-                <button
-                  key={region.name}
-                  onClick={() => handleRegionSelect(region.name)}
-                  className={`flex items-center gap-2 p-3 rounded-xl text-left transition-colors ${
-                    selectedRegion === region.name
-                      ? 'bg-primary text-white'
-                      : 'bg-gray-50 text-gray-700 active:bg-gray-100'
-                  }`}
-                >
-                  <span>{region.emoji}</span>
-                  <span className="font-medium">{region.name}</span>
-                </button>
-              ))}
-            </div>
+          <div className="grid grid-cols-2 gap-2">
+            {POPULAR_REGIONS.map((region) => (
+              <button
+                key={region.name}
+                onClick={() => setSelectedRegion(region.name)}
+                disabled={isLoading}
+                className={`flex items-center gap-2 p-4 rounded-xl text-left transition-colors ${
+                  selectedRegion === region.name
+                    ? 'bg-primary text-white'
+                    : 'bg-gray-50 text-gray-700 active:bg-gray-100'
+                }`}
+              >
+                <span className="text-xl">{region.emoji}</span>
+                <span className="font-medium">{region.name}</span>
+              </button>
+            ))}
           </div>
 
           {/* 동네 설정 없이 이용하기 */}
           <button
-            onClick={handleSkip}
-            className="w-full mt-6 py-3 text-gray-400 text-sm underline"
+            onClick={() => handleSubmit('전체')}
+            disabled={isLoading}
+            className="w-full mt-8 py-3 text-gray-400 text-sm underline"
           >
             동네 설정 없이 이용하기
           </button>
@@ -253,15 +210,16 @@ export default function OnboardingPage() {
           <div className="flex gap-3">
             <button
               onClick={() => setStep(1)}
+              disabled={isLoading}
               className="flex-1 py-4 rounded-xl font-semibold bg-gray-100 text-gray-600"
             >
               이전
             </button>
             <button
-              onClick={handleSubmit}
-              disabled={!currentRegion || isLoading}
+              onClick={() => handleSubmit(selectedRegion)}
+              disabled={!selectedRegion || isLoading}
               className={`flex-[2] py-4 rounded-xl font-semibold text-lg transition-colors ${
-                currentRegion && !isLoading
+                selectedRegion && !isLoading
                   ? 'bg-primary text-white active:bg-primary-dark'
                   : 'bg-gray-200 text-gray-400'
               }`}
