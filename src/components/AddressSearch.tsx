@@ -30,20 +30,52 @@ export default function AddressSearch({ onSelect, onCancel }: AddressSearchProps
 
   // 카카오맵 SDK 로드
   useEffect(() => {
-    if (window.kakao && window.kakao.maps && window.kakao.maps.services) {
-      setIsLoaded(true)
-      return
+    const loadKakaoSDK = () => {
+      // 이미 로드된 경우
+      if (window.kakao?.maps?.services) {
+        setIsLoaded(true)
+        return
+      }
+
+      // 스크립트가 이미 있지만 아직 로드 안된 경우
+      if (window.kakao?.maps) {
+        window.kakao.maps.load(() => {
+          setIsLoaded(true)
+        })
+        return
+      }
+
+      // 기존 스크립트 확인
+      const existingScript = document.querySelector('script[src*="dapi.kakao.com"]')
+      if (existingScript) {
+        // 스크립트는 있지만 아직 로드 안됨 - 대기
+        const checkLoaded = setInterval(() => {
+          if (window.kakao?.maps) {
+            clearInterval(checkLoaded)
+            window.kakao.maps.load(() => {
+              setIsLoaded(true)
+            })
+          }
+        }, 100)
+        return
+      }
+
+      // 새 스크립트 추가
+      const script = document.createElement('script')
+      script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY}&autoload=false&libraries=services`
+      script.async = true
+      script.onload = () => {
+        window.kakao.maps.load(() => {
+          setIsLoaded(true)
+        })
+      }
+      script.onerror = () => {
+        console.error('카카오맵 SDK 로드 실패')
+      }
+      document.head.appendChild(script)
     }
 
-    const script = document.createElement('script')
-    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY}&autoload=false&libraries=services`
-    script.async = true
-    script.onload = () => {
-      window.kakao.maps.load(() => {
-        setIsLoaded(true)
-      })
-    }
-    document.head.appendChild(script)
+    loadKakaoSDK()
   }, [])
 
   // 장소 검색
@@ -105,34 +137,47 @@ export default function AddressSearch({ onSelect, onCancel }: AddressSearchProps
 
       {/* 검색 입력 */}
       <div className="px-4 py-3 border-b border-gray-100">
-        <div className="relative">
-          <svg
-            className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="장소명 또는 주소로 검색"
-            autoFocus
-            className="w-full pl-12 pr-4 py-3 bg-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
-          />
-          {query && (
-            <button
-              onClick={() => setQuery('')}
-              className="absolute right-4 top-1/2 -translate-y-1/2"
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <svg
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              <svg className="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-            </button>
-          )}
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && searchPlaces(query)}
+              placeholder="장소명 또는 주소로 검색"
+              autoFocus
+              className="w-full pl-12 pr-10 py-3 bg-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
+            {query && (
+              <button
+                onClick={() => setQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2"
+              >
+                <svg className="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </button>
+            )}
+          </div>
+          <button
+            onClick={() => searchPlaces(query)}
+            disabled={!isLoaded || query.length < 2}
+            className="px-4 py-3 bg-primary text-white font-semibold rounded-xl disabled:bg-gray-300 disabled:cursor-not-allowed"
+          >
+            검색
+          </button>
         </div>
+        {!isLoaded && (
+          <p className="text-xs text-orange-500 mt-2">지도 SDK 로딩 중...</p>
+        )}
       </div>
 
       {/* 검색 결과 */}
