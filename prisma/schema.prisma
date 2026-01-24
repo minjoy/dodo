@@ -15,7 +15,7 @@ model User {
   kakaoId       String    @unique
   email         String?
   nickname      String    @unique
-  profileImage  String?
+  profileImage  String?   @db.Text
   bio           String?   @db.Text
 
   // 동네 정보
