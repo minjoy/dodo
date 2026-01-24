@@ -27,9 +27,17 @@ export default function AddressSearch({ onSelect, onCancel }: AddressSearchProps
   const [results, setResults] = useState<Place[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [isLoaded, setIsLoaded] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   // 카카오맵 SDK 로드
   useEffect(() => {
+    const apiKey = process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY
+
+    if (!apiKey || apiKey.includes('[') || apiKey.includes('카카오')) {
+      setLoadError('카카오맵 API 키가 설정되지 않았습니다')
+      return
+    }
+
     const loadKakaoSDK = () => {
       // 이미 로드된 경우
       if (window.kakao?.maps?.services) {
@@ -57,20 +65,32 @@ export default function AddressSearch({ onSelect, onCancel }: AddressSearchProps
             })
           }
         }, 100)
+        // 10초 후 타임아웃
+        setTimeout(() => {
+          clearInterval(checkLoaded)
+          if (!window.kakao?.maps) {
+            setLoadError('SDK 로드 타임아웃')
+          }
+        }, 10000)
         return
       }
 
       // 새 스크립트 추가
       const script = document.createElement('script')
-      script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY}&autoload=false&libraries=services`
+      script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${apiKey}&autoload=false&libraries=services`
       script.async = true
       script.onload = () => {
-        window.kakao.maps.load(() => {
-          setIsLoaded(true)
-        })
+        if (window.kakao?.maps) {
+          window.kakao.maps.load(() => {
+            setIsLoaded(true)
+          })
+        } else {
+          setLoadError('SDK 로드 후 kakao.maps 없음')
+        }
       }
-      script.onerror = () => {
-        console.error('카카오맵 SDK 로드 실패')
+      script.onerror = (e) => {
+        console.error('카카오맵 SDK 로드 실패', e)
+        setLoadError('SDK 스크립트 로드 실패 - 도메인 등록 확인 필요')
       }
       document.head.appendChild(script)
     }
@@ -175,7 +195,9 @@ export default function AddressSearch({ onSelect, onCancel }: AddressSearchProps
             검색
           </button>
         </div>
-        {!isLoaded && (
+        {loadError ? (
+          <p className="text-xs text-red-500 mt-2">{loadError}</p>
+        ) : !isLoaded && (
           <p className="text-xs text-orange-500 mt-2">지도 SDK 로딩 중...</p>
         )}
       </div>
