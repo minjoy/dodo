@@ -45,7 +45,7 @@ export default function ProfileEditPage() {
   const [selectedBadgeId, setSelectedBadgeId] = useState<string | null>(null)
 
   const [showImageCropper, setShowImageCropper] = useState(false)
-  const [selectedImageFile, setSelectedImageFile] = useState<string | null>(null)
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
   const [showBadgeModal, setShowBadgeModal] = useState(false)
 
   useEffect(() => {
@@ -73,12 +73,8 @@ export default function ProfileEditPage() {
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setSelectedImageFile(e.target?.result as string)
-        setShowImageCropper(true)
-      }
-      reader.readAsDataURL(file)
+      setSelectedImageFile(file)
+      setShowImageCropper(true)
     }
   }
 
@@ -253,8 +249,8 @@ export default function ProfileEditPage() {
       {/* 이미지 크롭 모달 */}
       {showImageCropper && selectedImageFile && (
         <ImageCropper
-          image={selectedImageFile}
-          onComplete={handleCropComplete}
+          imageFile={selectedImageFile}
+          onCrop={handleCropComplete}
           onCancel={() => {
             setShowImageCropper(false)
             setSelectedImageFile(null)
