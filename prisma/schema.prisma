@@ -1,0 +1,183 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// 사용자
+model User {
+  id            String    @id @default(cuid())
+  kakaoId       String    @unique
+  email         String?
+  nickname      String
+  profileImage  String?
+  bio           String?   @db.Text
+
+  // 동네 정보
+  region        String    // 예: "성수동"
+  regionCode    String?   // 법정동 코드
+
+  // 레벨 시스템
+  level         Int       @default(1)  // 1~5
+  exp           Int       @default(0)
+
+  // 통계
+  meetingCount  Int       @default(0)  // 참여 횟수
+  hostCount     Int       @default(0)  // 개설 횟수
+  likeReceived  Int       @default(0)  // 받은 좋아요
+  noShowCount   Int       @default(0)  // 노쇼 횟수
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // 관계
+  hostedMeetings    Meeting[]       @relation("HostedMeetings")
+  participations    Participant[]
+  reviewsGiven      Review[]        @relation("ReviewsGiven")
+  reviewsReceived   Review[]        @relation("ReviewsReceived")
+  badges            UserBadge[]
+
+  @@index([region])
+  @@index([level])
+}
+
+// 모임
+model Meeting {
+  id            String    @id @default(cuid())
+
+  // 기본 정보
+  title         String
+  description   String?   @db.Text
+  gameType      GameType  @default(GYEONGDO)
+
+  // 일시
+  meetingDate   DateTime
+  duration      Int       @default(120)  // 분 단위
+
+  // 장소
+  region        String
+  placeName     String
+  address       String
+  latitude      Float
+  longitude     Float
+
+  // 모집
+  maxParticipants   Int
+  minLevel          Int       @default(1)
+
+  // 상태
+  status        MeetingStatus @default(RECRUITING)
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // 관계
+  hostId        String
+  host          User      @relation("HostedMeetings", fields: [hostId], references: [id])
+  participants  Participant[]
+  reviews       Review[]
+
+  @@index([region])
+  @@index([meetingDate])
+  @@index([status])
+}
+
+// 게임 종류
+enum GameType {
+  GYEONGDO      // 경찰과 도둑
+  SULRAE        // 술래잡기
+  MUGUNGHWA     // 무궁화 꽃이 피었습니다
+  PIGU          // 피구
+  OTHER         // 기타
+}
+
+// 모임 상태
+enum MeetingStatus {
+  RECRUITING    // 모집중
+  FULL          // 모집완료
+  ONGOING       // 진행중
+  COMPLETED     // 완료
+  CANCELLED     // 취소됨
+}
+
+// 참가자
+model Participant {
+  id          String    @id @default(cuid())
+
+  status      ParticipantStatus @default(PENDING)
+  joinedAt    DateTime  @default(now())
+  attendedAt  DateTime? // 실제 참석 확인 시간
+
+  meetingId   String
+  meeting     Meeting   @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@unique([meetingId, userId])
+  @@index([meetingId])
+  @@index([userId])
+}
+
+// 참가 상태
+enum ParticipantStatus {
+  PENDING     // 대기중
+  CONFIRMED   // 확정
+  ATTENDED    // 참석완료
+  NOSHOW      // 노쇼
+  CANCELLED   // 취소
+}
+
+// 리뷰/평가
+model Review {
+  id          String    @id @default(cuid())
+
+  rating      Int       // 1~5
+  comment     String?   @db.Text
+  isLike      Boolean   @default(false)  // 좋아요 여부
+
+  createdAt   DateTime  @default(now())
+
+  meetingId   String
+  meeting     Meeting   @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  reviewerId  String
+  reviewer    User      @relation("ReviewsGiven", fields: [reviewerId], references: [id])
+
+  revieweeId  String
+  reviewee    User      @relation("ReviewsReceived", fields: [revieweeId], references: [id])
+
+  @@unique([meetingId, reviewerId, revieweeId])
+  @@index([revieweeId])
+}
+
+// 배지
+model Badge {
+  id          String    @id @default(cuid())
+
+  code        String    @unique  // FIRST_MEETING, GYEONGDO_10, HOST_FIRST 등
+  name        String
+  description String
+  icon        String
+
+  userBadges  UserBadge[]
+}
+
+// 사용자 배지 (획득)
+model UserBadge {
+  id          String    @id @default(cuid())
+  earnedAt    DateTime  @default(now())
+
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+
+  badgeId     String
+  badge       Badge     @relation(fields: [badgeId], references: [id])
+
+  @@unique([userId, badgeId])
+}
