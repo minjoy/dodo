@@ -100,6 +100,15 @@ export default function MeetingDetailPage() {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  const handleBack = () => {
+    // 이전 페이지가 모임 생성 페이지라면 홈으로 이동
+    if (document.referrer.includes('/create')) {
+      router.push('/home')
+    } else {
+      router.back()
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-gray-50 to-white">
@@ -136,7 +145,7 @@ export default function MeetingDetailPage() {
       {/* 헤더 */}
       <header className="bg-white/80 backdrop-blur-lg sticky top-0 z-40 border-b border-gray-100/50">
         <div className="px-4 py-4 flex items-center justify-between">
-          <button onClick={() => router.back()} className="p-2 -ml-2 hover:bg-gray-100 rounded-xl transition-colors">
+          <button onClick={handleBack} className="p-2 -ml-2 hover:bg-gray-100 rounded-xl transition-colors">
             <svg
               className="w-6 h-6 text-gray-600"
               fill="none"
@@ -390,7 +399,10 @@ export default function MeetingDetailPage() {
       {/* 하단 고정 버튼 */}
       <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-t border-gray-100 px-4 pt-4 pb-8 safe-bottom">
         {isHost ? (
-          <button className="w-full py-4 px-6 rounded-2xl font-bold text-lg bg-secondary text-white shadow-lg shadow-secondary/30 hover:shadow-xl transition-all flex items-center justify-center gap-2">
+          <button
+            onClick={() => router.push(`/meeting/${meetingId}/edit`)}
+            className="w-full py-4 px-6 rounded-2xl font-bold text-lg bg-secondary text-white shadow-lg shadow-secondary/30 hover:shadow-xl transition-all flex items-center justify-center gap-2"
+          >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
