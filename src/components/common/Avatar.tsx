@@ -35,6 +35,9 @@ const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
       return '?'
     }
 
+    // base64 데이터 URL인지 확인
+    const isDataUrl = src?.startsWith('data:')
+
     return (
       <div
         ref={ref}
@@ -46,13 +49,22 @@ const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
         {...props}
       >
         {src ? (
-          <Image
-            src={src}
-            alt={alt}
-            width={imageSizes[size]}
-            height={imageSizes[size]}
-            className="object-cover w-full h-full"
-          />
+          isDataUrl ? (
+            // base64 데이터 URL은 일반 img 태그 사용
+            <img
+              src={src}
+              alt={alt}
+              className="object-cover w-full h-full"
+            />
+          ) : (
+            <Image
+              src={src}
+              alt={alt}
+              width={imageSizes[size]}
+              height={imageSizes[size]}
+              className="object-cover w-full h-full"
+            />
+          )
         ) : (
           <span>{getFallbackText()}</span>
         )}

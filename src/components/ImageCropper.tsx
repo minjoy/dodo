@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 
 interface ImageCropperProps {
   imageFile: File
@@ -9,16 +9,18 @@ interface ImageCropperProps {
 }
 
 export default function ImageCropper({ imageFile, onCrop, onCancel }: ImageCropperProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const [imageSrc, setImageSrc] = useState<string>('')
-  const [image, setImage] = useState<HTMLImageElement | null>(null)
-  const [scale, setScale] = useState(1)
-  const [position, setPosition] = useState({ x: 0, y: 0 })
-  const [isDragging, setIsDragging] = useState(false)
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const [imageSize, setImageSize] = useState({ width: 0, height: 0 })
+  const [imageOffset, setImageOffset] = useState({ x: 0, y: 0 })
 
-  const CROP_SIZE = 200
-  const CANVAS_SIZE = 280
+  // 크롭 영역 상태
+  const [cropCircle, setCropCircle] = useState({ x: 0, y: 0, size: 200 })
+
+  // 드래그 상태
+  const [isDragging, setIsDragging] = useState(false)
+  const [isResizing, setIsResizing] = useState(false)
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
 
   // 이미지 파일 로드
   useEffect(() => {
@@ -29,205 +31,289 @@ export default function ImageCropper({ imageFile, onCrop, onCancel }: ImageCropp
     reader.readAsDataURL(imageFile)
   }, [imageFile])
 
-  // 이미지 객체 생성
+  // 이미지 크기 계산 및 초기 크롭 영역 설정
   useEffect(() => {
-    if (!imageSrc) return
+    if (!imageSrc || !containerRef.current) return
 
     const img = new Image()
     img.onload = () => {
-      setImage(img)
+      const container = containerRef.current!
+      const containerWidth = container.clientWidth
+      const containerHeight = container.clientHeight - 120 // 버튼 영역 제외
 
-      // 초기 스케일 계산 (이미지가 원에 꽉 차도록)
-      const minDimension = Math.min(img.width, img.height)
-      const initialScale = CROP_SIZE / minDimension
-      setScale(initialScale * 1.2) // 약간 여유있게
+      // 이미지를 컨테이너에 맞게 조절
+      const scale = Math.min(
+        containerWidth / img.width,
+        containerHeight / img.height
+      )
 
-      // 중앙 정렬
-      setPosition({
-        x: (CANVAS_SIZE - img.width * initialScale * 1.2) / 2,
-        y: (CANVAS_SIZE - img.height * initialScale * 1.2) / 2,
+      const displayWidth = img.width * scale
+      const displayHeight = img.height * scale
+      const offsetX = (containerWidth - displayWidth) / 2
+      const offsetY = (containerHeight - displayHeight) / 2
+
+      setImageSize({ width: displayWidth, height: displayHeight })
+      setImageOffset({ x: offsetX, y: offsetY })
+
+      // 초기 크롭 영역 (이미지 중앙, 이미지 크기의 60%)
+      const initialSize = Math.min(displayWidth, displayHeight) * 0.6
+      setCropCircle({
+        x: offsetX + (displayWidth - initialSize) / 2,
+        y: offsetY + (displayHeight - initialSize) / 2,
+        size: initialSize,
       })
     }
     img.src = imageSrc
   }, [imageSrc])
 
-  // 캔버스에 이미지 그리기
-  useEffect(() => {
-    if (!canvasRef.current || !image) return
+  const getEventPosition = (e: React.MouseEvent | React.TouchEvent) => {
+    if ('touches' in e) {
+      return { x: e.touches[0].clientX, y: e.touches[0].clientY }
+    }
+    return { x: e.clientX, y: e.clientY }
+  }
 
-    const canvas = canvasRef.current
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-
-    // 캔버스 초기화
-    ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE)
-
-    // 이미지 그리기
-    ctx.save()
-    ctx.beginPath()
-    ctx.arc(CANVAS_SIZE / 2, CANVAS_SIZE / 2, CROP_SIZE / 2, 0, Math.PI * 2)
-    ctx.clip()
-
-    ctx.drawImage(
-      image,
-      position.x,
-      position.y,
-      image.width * scale,
-      image.height * scale
-    )
-
-    ctx.restore()
-
-    // 원형 테두리
-    ctx.strokeStyle = '#6366f1'
-    ctx.lineWidth = 3
-    ctx.beginPath()
-    ctx.arc(CANVAS_SIZE / 2, CANVAS_SIZE / 2, CROP_SIZE / 2, 0, Math.PI * 2)
-    ctx.stroke()
-  }, [image, scale, position])
-
-  const handleMouseDown = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+  // 원 드래그 시작
+  const handleCircleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const pos = getEventPosition(e)
     setIsDragging(true)
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
-    setDragStart({ x: clientX - position.x, y: clientY - position.y })
-  }, [position])
-
-  const handleMouseMove = useCallback((e: React.MouseEvent | React.TouchEvent) => {
-    if (!isDragging) return
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
-    setPosition({
-      x: clientX - dragStart.x,
-      y: clientY - dragStart.y,
+    setDragStart({
+      x: pos.x - cropCircle.x,
+      y: pos.y - cropCircle.y,
     })
-  }, [isDragging, dragStart])
+  }
 
+  // 리사이즈 핸들 드래그 시작
+  const handleResizeMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const pos = getEventPosition(e)
+    setIsResizing(true)
+    setDragStart({ x: pos.x, y: pos.y })
+  }
+
+  // 드래그 중
+  const handleMouseMove = useCallback((e: MouseEvent | TouchEvent) => {
+    const pos = 'touches' in e
+      ? { x: e.touches[0].clientX, y: e.touches[0].clientY }
+      : { x: e.clientX, y: e.clientY }
+
+    if (isDragging) {
+      const newX = pos.x - dragStart.x
+      const newY = pos.y - dragStart.y
+
+      // 이미지 범위 내로 제한
+      const minX = imageOffset.x
+      const maxX = imageOffset.x + imageSize.width - cropCircle.size
+      const minY = imageOffset.y
+      const maxY = imageOffset.y + imageSize.height - cropCircle.size
+
+      setCropCircle(prev => ({
+        ...prev,
+        x: Math.max(minX, Math.min(maxX, newX)),
+        y: Math.max(minY, Math.min(maxY, newY)),
+      }))
+    } else if (isResizing) {
+      const dx = pos.x - dragStart.x
+      const dy = pos.y - dragStart.y
+      const delta = Math.max(dx, dy)
+
+      setCropCircle(prev => {
+        const newSize = Math.max(80, Math.min(
+          Math.min(imageSize.width, imageSize.height),
+          prev.size + delta
+        ))
+
+        // 크기 변경 시 이미지 범위 체크
+        let newX = prev.x
+        let newY = prev.y
+
+        if (newX + newSize > imageOffset.x + imageSize.width) {
+          newX = imageOffset.x + imageSize.width - newSize
+        }
+        if (newY + newSize > imageOffset.y + imageSize.height) {
+          newY = imageOffset.y + imageSize.height - newSize
+        }
+
+        return { x: newX, y: newY, size: newSize }
+      })
+
+      setDragStart({ x: pos.x, y: pos.y })
+    }
+  }, [isDragging, isResizing, dragStart, imageOffset, imageSize, cropCircle.size])
+
+  // 드래그 끝
   const handleMouseUp = useCallback(() => {
     setIsDragging(false)
+    setIsResizing(false)
   }, [])
 
+  // 이벤트 리스너 등록
+  useEffect(() => {
+    if (isDragging || isResizing) {
+      window.addEventListener('mousemove', handleMouseMove)
+      window.addEventListener('mouseup', handleMouseUp)
+      window.addEventListener('touchmove', handleMouseMove)
+      window.addEventListener('touchend', handleMouseUp)
+
+      return () => {
+        window.removeEventListener('mousemove', handleMouseMove)
+        window.removeEventListener('mouseup', handleMouseUp)
+        window.removeEventListener('touchmove', handleMouseMove)
+        window.removeEventListener('touchend', handleMouseUp)
+      }
+    }
+  }, [isDragging, isResizing, handleMouseMove, handleMouseUp])
+
+  // 크롭 실행
   const handleCrop = () => {
-    if (!image) return
+    if (!imageSrc) return
 
-    // 최종 크롭된 이미지 생성 (100x100으로 리사이즈)
-    const outputSize = 100
-    const outputCanvas = document.createElement('canvas')
-    outputCanvas.width = outputSize
-    outputCanvas.height = outputSize
-    const outputCtx = outputCanvas.getContext('2d')
-    if (!outputCtx) return
+    const img = new Image()
+    img.onload = () => {
+      // 이미지 표시 비율 계산
+      const scaleX = img.width / imageSize.width
+      const scaleY = img.height / imageSize.height
 
-    // 원형 클리핑
-    outputCtx.beginPath()
-    outputCtx.arc(outputSize / 2, outputSize / 2, outputSize / 2, 0, Math.PI * 2)
-    outputCtx.clip()
+      // 실제 이미지에서의 크롭 좌표
+      const sourceX = (cropCircle.x - imageOffset.x) * scaleX
+      const sourceY = (cropCircle.y - imageOffset.y) * scaleY
+      const sourceSize = cropCircle.size * Math.max(scaleX, scaleY)
 
-    // 크롭 영역 계산
-    const cropCenterX = CANVAS_SIZE / 2
-    const cropCenterY = CANVAS_SIZE / 2
-    const scaleRatio = outputSize / CROP_SIZE
+      // 출력 캔버스 (100x100)
+      const outputSize = 100
+      const canvas = document.createElement('canvas')
+      canvas.width = outputSize
+      canvas.height = outputSize
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
 
-    outputCtx.drawImage(
-      image,
-      (position.x - cropCenterX + CROP_SIZE / 2) * (outputSize / CROP_SIZE) / scale * -1 + outputSize / 2 - (image.width * scaleRatio * scale) / 2,
-      (position.y - cropCenterY + CROP_SIZE / 2) * (outputSize / CROP_SIZE) / scale * -1 + outputSize / 2 - (image.height * scaleRatio * scale) / 2,
-      image.width * scaleRatio * scale,
-      image.height * scaleRatio * scale
-    )
+      // 원형 마스크
+      ctx.beginPath()
+      ctx.arc(outputSize / 2, outputSize / 2, outputSize / 2, 0, Math.PI * 2)
+      ctx.clip()
 
-    // 더 간단한 방식으로 다시 구현
-    const finalCanvas = document.createElement('canvas')
-    finalCanvas.width = outputSize
-    finalCanvas.height = outputSize
-    const finalCtx = finalCanvas.getContext('2d')
-    if (!finalCtx) return
+      // 이미지 그리기
+      ctx.drawImage(
+        img,
+        sourceX,
+        sourceY,
+        sourceSize,
+        sourceSize,
+        0,
+        0,
+        outputSize,
+        outputSize
+      )
 
-    // 원형 마스크
-    finalCtx.beginPath()
-    finalCtx.arc(outputSize / 2, outputSize / 2, outputSize / 2, 0, Math.PI * 2)
-    finalCtx.clip()
-
-    // 현재 캔버스에서 크롭 영역만 추출
-    const sourceCanvas = canvasRef.current
-    if (!sourceCanvas) return
-
-    const cropStartX = (CANVAS_SIZE - CROP_SIZE) / 2
-    const cropStartY = (CANVAS_SIZE - CROP_SIZE) / 2
-
-    finalCtx.drawImage(
-      sourceCanvas,
-      cropStartX,
-      cropStartY,
-      CROP_SIZE,
-      CROP_SIZE,
-      0,
-      0,
-      outputSize,
-      outputSize
-    )
-
-    // JPEG로 변환 (용량 절약)
-    const dataUrl = finalCanvas.toDataURL('image/jpeg', 0.8)
-    onCrop(dataUrl)
+      // JPEG로 변환
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.85)
+      onCrop(dataUrl)
+    }
+    img.src = imageSrc
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-      <div className="bg-white rounded-2xl p-6 mx-4 w-full max-w-sm">
-        <h3 className="text-lg font-bold text-gray-900 mb-4 text-center">프로필 사진 편집</h3>
+    <div
+      ref={containerRef}
+      className="fixed inset-0 z-50 bg-black flex flex-col"
+    >
+      {/* 헤더 */}
+      <header className="flex items-center justify-between px-4 py-3 bg-black/80">
+        <button
+          onClick={onCancel}
+          className="text-white text-lg font-medium"
+        >
+          취소
+        </button>
+        <h1 className="text-white text-lg font-bold">사진 편집</h1>
+        <button
+          onClick={handleCrop}
+          className="text-primary text-lg font-bold"
+        >
+          완료
+        </button>
+      </header>
 
-        <div className="flex justify-center mb-4">
-          <div className="relative">
-            <canvas
-              ref={canvasRef}
-              width={CANVAS_SIZE}
-              height={CANVAS_SIZE}
-              className="cursor-move rounded-lg bg-gray-100"
-              onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onMouseLeave={handleMouseUp}
-              onTouchStart={handleMouseDown}
-              onTouchMove={handleMouseMove}
-              onTouchEnd={handleMouseUp}
-            />
+      {/* 이미지 및 크롭 영역 */}
+      <div className="flex-1 relative overflow-hidden">
+        {/* 원본 이미지 */}
+        {imageSrc && (
+          <img
+            src={imageSrc}
+            alt="편집할 이미지"
+            className="absolute"
+            style={{
+              left: imageOffset.x,
+              top: imageOffset.y,
+              width: imageSize.width,
+              height: imageSize.height,
+            }}
+            draggable={false}
+          />
+        )}
+
+        {/* 어두운 오버레이 (크롭 영역 제외) */}
+        <svg className="absolute inset-0 w-full h-full pointer-events-none">
+          <defs>
+            <mask id="cropMask">
+              <rect width="100%" height="100%" fill="white" />
+              <circle
+                cx={cropCircle.x + cropCircle.size / 2}
+                cy={cropCircle.y + cropCircle.size / 2}
+                r={cropCircle.size / 2}
+                fill="black"
+              />
+            </mask>
+          </defs>
+          <rect
+            width="100%"
+            height="100%"
+            fill="rgba(0,0,0,0.6)"
+            mask="url(#cropMask)"
+          />
+        </svg>
+
+        {/* 크롭 원 테두리 및 핸들 */}
+        <div
+          className="absolute border-2 border-white rounded-full cursor-move"
+          style={{
+            left: cropCircle.x,
+            top: cropCircle.y,
+            width: cropCircle.size,
+            height: cropCircle.size,
+          }}
+          onMouseDown={handleCircleMouseDown}
+          onTouchStart={handleCircleMouseDown}
+        >
+          {/* 가이드 라인 */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="w-px h-full bg-white/30" />
+          </div>
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="w-full h-px bg-white/30" />
+          </div>
+
+          {/* 리사이즈 핸들 (우하단) */}
+          <div
+            className="absolute -bottom-3 -right-3 w-8 h-8 bg-white rounded-full shadow-lg cursor-se-resize flex items-center justify-center"
+            onMouseDown={handleResizeMouseDown}
+            onTouchStart={handleResizeMouseDown}
+          >
+            <svg className="w-4 h-4 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+            </svg>
           </div>
         </div>
+      </div>
 
-        {/* 줌 컨트롤 */}
-        <div className="flex items-center gap-3 mb-6 px-4">
-          <span className="text-sm text-gray-500">축소</span>
-          <input
-            type="range"
-            min="0.5"
-            max="3"
-            step="0.1"
-            value={scale}
-            onChange={(e) => setScale(parseFloat(e.target.value))}
-            className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
-          />
-          <span className="text-sm text-gray-500">확대</span>
-        </div>
-
-        <p className="text-sm text-gray-400 text-center mb-4">
-          드래그하여 위치를 조정하세요
+      {/* 안내 텍스트 */}
+      <div className="px-4 py-6 bg-black/80 text-center">
+        <p className="text-white/70 text-sm">
+          원을 드래그하여 위치를 조정하고, 모서리를 잡아 크기를 조절하세요
         </p>
-
-        <div className="flex gap-3">
-          <button
-            onClick={onCancel}
-            className="flex-1 py-3 rounded-xl font-semibold bg-gray-100 text-gray-600"
-          >
-            취소
-          </button>
-          <button
-            onClick={handleCrop}
-            className="flex-1 py-3 rounded-xl font-semibold bg-primary text-white"
-          >
-            확인
-          </button>
-        </div>
       </div>
     </div>
   )
