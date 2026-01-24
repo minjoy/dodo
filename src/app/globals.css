@@ -2,10 +2,6 @@
 
 @import "tailwindcss";
 
-/* Tailwind v4: Source 디렉티브로 클래스 스캔 경로 지정 */
-@source "../../src/**/*.{js,ts,jsx,tsx,mdx}";
-@source "../**/*.{js,ts,jsx,tsx,mdx}";
-
 @theme {
   /* Colors */
   --color-primary: #FF6B35;
