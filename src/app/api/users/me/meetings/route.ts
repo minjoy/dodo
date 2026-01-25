@@ -1,10 +1,10 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 // GET /api/users/me/meetings - 내 모임 목록
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -12,24 +12,53 @@ export async function GET() {
     }
 
     const userId = session.user.id
+    const { searchParams } = new URL(request.url)
+    const type = searchParams.get('type') // 'past' | null
 
-    // 내가 호스트이거나 참여한 모임
-    const meetings = await prisma.meeting.findMany({
-      where: {
-        OR: [
-          { hostId: userId },
-          {
-            participants: {
-              some: {
-                userId,
-                status: {
-                  not: 'CANCELLED',
-                },
+    const now = new Date()
+
+    // 기본 조건: 내가 호스트이거나 참여한 모임
+    const baseWhere = {
+      OR: [
+        { hostId: userId },
+        {
+          participants: {
+            some: {
+              userId,
+              status: {
+                not: 'CANCELLED' as const,
               },
             },
           },
-        ],
-      },
+        },
+      ],
+    }
+
+    // type에 따른 필터링
+    const where = type === 'past'
+      ? {
+          ...baseWhere,
+          OR: [
+            ...baseWhere.OR,
+          ],
+          AND: [
+            {
+              OR: [
+                { status: 'COMPLETED' as const },
+                {
+                  AND: [
+                    { status: { not: 'PLAYING' as const } },
+                    { meetingDate: { lt: now } },
+                  ],
+                },
+              ],
+            },
+          ],
+        }
+      : baseWhere
+
+    const meetings = await prisma.meeting.findMany({
+      where,
       include: {
         host: {
           select: {
@@ -39,6 +68,20 @@ export async function GET() {
             level: true,
             meetingCount: true,
             likeReceived: true,
+          },
+        },
+        participants: {
+          where: {
+            status: { not: 'CANCELLED' },
+          },
+          select: {
+            userId: true,
+            user: {
+              select: {
+                id: true,
+                nickname: true,
+              },
+            },
           },
         },
         _count: {
@@ -58,7 +101,56 @@ export async function GET() {
       },
     })
 
-    return NextResponse.json(meetings)
+    // 지난 모임의 경우 미평가 여부 확인
+    if (type === 'past') {
+      // 내가 작성한 리뷰 목록 가져오기
+      const myReviews = await prisma.review.findMany({
+        where: {
+          reviewerId: userId,
+        },
+        select: {
+          meetingId: true,
+          revieweeId: true,
+        },
+      })
+
+      // 모임별 내가 평가한 사용자 맵 생성
+      const reviewedMap = new Map<string, Set<string>>()
+      myReviews.forEach((review) => {
+        if (!reviewedMap.has(review.meetingId)) {
+          reviewedMap.set(review.meetingId, new Set())
+        }
+        reviewedMap.get(review.meetingId)!.add(review.revieweeId)
+      })
+
+      // 미평가 여부 추가
+      const meetingsWithUnreviewed = meetings.map((meeting) => {
+        const reviewedUsers = reviewedMap.get(meeting.id) || new Set()
+
+        // 평가 대상: 참여자 + 호스트 (나 제외)
+        const targetUsers = [
+          ...meeting.participants.map(p => p.userId),
+          meeting.hostId,
+        ].filter(id => id !== userId)
+
+        // 미평가 사용자가 있는지 확인
+        const hasUnreviewed = meeting.status === 'COMPLETED' &&
+          targetUsers.some(targetId => !reviewedUsers.has(targetId))
+
+        // participants 상세 정보 제거 (응답 크기 줄이기)
+        const { participants, ...rest } = meeting
+        return {
+          ...rest,
+          hasUnreviewed,
+        }
+      })
+
+      return NextResponse.json(meetingsWithUnreviewed)
+    }
+
+    // 일반 조회 시 participants 상세 정보 제거
+    const cleanMeetings = meetings.map(({ participants, ...rest }) => rest)
+    return NextResponse.json(cleanMeetings)
   } catch (error) {
     console.error('Failed to fetch user meetings:', error)
     return NextResponse.json(

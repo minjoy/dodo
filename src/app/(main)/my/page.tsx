@@ -58,8 +58,8 @@ export default function MyPage() {
   const [user, setUser] = useState<User | null>(null)
   const [playingMeetings, setPlayingMeetings] = useState<MeetingWithDetails[]>([])
   const [upcomingMeetings, setUpcomingMeetings] = useState<MeetingWithDetails[]>([])
-  const [pastMeetings, setPastMeetings] = useState<MeetingWithDetails[]>([])
-  const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming')
+  const [pastMeetingsCount, setPastMeetingsCount] = useState(0)
+  const [unreviewedCount, setUnreviewedCount] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [showLevelModal, setShowLevelModal] = useState(false)
   const [showBadgeModal, setShowBadgeModal] = useState(false)
@@ -85,9 +85,10 @@ export default function MyPage() {
 
   const fetchUserData = async () => {
     try {
-      const [userRes, meetingsRes, badgesRes] = await Promise.all([
+      const [userRes, meetingsRes, pastMeetingsRes, badgesRes] = await Promise.all([
         fetch('/api/users/me'),
         fetch('/api/users/me/meetings'),
+        fetch('/api/users/me/meetings?type=past'),
         fetch('/api/users/me/badges'),
       ])
 
@@ -117,12 +118,14 @@ export default function MyPage() {
             m.status !== 'PLAYING' && m.status !== 'COMPLETED' && new Date(m.meetingDate) >= now
           )
         )
-        // 지난 모임 (완료된 모임 또는 과거 날짜)
-        setPastMeetings(
-          meetingsData.filter((m: MeetingWithDetails) =>
-            m.status === 'COMPLETED' || (m.status !== 'PLAYING' && new Date(m.meetingDate) < now)
-          )
-        )
+      }
+
+      if (pastMeetingsRes.ok) {
+        const pastData = await pastMeetingsRes.json()
+        setPastMeetingsCount(pastData.length)
+        // 미평가 모임 카운트
+        const unreviewed = pastData.filter((m: MeetingWithDetails & { hasUnreviewed?: boolean }) => m.hasUnreviewed).length
+        setUnreviewedCount(unreviewed)
       }
 
       if (badgesRes.ok) {
@@ -368,94 +371,69 @@ export default function MyPage() {
           </div>
         )}
 
-        {/* 모임 탭 */}
+        {/* 참여 예정 모임 */}
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="flex border-b border-gray-100">
-            <button
-              onClick={() => setActiveTab('upcoming')}
-              className={`flex-1 py-4 text-center font-bold transition-all relative ${
-                activeTab === 'upcoming'
-                  ? 'text-primary'
-                  : 'text-gray-400 hover:text-gray-600'
-              }`}
-            >
-              <span className="flex items-center justify-center gap-2">
-                <span>📅</span>
-                참여 예정
-                <span className={`inline-flex items-center justify-center min-w-[20px] h-5 text-xs font-bold rounded-full px-1.5 ${
-                  activeTab === 'upcoming' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-600'
-                }`}>
-                  {upcomingMeetings.length}
-                </span>
+          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">📅</span>
+              <h3 className="font-bold text-gray-900">참여 예정</h3>
+              <span className="bg-primary text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                {upcomingMeetings.length}
               </span>
-              {activeTab === 'upcoming' && (
-                <div className="absolute bottom-0 left-1/4 right-1/4 h-0.5 bg-primary rounded-full" />
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab('past')}
-              className={`flex-1 py-4 text-center font-bold transition-all relative ${
-                activeTab === 'past'
-                  ? 'text-primary'
-                  : 'text-gray-400 hover:text-gray-600'
-              }`}
-            >
-              <span className="flex items-center justify-center gap-2">
-                <span>📚</span>
-                지난 모임
-                <span className={`inline-flex items-center justify-center min-w-[20px] h-5 text-xs font-bold rounded-full px-1.5 ${
-                  activeTab === 'past' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-600'
-                }`}>
-                  {pastMeetings.length}
-                </span>
-              </span>
-              {activeTab === 'past' && (
-                <div className="absolute bottom-0 left-1/4 right-1/4 h-0.5 bg-primary rounded-full" />
-              )}
-            </button>
+            </div>
           </div>
 
           <div className="p-4">
-            {activeTab === 'upcoming' ? (
-              upcomingMeetings.length > 0 ? (
-                <div className="space-y-3">
-                  {upcomingMeetings.map((meeting) => (
-                    <MeetingCard key={meeting.id} meeting={meeting} />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <div className="w-20 h-20 bg-gray-100 rounded-3xl flex items-center justify-center mx-auto mb-4">
-                    <span className="text-4xl">📭</span>
-                  </div>
-                  <p className="text-gray-500 font-medium mb-4">참여 예정인 모임이 없어요</p>
-                  <Link href="/home">
-                    <button className="inline-flex items-center gap-2 bg-primary/10 text-primary font-bold py-3 px-6 rounded-xl hover:bg-primary/20 transition-colors">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                      </svg>
-                      모임 찾아보기
-                    </button>
-                  </Link>
-                </div>
-              )
-            ) : pastMeetings.length > 0 ? (
+            {upcomingMeetings.length > 0 ? (
               <div className="space-y-3">
-                {pastMeetings.map((meeting) => (
+                {upcomingMeetings.map((meeting) => (
                   <MeetingCard key={meeting.id} meeting={meeting} />
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12">
-                <div className="w-20 h-20 bg-gray-100 rounded-3xl flex items-center justify-center mx-auto mb-4">
-                  <span className="text-4xl">🏃</span>
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                  <span className="text-3xl">📭</span>
                 </div>
-                <p className="text-gray-500 font-medium">아직 참여한 모임이 없어요</p>
-                <p className="text-gray-400 text-sm mt-1">첫 경도를 시작해보세요!</p>
+                <p className="text-gray-500 font-medium mb-3">참여 예정인 모임이 없어요</p>
+                <Link href="/home">
+                  <button className="inline-flex items-center gap-2 bg-primary/10 text-primary font-bold py-2.5 px-5 rounded-xl hover:bg-primary/20 transition-colors text-sm">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    모임 찾아보기
+                  </button>
+                </Link>
               </div>
             )}
           </div>
         </div>
+
+        {/* 지난 모임 바로가기 */}
+        <Link href="/my/past-meetings" className="block">
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 px-5 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center">
+                <span className="text-xl">📚</span>
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-gray-900">지난 모임</span>
+                  <span className="text-sm text-gray-500">{pastMeetingsCount}개</span>
+                  {unreviewedCount > 0 && (
+                    <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full animate-pulse">
+                      {unreviewedCount}개 미평가
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-gray-400">참여했던 모임 기록</p>
+              </div>
+            </div>
+            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </Link>
 
         {/* 메뉴 */}
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
