@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     const completedMeetings = await prisma.meeting.findMany({
       where: {
         status: 'COMPLETED',
-        endedAt: {
+        gameEndedAt: {
           gte: twoHoursAgo,
           lt: oneHourAgo,
         },
