@@ -509,8 +509,8 @@ export default function MyPage() {
 
       {/* 레벨 설명 모달 */}
       {showLevelModal && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-4 pb-20">
-          <div className="bg-white rounded-3xl w-full max-w-sm max-h-[65vh] flex flex-col overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-4 pb-24">
+          <div className="bg-white rounded-3xl w-full max-w-sm max-h-[60vh] flex flex-col overflow-hidden">
             <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
               <h3 className="text-lg font-bold text-gray-900">레벨 시스템</h3>
               <button
@@ -522,7 +522,7 @@ export default function MyPage() {
                 </svg>
               </button>
             </div>
-            <div className="p-4 overflow-y-auto flex-1">
+            <div className="p-4 overflow-y-auto flex-1 overscroll-contain">
               <div className="space-y-2">
                 {LEVEL_INFO.map((info) => (
                   <div
@@ -564,8 +564,8 @@ export default function MyPage() {
 
       {/* 대표 뱃지 선택 모달 */}
       {showBadgeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-3xl w-full max-w-sm max-h-[85vh] flex flex-col overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-4 pb-24">
+          <div className="bg-white rounded-3xl w-full max-w-sm max-h-[60vh] flex flex-col overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
               <h3 className="text-lg font-bold text-gray-900">대표 뱃지 선택</h3>
               <button
@@ -577,7 +577,7 @@ export default function MyPage() {
                 </svg>
               </button>
             </div>
-            <div className="p-5 overflow-y-auto flex-1">
+            <div className="p-5 overflow-y-auto flex-1 overscroll-contain">
               <div className="flex items-center justify-between mb-4">
                 <p className="text-sm text-gray-500">
                   최대 2개까지 선택할 수 있어요
