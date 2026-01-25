@@ -64,7 +64,7 @@ export default function RegionChangePage() {
   const isChanged = selectedRegion && selectedRegion !== currentRegion
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-32">
+    <div className="min-h-screen bg-gray-50 pb-40">
       {/* 헤더 */}
       <header className="bg-white sticky top-0 z-40 border-b border-gray-100">
         <div className="px-4 py-4 flex items-center justify-between">
@@ -184,8 +184,8 @@ export default function RegionChangePage() {
       </div>
 
       {/* 하단 버튼 */}
-      <div className="fixed bottom-0 left-0 right-0 z-40">
-        <div className="max-w-[1000px] mx-auto bg-white border-t border-gray-100 px-4 pt-4 pb-8 safe-bottom">
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-lg">
+        <div className="max-w-[1000px] mx-auto px-4 pt-4 pb-8 safe-bottom">
           <button
             onClick={handleRegionChange}
             disabled={!isChanged || isLoading}
