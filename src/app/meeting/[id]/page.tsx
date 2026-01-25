@@ -57,6 +57,12 @@ function MeetingDetailContent() {
   const [prevStatus, setPrevStatus] = useState<string | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
 
+  // 신고 관련 상태
+  const [showReportModal, setShowReportModal] = useState(false)
+  const [reportReason, setReportReason] = useState('')
+  const [reportDescription, setReportDescription] = useState('')
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false)
+
   const meetingId = params.id as string
   const joinedFromInvite = searchParams.get('joined') === 'true'
   const fromInviteLink = searchParams.get('fromInvite') === 'true'
@@ -398,6 +404,47 @@ function MeetingDetailContent() {
     setReviewComment('')
     setReviewIsLike(false)
     setShowReviewModal(true)
+  }
+
+  const openReportModal = () => {
+    setShowReviewModal(false)
+    setShowReportModal(true)
+    setReportReason('')
+    setReportDescription('')
+  }
+
+  const handleReport = async () => {
+    if (!reviewTarget || !reportReason || !session?.user?.id) return
+
+    setIsSubmittingReport(true)
+    try {
+      const res = await fetch('/api/reports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reportedId: reviewTarget.id,
+          reason: reportReason,
+          description: reportDescription || undefined,
+          meetingId,
+        }),
+      })
+
+      if (res.ok) {
+        setToastMessage('신고가 접수되었습니다')
+        setShowToast(true)
+        setTimeout(() => setShowToast(false), 3000)
+        setShowReportModal(false)
+        setReviewTarget(null)
+      } else {
+        const data = await res.json()
+        alert(data.message || '신고에 실패했습니다')
+      }
+    } catch (error) {
+      console.error('Failed to submit report:', error)
+      alert('신고 접수에 실패했습니다')
+    } finally {
+      setIsSubmittingReport(false)
+    }
   }
 
   const handleBack = () => {
@@ -1253,6 +1300,90 @@ function MeetingDetailContent() {
                 ) : (
                   '평가 제출'
                 )}
+              </button>
+            </div>
+
+            {/* 신고하기 버튼 */}
+            <button
+              onClick={openReportModal}
+              className="w-full mt-3 py-2 text-sm text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+            >
+              🚨 이 사용자 신고하기
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 신고 모달 */}
+      {showReportModal && reviewTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl p-6 mx-4 w-full max-w-sm">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              🚨 {reviewTarget.nickname}님 신고하기
+            </h3>
+            <p className="text-sm text-gray-500 mb-4">
+              허위 신고 시 불이익이 있을 수 있습니다
+            </p>
+
+            {/* 신고 사유 선택 */}
+            <div className="mb-4">
+              <p className="text-sm text-gray-500 mb-2">신고 사유</p>
+              <div className="space-y-2">
+                {[
+                  { value: 'INAPPROPRIATE_BEHAVIOR', label: '부적절한 행동' },
+                  { value: 'NO_SHOW', label: '노쇼 (무단 불참)' },
+                  { value: 'HARASSMENT', label: '괴롭힘/욕설' },
+                  { value: 'FAKE_PROFILE', label: '허위 프로필' },
+                  { value: 'OTHER', label: '기타' },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => setReportReason(option.value)}
+                    className={`w-full py-3 px-4 rounded-xl text-left transition-colors ${
+                      reportReason === option.value
+                        ? 'bg-red-100 text-red-700 border-2 border-red-300'
+                        : 'bg-gray-100 text-gray-700 border-2 border-transparent'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 상세 설명 */}
+            <div className="mb-4">
+              <p className="text-sm text-gray-500 mb-2">상세 설명 (선택)</p>
+              <textarea
+                value={reportDescription}
+                onChange={(e) => setReportDescription(e.target.value)}
+                placeholder="구체적인 상황을 설명해주세요..."
+                maxLength={500}
+                rows={3}
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-300 resize-none"
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  setShowReportModal(false)
+                  setReviewTarget(null)
+                }}
+                className="flex-1 py-3 text-gray-500 font-semibold rounded-xl hover:bg-gray-100 transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleReport}
+                disabled={!reportReason || isSubmittingReport}
+                className={`flex-1 py-3 font-semibold rounded-xl flex items-center justify-center gap-2 transition-colors ${
+                  reportReason && !isSubmittingReport
+                    ? 'bg-red-500 text-white hover:bg-red-600'
+                    : 'bg-gray-200 text-gray-400'
+                }`}
+              >
+                {isSubmittingReport ? '제출 중...' : '신고 제출'}
               </button>
             </div>
           </div>

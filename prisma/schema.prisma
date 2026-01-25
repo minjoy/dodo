@@ -39,6 +39,11 @@ model User {
   representativeBadge2Id String?
   representativeBadge2   Badge?    @relation("RepresentativeBadge2", fields: [representativeBadge2Id], references: [id])
 
+  // 정지 상태
+  isBanned      Boolean   @default(false)
+  bannedAt      DateTime?
+  banReason     String?   @db.Text
+
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -60,6 +65,7 @@ model User {
 
   @@index([region])
   @@index([level])
+  @@index([isBanned])
 }
 
 // 모임
@@ -107,6 +113,7 @@ model Meeting {
   reviews       Review[]
   gameRoles     GameRole[]    // 게임별 역할 기록
   comments      MeetingComment[]
+  reports       Report[]      // 이 모임에서 발생한 신고들
 
   @@index([region])
   @@index([meetingDate])
@@ -259,10 +266,12 @@ model Report {
   reportedId  String
   reported    User      @relation("ReportsReceived", fields: [reportedId], references: [id])
 
-  meetingId   String?   // 관련 모임 (선택)
+  meetingId   String?
+  meeting     Meeting?  @relation(fields: [meetingId], references: [id])
 
   @@index([reporterId])
   @@index([reportedId])
+  @@index([meetingId])
 }
 
 // 신고 사유
@@ -332,4 +341,17 @@ model MeetingComment {
 
   @@index([meetingId])
   @@index([userId])
+}
+
+// 영구 정지된 카카오 계정 (재가입 방지)
+model BannedKakao {
+  id          String    @id @default(cuid())
+  kakaoId     String    @unique  // 정지된 카카오 ID
+
+  reason      String?   @db.Text // 정지 사유
+  bannedAt    DateTime  @default(now())
+
+  // 원래 유저 정보 (참고용)
+  originalUserId    String?
+  originalNickname  String?
 }

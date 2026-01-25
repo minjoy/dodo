@@ -1,17 +1,61 @@
 'use client'
 
 import { signIn } from 'next-auth/react'
-import { Button } from '@/components/common'
+import { useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 
-export default function LoginPage() {
+function LoginContent() {
+  const searchParams = useSearchParams()
+  const error = searchParams.get('error')
+
   const handleKakaoLogin = () => {
     signIn('kakao', { callbackUrl: '/onboarding' })
   }
+
+  const getErrorMessage = () => {
+    switch (error) {
+      case 'banned':
+        return {
+          title: '이용이 제한된 계정입니다',
+          message: '영구 정지된 계정으로 서비스를 이용할 수 없습니다.',
+          icon: '🚫',
+        }
+      case 'suspended':
+        return {
+          title: '계정이 정지되었습니다',
+          message: '신고 누적으로 인해 계정이 정지되었습니다. 관리자에게 문의해주세요.',
+          icon: '⚠️',
+        }
+      case 'underage':
+        return {
+          title: '가입이 제한됩니다',
+          message: '경도는 20세 이상 성인만 이용할 수 있는 서비스입니다.',
+          icon: '🔞',
+        }
+      default:
+        return null
+    }
+  }
+
+  const errorInfo = getErrorMessage()
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
       {/* 상단 */}
       <div className="flex-1 flex flex-col items-center justify-center px-6">
+        {/* 에러 메시지 */}
+        {errorInfo && (
+          <div className="w-full max-w-sm mb-8 bg-red-50 border border-red-200 rounded-xl p-4">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">{errorInfo.icon}</span>
+              <div>
+                <h3 className="font-bold text-red-800 mb-1">{errorInfo.title}</h3>
+                <p className="text-sm text-red-600">{errorInfo.message}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* 로고 */}
         <div className="mb-8">
           <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-4 mx-auto">
@@ -52,5 +96,17 @@ export default function LoginPage() {
       {/* 하단 장식 */}
       <div className="h-32 bg-gradient-to-t from-primary/5 to-transparent" />
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   )
 }
