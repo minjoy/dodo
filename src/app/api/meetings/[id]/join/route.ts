@@ -125,7 +125,7 @@ export async function POST(
     if (updatedCount >= meeting.maxParticipants) {
       await prisma.meeting.update({
         where: { id: meetingId },
-        data: { status: 'FULL' },
+        data: { status: 'CLOSED' },
       })
     }
 
