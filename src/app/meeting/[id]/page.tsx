@@ -789,17 +789,18 @@ function MeetingDetailContent() {
                             {isMe && (
                               <span className="text-xs text-primary font-medium">(나)</span>
                             )}
-                            {(participant.user.representativeBadge || participant.user.representativeBadge2) && (
-                              <div className="flex items-center gap-0.5 bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-full px-1.5 py-0.5">
-                                {participant.user.representativeBadge && (
-                                  <span className="text-xs">{participant.user.representativeBadge.icon}</span>
-                                )}
-                                {participant.user.representativeBadge2 && (
-                                  <span className="text-xs">{participant.user.representativeBadge2.icon}</span>
-                                )}
-                              </div>
-                            )}
                           </div>
+                          {/* 대표 뱃지 표시 */}
+                          {(participant.user.representativeBadge || participant.user.representativeBadge2) && (
+                            <div className="flex items-center gap-0.5 bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-full px-1.5 py-0.5 mt-0.5">
+                              {participant.user.representativeBadge && (
+                                <span className="text-xs">{participant.user.representativeBadge.icon}</span>
+                              )}
+                              {participant.user.representativeBadge2 && (
+                                <span className="text-xs">{participant.user.representativeBadge2.icon}</span>
+                              )}
+                            </div>
+                          )}
                           {/* 레디한 사람의 약속장소와의 거리 표시 */}
                           {!isCompleted && readyDistance !== null && (
                             <span className="text-xs text-green-600 mt-0.5">
