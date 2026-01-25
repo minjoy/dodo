@@ -556,59 +556,85 @@ function MeetingDetailContent() {
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="space-y-2">
               {meeting.participants
                 .filter((p) => p.status !== 'CANCELLED')
                 .map((participant) => {
                   const pLevel = (participant.user.level || 1) as 1 | 2 | 3 | 4 | 5
+                  const isMe = participant.user.id === session?.user?.id
                   return (
-                    <button
+                    <div
                       key={participant.id}
-                      onClick={() => router.push(`/profile/${participant.user.id}`)}
-                      className={`flex items-center gap-2 rounded-xl px-3 py-2.5 transition-colors ${
+                      className={`flex items-center justify-between rounded-xl px-3 py-3 transition-colors ${
                         participant.isReady
-                          ? 'bg-green-50 hover:bg-green-100 border border-green-200'
-                          : 'bg-gray-50 hover:bg-gray-100'
+                          ? 'bg-green-50 border border-green-200'
+                          : 'bg-gray-50 border border-gray-100'
                       }`}
                     >
-                      <div className="relative">
-                        <div className={`w-8 h-8 rounded-full border overflow-hidden bg-gray-100 ${
-                          participant.isReady ? 'border-green-400' : 'border-gray-200'
-                        }`}>
-                          <Avatar
-                            src={participant.user.profileImage}
-                            alt={participant.user.nickname}
-                            size="sm"
-                            fallback={participant.user.nickname}
-                          />
-                        </div>
-                        <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-white rounded-full flex items-center justify-center border border-gray-200 shadow-sm">
-                          <span className="text-[10px]">{LEVEL_EMOJIS[pLevel - 1]}</span>
-                        </div>
-                        {participant.isReady && (
-                          <div className="absolute -top-1 -left-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                            <span className="text-[10px] text-white">✓</span>
+                      <button
+                        onClick={() => router.push(`/profile/${participant.user.id}`)}
+                        className="flex items-center gap-3 flex-1"
+                      >
+                        <div className="relative">
+                          <div className={`w-10 h-10 rounded-full border-2 overflow-hidden bg-gray-100 ${
+                            participant.isReady ? 'border-green-400' : 'border-gray-200'
+                          }`}>
+                            <Avatar
+                              src={participant.user.profileImage}
+                              alt={participant.user.nickname}
+                              size="md"
+                              fallback={participant.user.nickname}
+                            />
                           </div>
-                        )}
-                      </div>
-                      <span className="text-sm font-medium text-gray-700">
-                        {participant.user.nickname}
-                      </span>
-                      {(participant.user.representativeBadge || participant.user.representativeBadge2) && (
-                        <div className="flex items-center gap-0.5 bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-full px-1 py-0.5">
-                          {participant.user.representativeBadge && (
-                            <span className="text-xs" title={participant.user.representativeBadge.name}>
-                              {participant.user.representativeBadge.icon}
+                          <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-white rounded-full flex items-center justify-center border border-gray-200 shadow-sm">
+                            <span className="text-xs">{LEVEL_EMOJIS[pLevel - 1]}</span>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-start">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-semibold text-gray-900">
+                              {participant.user.nickname}
                             </span>
-                          )}
-                          {participant.user.representativeBadge2 && (
-                            <span className="text-xs" title={participant.user.representativeBadge2.name}>
-                              {participant.user.representativeBadge2.icon}
-                            </span>
-                          )}
+                            {isMe && (
+                              <span className="text-xs text-primary font-medium">(나)</span>
+                            )}
+                            {(participant.user.representativeBadge || participant.user.representativeBadge2) && (
+                              <div className="flex items-center gap-0.5 bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-full px-1.5 py-0.5">
+                                {participant.user.representativeBadge && (
+                                  <span className="text-xs">{participant.user.representativeBadge.icon}</span>
+                                )}
+                                {participant.user.representativeBadge2 && (
+                                  <span className="text-xs">{participant.user.representativeBadge2.icon}</span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+
+                      {/* 레디 상태 또는 레디 버튼 */}
+                      {isMe && canReady ? (
+                        <button
+                          onClick={participant.isReady ? handleCancelReady : handleReady}
+                          disabled={isReadying}
+                          className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                            participant.isReady
+                              ? 'bg-green-500 text-white'
+                              : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                          }`}
+                        >
+                          {isReadying ? '...' : participant.isReady ? '✓ 레디' : '레디'}
+                        </button>
+                      ) : (
+                        <div className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
+                          participant.isReady
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-gray-100 text-gray-500'
+                        }`}>
+                          {participant.isReady ? '✓ 레디' : '대기중'}
                         </div>
                       )}
-                    </button>
+                    </div>
                   )
                 })}
               {totalParticipants < meeting.maxParticipants && (
@@ -671,75 +697,28 @@ function MeetingDetailContent() {
             )}
           </div>
         ) : isParticipant ? (
-          <div className="space-y-3">
-            {/* 레디 버튼 */}
-            {canReady && !isMyReady ? (
-              <button
-                onClick={handleReady}
-                disabled={isReadying}
-                className="w-full py-4 px-6 rounded-2xl font-bold text-lg bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/30 hover:shadow-xl transition-all flex items-center justify-center gap-2"
-              >
-                {isReadying ? (
-                  <>
-                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    처리 중...
-                  </>
-                ) : (
-                  <>
-                    <span className="text-xl">✋</span>
-                    레디!
-                  </>
-                )}
-              </button>
-            ) : isMyReady ? (
-              <button
-                onClick={handleCancelReady}
-                disabled={isReadying}
-                className="w-full py-4 px-6 rounded-2xl font-bold text-lg bg-green-100 text-green-700 border-2 border-green-300 transition-all flex items-center justify-center gap-2"
-              >
-                {isReadying ? (
-                  <>
-                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    처리 중...
-                  </>
-                ) : (
-                  <>
-                    <span className="text-xl">✅</span>
-                    레디 완료! (취소하려면 터치)
-                  </>
-                )}
-              </button>
+          <button
+            onClick={handleLeave}
+            disabled={isJoining}
+            className="w-full py-4 px-6 rounded-2xl font-bold text-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all flex items-center justify-center gap-2"
+          >
+            {isJoining ? (
+              <>
+                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                처리 중...
+              </>
             ) : (
-              <button
-                onClick={handleLeave}
-                disabled={isJoining}
-                className="w-full py-4 px-6 rounded-2xl font-bold text-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all flex items-center justify-center gap-2"
-              >
-                {isJoining ? (
-                  <>
-                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    처리 중...
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                    </svg>
-                    참여 취소
-                  </>
-                )}
-              </button>
+              <>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                참여 취소
+              </>
             )}
-          </div>
+          </button>
         ) : canJoin ? (
           <button
             onClick={handleJoin}

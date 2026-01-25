@@ -148,7 +148,9 @@ export default function JoinPage({ params }: { params: Promise<{ code: string }>
 
   if (!meeting) return null
 
-  const isFull = meeting._count.participants >= meeting.maxParticipants
+  // 참여자 수에 호스트 포함 (+1)
+  const totalParticipants = meeting._count.participants + 1
+  const isFull = totalParticipants >= meeting.maxParticipants
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -201,7 +203,7 @@ export default function JoinPage({ params }: { params: Promise<{ code: string }>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
               </svg>
               <span>
-                {meeting._count.participants}/{meeting.maxParticipants}명
+                {totalParticipants}/{meeting.maxParticipants}명
                 {isFull && <span className="text-orange-500 ml-2">(마감)</span>}
               </span>
             </div>
