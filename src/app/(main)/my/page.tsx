@@ -135,11 +135,11 @@ export default function MyPage() {
           <div className="relative">
             <div className="flex items-center gap-4 mb-6">
               <div className="relative">
-                <div className="w-20 h-20 rounded-2xl bg-white/20 p-1 shadow-lg">
+                <div className="w-[76px] h-[76px] rounded-2xl bg-white/20 flex items-center justify-center shadow-lg">
                   <Avatar
                     src={user?.profileImage || session?.user?.profileImage}
                     alt={user?.nickname || session?.user?.nickname || ''}
-                    size="xl"
+                    size="2xl"
                     fallback={user?.nickname || session?.user?.nickname || ''}
                   />
                 </div>

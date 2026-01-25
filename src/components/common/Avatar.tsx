@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 interface AvatarProps extends HTMLAttributes<HTMLDivElement> {
   src?: string | null
   alt?: string
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl'
   fallback?: string
 }
 
@@ -19,6 +19,8 @@ const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
       md: 'w-10 h-10 text-base',
       lg: 'w-12 h-12 text-lg',
       xl: 'w-16 h-16 text-xl',
+      '2xl': 'w-[72px] h-[72px] text-2xl',
+      '3xl': 'w-[88px] h-[88px] text-3xl',
     }
 
     const imageSizes = {
@@ -27,6 +29,8 @@ const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
       md: 40,
       lg: 48,
       xl: 64,
+      '2xl': 72,
+      '3xl': 88,
     }
 
     const getFallbackText = () => {
