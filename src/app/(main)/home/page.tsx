@@ -1,15 +1,24 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { MeetingCard } from '@/components/meeting'
+import BadgeAcquisition from '@/components/BadgeAcquisition'
 import type { Meeting, User } from '@/types'
 
 type MeetingWithDetails = Meeting & {
   host: User
   _count: { participants: number }
+}
+
+interface Badge {
+  id: string
+  code: string
+  name: string
+  description: string
+  icon: string
 }
 
 const GAME_TYPES = [
@@ -30,10 +39,36 @@ export default function HomePage() {
   const [showCodeInput, setShowCodeInput] = useState(false)
   const [meetingCode, setMeetingCode] = useState('')
   const [codeError, setCodeError] = useState('')
+  const [earnedBadge, setEarnedBadge] = useState<Badge | null>(null)
+
+  // 얼리버드 뱃지 체크
+  const checkEarlyBirdBadge = useCallback(async () => {
+    if (!session?.user?.id) return
+
+    try {
+      const res = await fetch('/api/badges/early-bird', {
+        method: 'POST',
+      })
+      const data = await res.json()
+
+      if (data.awarded && data.badge) {
+        // 약간의 딜레이 후 뱃지 표시 (로딩 완료 후)
+        setTimeout(() => {
+          setEarnedBadge(data.badge)
+        }, 1000)
+      }
+    } catch (error) {
+      console.error('Failed to check early bird badge:', error)
+    }
+  }, [session?.user?.id])
 
   useEffect(() => {
     fetchMeetings()
   }, [session?.user?.region, selectedGameType])
+
+  useEffect(() => {
+    checkEarlyBirdBadge()
+  }, [checkEarlyBirdBadge])
 
   const handleCodeSearch = async () => {
     if (meetingCode.length !== 6) {
@@ -211,6 +246,14 @@ export default function HomePage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* 뱃지 획득 애니메이션 */}
+      {earnedBadge && (
+        <BadgeAcquisition
+          badge={earnedBadge}
+          onClose={() => setEarnedBadge(null)}
+        />
       )}
     </div>
   )

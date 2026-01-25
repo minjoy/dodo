@@ -44,6 +44,17 @@ export async function GET(
             },
           },
         },
+        gameRoles: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                nickname: true,
+                profileImage: true,
+              },
+            },
+          },
+        },
         _count: {
           select: {
             participants: {
