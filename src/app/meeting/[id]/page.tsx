@@ -38,6 +38,8 @@ function MeetingDetailContent() {
   const [meeting, setMeeting] = useState<MeetingWithDetails | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isJoining, setIsJoining] = useState(false)
+  const [isReadying, setIsReadying] = useState(false)
+  const [isStarting, setIsStarting] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
   const [copied, setCopied] = useState(false)
 
@@ -141,6 +143,82 @@ function MeetingDetailContent() {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  const handleReady = async () => {
+    if (!session?.user?.id) return
+
+    setIsReadying(true)
+    try {
+      // 현재 위치 가져오기 (선택적)
+      let latitude, longitude
+      if (navigator.geolocation) {
+        try {
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 })
+          })
+          latitude = position.coords.latitude
+          longitude = position.coords.longitude
+        } catch {
+          // 위치 권한 없어도 레디 가능
+        }
+      }
+
+      const res = await fetch(`/api/meetings/${meetingId}/ready`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ latitude, longitude }),
+      })
+      if (res.ok) {
+        fetchMeeting()
+      } else {
+        const data = await res.json()
+        alert(data.message || '레디에 실패했습니다')
+      }
+    } catch (error) {
+      console.error('Failed to ready:', error)
+    } finally {
+      setIsReadying(false)
+    }
+  }
+
+  const handleCancelReady = async () => {
+    if (!session?.user?.id) return
+
+    setIsReadying(true)
+    try {
+      const res = await fetch(`/api/meetings/${meetingId}/ready`, {
+        method: 'DELETE',
+      })
+      if (res.ok) {
+        fetchMeeting()
+      }
+    } catch (error) {
+      console.error('Failed to cancel ready:', error)
+    } finally {
+      setIsReadying(false)
+    }
+  }
+
+  const handleStart = async () => {
+    if (!session?.user?.id) return
+
+    setIsStarting(true)
+    try {
+      const res = await fetch(`/api/meetings/${meetingId}/start`, {
+        method: 'POST',
+      })
+      if (res.ok) {
+        fetchMeeting()
+      } else {
+        const data = await res.json()
+        alert(data.message || '모임 시작에 실패했습니다')
+      }
+    } catch (error) {
+      console.error('Failed to start meeting:', error)
+    } finally {
+      setIsStarting(false)
+    }
+  }
+
   const handleBack = () => {
     // 이전 페이지가 모임 생성 페이지라면 홈으로 이동
     if (document.referrer.includes('/create')) {
@@ -182,6 +260,25 @@ function MeetingDetailContent() {
 
   const participationRate = (totalParticipants / meeting.maxParticipants) * 100
   const hostLevel = meeting.host.level as 1 | 2 | 3 | 4 | 5
+
+  // 레디 관련 상태
+  const now = new Date()
+  const meetingDate = new Date(meeting.meetingDate)
+  const oneHourBefore = new Date(meetingDate.getTime() - 60 * 60 * 1000)
+  const canReady = now >= oneHourBefore && (meeting.status === 'RECRUITING' || meeting.status === 'CLOSED' || meeting.status === 'READY')
+  const timeUntilReady = oneHourBefore.getTime() - now.getTime()
+
+  // 현재 사용자의 레디 상태
+  const myParticipation = meeting.participants.find(p => p.userId === session?.user?.id && p.status !== 'CANCELLED')
+  const isMyReady = myParticipation?.isReady || false
+
+  // 모든 참가자(호스트 제외)의 레디 상태
+  const readyCount = meeting.participants.filter(p => p.status !== 'CANCELLED' && p.isReady).length
+  const allParticipantsReady = meeting.participants.filter(p => p.status !== 'CANCELLED').every(p => p.isReady)
+
+  // 모임 시작 가능 여부 (호스트이고, 모임 시작 1시간 전이고, 참가자가 있는 경우)
+  const canStart = isHost && canReady && (meeting.status === 'READY' || meeting.status === 'RECRUITING' || meeting.status === 'CLOSED')
+  const isPlaying = meeting.status === 'PLAYING'
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white pb-28">
@@ -237,13 +334,15 @@ function MeetingDetailContent() {
               </span>
             </div>
             <div className={`px-4 py-2 rounded-full text-sm font-bold ${
-              meeting.status === 'RECRUITING' && !isFull
-                ? 'bg-gradient-to-r from-green-400 to-emerald-500 text-white shadow-sm shadow-green-500/30'
-                : isFull
-                  ? 'bg-gradient-to-r from-orange-400 to-amber-500 text-white shadow-sm shadow-orange-500/30'
-                  : 'bg-gray-100 text-gray-500'
+              isPlaying
+                ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-sm shadow-blue-500/30'
+                : meeting.status === 'RECRUITING' && !isFull
+                  ? 'bg-gradient-to-r from-green-400 to-emerald-500 text-white shadow-sm shadow-green-500/30'
+                  : isFull
+                    ? 'bg-gradient-to-r from-orange-400 to-amber-500 text-white shadow-sm shadow-orange-500/30'
+                    : 'bg-gray-100 text-gray-500'
             }`}>
-              {isFull ? '마감' : getStatusName(meeting.status)}
+              {isPlaying ? '🎮 진행중' : isFull ? '마감' : getStatusName(meeting.status)}
             </div>
           </div>
           <h2 className="text-2xl font-bold text-gray-900">{meeting.title}</h2>
@@ -377,6 +476,52 @@ function MeetingDetailContent() {
 
           <div className="h-px bg-gray-100" />
 
+          {/* 레디 상태 안내 */}
+          {(isHost || isParticipant) && !isPlaying && meeting.status !== 'COMPLETED' && (
+            <div className={`rounded-xl p-4 ${canReady ? 'bg-green-50 border border-green-200' : 'bg-gray-50 border border-gray-200'}`}>
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">{canReady ? '✅' : '⏰'}</span>
+                <div className="flex-1">
+                  {canReady ? (
+                    <>
+                      <p className="font-semibold text-green-800">레디 가능!</p>
+                      <p className="text-sm text-green-600">
+                        모임 장소에 도착하면 레디해주세요 ({readyCount}/{meeting.participants.filter(p => p.status !== 'CANCELLED').length}명 레디)
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="font-semibold text-gray-700">레디 대기중</p>
+                      <p className="text-sm text-gray-500">
+                        모임 시작 1시간 전부터 레디할 수 있습니다
+                        {timeUntilReady > 0 && (
+                          <span className="ml-1">
+                            ({Math.floor(timeUntilReady / (1000 * 60 * 60))}시간 {Math.floor((timeUntilReady % (1000 * 60 * 60)) / (1000 * 60))}분 후)
+                          </span>
+                        )}
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 모임 진행중 표시 */}
+          {isPlaying && (
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">🎮</span>
+                <div>
+                  <p className="font-semibold text-blue-800">모임 진행중!</p>
+                  <p className="text-sm text-blue-600">즐거운 게임 되세요!</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="h-px bg-gray-100" />
+
           {/* 참여자 목록 */}
           <div>
             <div className="flex items-center justify-between mb-4">
@@ -414,10 +559,16 @@ function MeetingDetailContent() {
                     <button
                       key={participant.id}
                       onClick={() => router.push(`/profile/${participant.user.id}`)}
-                      className="flex items-center gap-2 bg-gray-50 hover:bg-gray-100 rounded-xl px-3 py-2.5 transition-colors"
+                      className={`flex items-center gap-2 rounded-xl px-3 py-2.5 transition-colors ${
+                        participant.isReady
+                          ? 'bg-green-50 hover:bg-green-100 border border-green-200'
+                          : 'bg-gray-50 hover:bg-gray-100'
+                      }`}
                     >
                       <div className="relative">
-                        <div className="w-8 h-8 rounded-full border border-gray-200 overflow-hidden bg-gray-100">
+                        <div className={`w-8 h-8 rounded-full border overflow-hidden bg-gray-100 ${
+                          participant.isReady ? 'border-green-400' : 'border-gray-200'
+                        }`}>
                           <Avatar
                             src={participant.user.profileImage}
                             alt={participant.user.nickname}
@@ -428,6 +579,11 @@ function MeetingDetailContent() {
                         <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-white rounded-full flex items-center justify-center border border-gray-200 shadow-sm">
                           <span className="text-[10px]">{LEVEL_EMOJIS[pLevel - 1]}</span>
                         </div>
+                        {participant.isReady && (
+                          <div className="absolute -top-1 -left-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                            <span className="text-[10px] text-white">✓</span>
+                          </div>
+                        )}
                       </div>
                       <span className="text-sm font-medium text-gray-700">
                         {participant.user.nickname}
@@ -466,40 +622,118 @@ function MeetingDetailContent() {
 
       {/* 하단 고정 버튼 */}
       <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-t border-gray-100 px-4 pt-4 pb-8 safe-bottom">
-        {isHost ? (
-          <button
-            onClick={() => router.push(`/meeting/${meetingId}/edit`)}
-            className="w-full py-4 px-6 rounded-2xl font-bold text-lg bg-secondary text-white shadow-lg shadow-secondary/30 hover:shadow-xl transition-all flex items-center justify-center gap-2"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            모임 관리
-          </button>
-        ) : isParticipant ? (
-          <button
-            onClick={handleLeave}
-            disabled={isJoining}
-            className="w-full py-4 px-6 rounded-2xl font-bold text-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all flex items-center justify-center gap-2"
-          >
-            {isJoining ? (
-              <>
-                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
-                처리 중...
-              </>
+        {/* 모임 진행중 표시 */}
+        {isPlaying ? (
+          <div className="w-full py-4 px-6 rounded-2xl font-bold text-lg bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-center">
+            🎮 모임 진행중
+          </div>
+        ) : isHost ? (
+          <div className="space-y-3">
+            {/* 호스트: 시작 버튼 또는 관리 버튼 */}
+            {canStart ? (
+              <button
+                onClick={handleStart}
+                disabled={isStarting}
+                className="w-full py-4 px-6 rounded-2xl font-bold text-lg bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/30 hover:shadow-xl transition-all flex items-center justify-center gap-2"
+              >
+                {isStarting ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    시작 중...
+                  </>
+                ) : (
+                  <>
+                    <span className="text-xl">🚀</span>
+                    모임 시작하기
+                  </>
+                )}
+              </button>
             ) : (
-              <>
+              <button
+                onClick={() => router.push(`/meeting/${meetingId}/edit`)}
+                className="w-full py-4 px-6 rounded-2xl font-bold text-lg bg-secondary text-white shadow-lg shadow-secondary/30 hover:shadow-xl transition-all flex items-center justify-center gap-2"
+              >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                참여 취소
-              </>
+                모임 관리
+              </button>
             )}
-          </button>
+          </div>
+        ) : isParticipant ? (
+          <div className="space-y-3">
+            {/* 레디 버튼 */}
+            {canReady && !isMyReady ? (
+              <button
+                onClick={handleReady}
+                disabled={isReadying}
+                className="w-full py-4 px-6 rounded-2xl font-bold text-lg bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/30 hover:shadow-xl transition-all flex items-center justify-center gap-2"
+              >
+                {isReadying ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    처리 중...
+                  </>
+                ) : (
+                  <>
+                    <span className="text-xl">✋</span>
+                    레디!
+                  </>
+                )}
+              </button>
+            ) : isMyReady ? (
+              <button
+                onClick={handleCancelReady}
+                disabled={isReadying}
+                className="w-full py-4 px-6 rounded-2xl font-bold text-lg bg-green-100 text-green-700 border-2 border-green-300 transition-all flex items-center justify-center gap-2"
+              >
+                {isReadying ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    처리 중...
+                  </>
+                ) : (
+                  <>
+                    <span className="text-xl">✅</span>
+                    레디 완료! (취소하려면 터치)
+                  </>
+                )}
+              </button>
+            ) : (
+              <button
+                onClick={handleLeave}
+                disabled={isJoining}
+                className="w-full py-4 px-6 rounded-2xl font-bold text-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all flex items-center justify-center gap-2"
+              >
+                {isJoining ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    처리 중...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    참여 취소
+                  </>
+                )}
+              </button>
+            )}
+          </div>
         ) : canJoin ? (
           <button
             onClick={handleJoin}

@@ -2,9 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { isWithinRadius, READY_RADIUS_METERS } from '@/lib/location'
 
-// POST /api/meetings/[id]/ready - 레디 상태 토글
+// POST /api/meetings/[id]/ready - 레디하기
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -16,15 +15,14 @@ export async function POST(
     }
 
     const { id } = await params
-    const body = await request.json()
-    const { latitude, longitude, isReady } = body
+    const body = await request.json().catch(() => ({}))
+    const { latitude, longitude } = body
 
-    // 모임 조회
     const meeting = await prisma.meeting.findUnique({
       where: { id },
       include: {
         participants: {
-          where: { userId: session.user.id },
+          where: { userId: session.user.id, status: { not: 'CANCELLED' } },
         },
       },
     })
@@ -33,65 +31,152 @@ export async function POST(
       return NextResponse.json({ message: '모임을 찾을 수 없습니다' }, { status: 404 })
     }
 
-    // 호스트이거나 참가자인지 확인
+    // 호스트이거나 참가자여야 함
     const isHost = meeting.hostId === session.user.id
     const participant = meeting.participants[0]
 
     if (!isHost && !participant) {
-      return NextResponse.json({ message: '참가자가 아닙니다' }, { status: 403 })
+      return NextResponse.json({ message: '모임 참가자만 레디할 수 있습니다' }, { status: 403 })
     }
 
-    // 레디하려면 위치 검증 필요
-    if (isReady && latitude !== undefined && longitude !== undefined) {
-      const withinRadius = isWithinRadius(
-        latitude,
-        longitude,
-        meeting.latitude,
-        meeting.longitude,
-        READY_RADIUS_METERS
-      )
-
-      if (!withinRadius) {
-        return NextResponse.json(
-          {
-            message: `모임 장소에서 ${READY_RADIUS_METERS}m 이내에 있어야 레디할 수 있습니다`,
-            distance: true,
-          },
-          { status: 400 }
-        )
-      }
+    // 이미 시작된 모임은 레디 불가
+    if (meeting.status === 'PLAYING' || meeting.status === 'COMPLETED') {
+      return NextResponse.json({ message: '이미 시작되었거나 완료된 모임입니다' }, { status: 400 })
     }
 
-    // 호스트는 별도 처리 (참가자 테이블에 없음)
-    if (isHost) {
-      // 호스트 레디 상태는 모임 상태로 관리
-      // 모든 참가자가 레디하면 호스트가 시작 가능
+    // 모임 시작 1시간 전부터 레디 가능
+    const now = new Date()
+    const meetingDate = new Date(meeting.meetingDate)
+    const oneHourBefore = new Date(meetingDate.getTime() - 60 * 60 * 1000)
+
+    if (now < oneHourBefore) {
       return NextResponse.json({
-        success: true,
-        isHost: true,
-        message: '호스트는 모든 참가자가 레디하면 게임을 시작할 수 있습니다',
+        message: '모임 시작 1시간 전부터 레디할 수 있습니다',
+        canReadyAt: oneHourBefore.toISOString(),
+      }, { status: 400 })
+    }
+
+    // 모임 상태가 RECRUITING이면 READY 상태로 변경
+    if (meeting.status === 'RECRUITING' || meeting.status === 'CLOSED') {
+      await prisma.meeting.update({
+        where: { id },
+        data: { status: 'READY' },
       })
     }
 
-    // 참가자 레디 상태 업데이트
-    const updatedParticipant = await prisma.participant.update({
-      where: { id: participant.id },
-      data: {
-        isReady,
-        readyAt: isReady ? new Date() : null,
-        readyLat: isReady ? latitude : null,
-        readyLng: isReady ? longitude : null,
+    if (participant) {
+      // 참가자 레디 상태 업데이트
+      await prisma.participant.update({
+        where: { id: participant.id },
+        data: {
+          isReady: true,
+          readyAt: new Date(),
+          readyLat: latitude,
+          readyLng: longitude,
+        },
+      })
+    } else if (isHost) {
+      // 호스트도 참가자 레코드로 관리
+      const existingHostParticipant = await prisma.participant.findUnique({
+        where: { meetingId_userId: { meetingId: id, userId: session.user.id } },
+      })
+
+      if (!existingHostParticipant) {
+        await prisma.participant.create({
+          data: {
+            meetingId: id,
+            userId: session.user.id,
+            status: 'CONFIRMED',
+            isReady: true,
+            readyAt: new Date(),
+            readyLat: latitude,
+            readyLng: longitude,
+          },
+        })
+      } else {
+        await prisma.participant.update({
+          where: { meetingId_userId: { meetingId: id, userId: session.user.id } },
+          data: {
+            isReady: true,
+            readyAt: new Date(),
+            readyLat: latitude,
+            readyLng: longitude,
+          },
+        })
+      }
+    }
+
+    return NextResponse.json({ success: true, isReady: true })
+  } catch (error) {
+    console.error('Failed to ready:', error)
+    return NextResponse.json(
+      { message: '레디에 실패했습니다' },
+      { status: 500 }
+    )
+  }
+}
+
+// DELETE /api/meetings/[id]/ready - 레디 취소
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json({ message: '로그인이 필요합니다' }, { status: 401 })
+    }
+
+    const { id } = await params
+
+    const meeting = await prisma.meeting.findUnique({
+      where: { id },
+      include: {
+        participants: {
+          where: { userId: session.user.id, status: { not: 'CANCELLED' } },
+        },
       },
     })
 
-    return NextResponse.json({
-      success: true,
-      isReady: updatedParticipant.isReady,
-    })
+    if (!meeting) {
+      return NextResponse.json({ message: '모임을 찾을 수 없습니다' }, { status: 404 })
+    }
+
+    // 이미 시작된 모임은 레디 취소 불가
+    if (meeting.status === 'PLAYING') {
+      return NextResponse.json({ message: '이미 시작된 모임입니다' }, { status: 400 })
+    }
+
+    const participant = meeting.participants[0]
+
+    if (participant) {
+      await prisma.participant.update({
+        where: { id: participant.id },
+        data: {
+          isReady: false,
+          readyAt: null,
+          readyLat: null,
+          readyLng: null,
+        },
+      })
+    } else {
+      // 호스트의 참가자 레코드가 있으면 업데이트
+      await prisma.participant.updateMany({
+        where: { meetingId: id, userId: session.user.id },
+        data: {
+          isReady: false,
+          readyAt: null,
+          readyLat: null,
+          readyLng: null,
+        },
+      })
+    }
+
+    return NextResponse.json({ success: true, isReady: false })
   } catch (error) {
-    console.error('Failed to update ready status:', error)
+    console.error('Failed to cancel ready:', error)
     return NextResponse.json(
-      { message: '레디 상태 변경에 실패했습니다' },
+      { message: '레디 취소에 실패했습니다' },
       { status: 500 }
     )
   }

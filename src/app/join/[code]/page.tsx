@@ -40,9 +40,16 @@ export default function JoinPage({ params }: { params: Promise<{ code: string }>
 
   // 뒤로가기 시 홈으로 이동
   useEffect(() => {
-    window.history.pushState(null, '', window.location.href)
+    // 히스토리가 없거나 외부에서 왔을 때를 위해 홈을 히스토리에 추가
+    if (window.history.length <= 1) {
+      window.history.replaceState({ fromJoin: true }, '', window.location.href)
+    } else {
+      window.history.pushState({ fromJoin: true }, '', window.location.href)
+    }
 
-    const handlePopState = () => {
+    const handlePopState = (e: PopStateEvent) => {
+      // 뒤로가기 시 항상 홈으로 이동
+      e.preventDefault()
       router.replace('/home')
     }
 
@@ -147,7 +154,17 @@ export default function JoinPage({ params }: { params: Promise<{ code: string }>
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* 헤더 */}
       <header className="bg-white px-4 py-4 shadow-sm">
-        <h1 className="text-lg font-bold text-center text-gray-900">모임 입장</h1>
+        <div className="relative flex items-center justify-center">
+          <button
+            onClick={() => router.replace('/home')}
+            className="absolute left-0 p-1"
+          >
+            <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <h1 className="text-lg font-bold text-center text-gray-900">모임 입장</h1>
+        </div>
       </header>
 
       {/* 모임 정보 */}

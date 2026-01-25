@@ -59,6 +59,10 @@ export interface Participant {
   status: ParticipantStatus
   joinedAt: Date
   attendedAt?: Date | null
+  isReady: boolean
+  readyAt?: Date | null
+  readyLat?: number | null
+  readyLng?: number | null
   meetingId: string
   userId: string
   user?: User

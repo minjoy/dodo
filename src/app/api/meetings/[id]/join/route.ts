@@ -58,6 +58,18 @@ export async function POST(
     }
 
     // 모집중 상태 확인
+    if (meeting.status === 'PLAYING') {
+      return NextResponse.json(
+        { message: '이미 시작된 모임입니다' },
+        { status: 400 }
+      )
+    }
+    if (meeting.status === 'COMPLETED') {
+      return NextResponse.json(
+        { message: '이미 완료된 모임입니다' },
+        { status: 400 }
+      )
+    }
     if (meeting.status !== 'RECRUITING') {
       return NextResponse.json(
         { message: '모집이 마감된 모임입니다' },
