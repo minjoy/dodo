@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 
-const POPULAR_REGIONS = [
+const SEOUL_REGIONS = [
   { name: '성수동', emoji: '🏭' },
   { name: '홍대', emoji: '🎸' },
   { name: '강남', emoji: '💼' },
@@ -26,7 +26,7 @@ const POPULAR_REGIONS = [
 export default function RegionChangePage() {
   const router = useRouter()
   const { data: session, update } = useSession()
-  const [selectedRegion, setSelectedRegion] = useState(session?.user?.region || '')
+  const [selectedRegion, setSelectedRegion] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [showToast, setShowToast] = useState(false)
 
@@ -61,6 +61,7 @@ export default function RegionChangePage() {
   }
 
   const currentRegion = session?.user?.region
+  const isChanged = selectedRegion && selectedRegion !== currentRegion
 
   return (
     <div className="min-h-screen bg-gray-50 pb-32">
@@ -98,12 +99,12 @@ export default function RegionChangePage() {
         </div>
       </div>
 
-      {/* 동네 선택 */}
+      {/* 서울 지역 선택 */}
       <div className="px-4">
-        <h2 className="text-sm font-semibold text-gray-500 mb-3">동네 선택</h2>
+        <h2 className="text-sm font-semibold text-gray-500 mb-3">서울</h2>
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
           <div className="grid grid-cols-2 gap-2">
-            {POPULAR_REGIONS.map((region) => (
+            {SEOUL_REGIONS.map((region) => (
               <button
                 key={region.name}
                 onClick={() => setSelectedRegion(region.name)}
@@ -124,6 +125,33 @@ export default function RegionChangePage() {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* 그 외 지역 */}
+        <h2 className="text-sm font-semibold text-gray-500 mb-3 mt-6">그 외 지역</h2>
+        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+          <button
+            onClick={() => setSelectedRegion('그 외 지역')}
+            disabled={isLoading}
+            className={`w-full flex items-center gap-3 p-4 rounded-xl text-left transition-all ${
+              selectedRegion === '그 외 지역'
+                ? 'bg-primary text-white shadow-md shadow-primary/30'
+                : currentRegion === '그 외 지역'
+                  ? 'bg-green-50 text-green-700 border-2 border-green-200'
+                  : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            <span className="text-2xl">🌏</span>
+            <div>
+              <span className="font-medium">그 외 지역</span>
+              <p className={`text-sm mt-0.5 ${selectedRegion === '그 외 지역' ? 'text-white/80' : 'text-gray-500'}`}>
+                서울 외 지역 (경기, 인천, 지방 등)
+              </p>
+            </div>
+            {currentRegion === '그 외 지역' && selectedRegion !== '그 외 지역' && (
+              <span className="ml-auto text-xs text-green-600">현재</span>
+            )}
+          </button>
         </div>
 
         {/* 안내 문구 */}
@@ -147,9 +175,9 @@ export default function RegionChangePage() {
         <div className="max-w-[1000px] mx-auto bg-white border-t border-gray-100 px-4 pt-4 pb-8 safe-bottom">
           <button
             onClick={handleRegionChange}
-            disabled={!selectedRegion || selectedRegion === currentRegion || isLoading}
+            disabled={!isChanged || isLoading}
             className={`w-full py-4 rounded-2xl font-bold text-lg transition-all ${
-              selectedRegion && selectedRegion !== currentRegion && !isLoading
+              isChanged && !isLoading
                 ? 'bg-gradient-to-r from-primary to-primary-dark text-white shadow-lg shadow-primary/30'
                 : 'bg-gray-200 text-gray-400'
             }`}
@@ -162,10 +190,12 @@ export default function RegionChangePage() {
                 </svg>
                 변경 중...
               </span>
+            ) : !selectedRegion ? (
+              '변경할 동네를 선택해주세요'
             ) : selectedRegion === currentRegion ? (
               '현재 동네입니다'
             ) : (
-              `${selectedRegion || '동네 선택'}으로 변경`
+              '변경 적용'
             )}
           </button>
         </div>
