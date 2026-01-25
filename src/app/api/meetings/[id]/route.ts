@@ -237,6 +237,11 @@ export async function PUT(
       return NextResponse.json({ message: '권한이 없습니다' }, { status: 403 })
     }
 
+    // 완료된 모임은 수정 불가
+    if (meeting.status === 'COMPLETED') {
+      return NextResponse.json({ message: '완료된 모임은 수정할 수 없습니다' }, { status: 400 })
+    }
+
     // 상태가 COMPLETED로 변경되는 경우 참여자들 처리
     const isCompletingMeeting = body.status === 'COMPLETED' && meeting.status !== 'COMPLETED'
 
@@ -340,6 +345,11 @@ export async function DELETE(
 
     if (meeting.hostId !== session.user.id) {
       return NextResponse.json({ message: '권한이 없습니다' }, { status: 403 })
+    }
+
+    // 완료된 모임은 삭제 불가
+    if (meeting.status === 'COMPLETED') {
+      return NextResponse.json({ message: '완료된 모임은 삭제할 수 없습니다' }, { status: 400 })
     }
 
     // 트랜잭션으로 모임 삭제 및 hostCount 차감

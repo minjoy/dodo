@@ -56,6 +56,29 @@ export async function POST(
       }, { status: 400 })
     }
 
+    // 최소 인원 체크 (호스트 포함)
+    const MIN_PARTICIPANTS = 2
+    const totalParticipants = meeting.participants.length + 1 // +1은 호스트
+    if (totalParticipants < MIN_PARTICIPANTS) {
+      return NextResponse.json({
+        message: `최소 ${MIN_PARTICIPANTS}명 이상이 모여야 시작할 수 있습니다 (현재 ${totalParticipants}명)`,
+        errorType: 'MIN_PARTICIPANTS',
+        current: totalParticipants,
+        required: MIN_PARTICIPANTS,
+      }, { status: 400 })
+    }
+
+    // 모든 참여자가 레디했는지 체크 (호스트 제외한 참여자 중)
+    const notReadyParticipants = meeting.participants.filter(p => !p.isReady)
+    if (notReadyParticipants.length > 0) {
+      return NextResponse.json({
+        message: `아직 레디하지 않은 참여자가 ${notReadyParticipants.length}명 있습니다`,
+        errorType: 'NOT_ALL_READY',
+        notReadyCount: notReadyParticipants.length,
+        totalParticipants: meeting.participants.length,
+      }, { status: 400 })
+    }
+
     // 모임 상태를 PLAYING으로 변경
     await prisma.meeting.update({
       where: { id },

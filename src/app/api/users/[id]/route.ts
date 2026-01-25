@@ -41,7 +41,21 @@ export async function GET(
       return NextResponse.json({ message: '사용자를 찾을 수 없습니다' }, { status: 404 })
     }
 
-    return NextResponse.json(user)
+    // 별점 평균 계산
+    const reviewStats = await prisma.review.aggregate({
+      where: { revieweeId: id },
+      _avg: { rating: true },
+      _count: { rating: true },
+    })
+
+    const avgRating = reviewStats._avg.rating ? Math.round(reviewStats._avg.rating * 10) / 10 : null
+    const reviewCount = reviewStats._count.rating
+
+    return NextResponse.json({
+      ...user,
+      avgRating,
+      reviewCount,
+    })
   } catch (error) {
     console.error('Failed to fetch user profile:', error)
     return NextResponse.json(

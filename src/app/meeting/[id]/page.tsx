@@ -46,6 +46,14 @@ function MeetingDetailContent() {
   const [isKicking, setIsKicking] = useState<string | null>(null)
   const [showShareModal, setShowShareModal] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [showReviewModal, setShowReviewModal] = useState(false)
+  const [reviewTarget, setReviewTarget] = useState<{ id: string; nickname: string } | null>(null)
+  const [reviewRating, setReviewRating] = useState(5)
+  const [reviewComment, setReviewComment] = useState('')
+  const [reviewIsLike, setReviewIsLike] = useState(false)
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false)
+  const [reviewedUserIds, setReviewedUserIds] = useState<string[]>([])
+  const [prevStatus, setPrevStatus] = useState<string | null>(null)
 
   const meetingId = params.id as string
   const joinedFromInvite = searchParams.get('joined') === 'true'
@@ -74,6 +82,49 @@ function MeetingDetailContent() {
   useEffect(() => {
     fetchMeeting()
   }, [meetingId])
+
+  // 실시간 업데이트 - 모임 진행중일 때 5초마다 갱신
+  useEffect(() => {
+    if (meeting?.status === 'PLAYING' || meeting?.status === 'READY') {
+      const interval = setInterval(() => {
+        fetchMeeting()
+      }, 5000)
+      return () => clearInterval(interval)
+    }
+  }, [meeting?.status, meetingId])
+
+  // 상태 변화 감지하여 토스트 표시
+  useEffect(() => {
+    if (meeting && prevStatus && prevStatus !== meeting.status) {
+      if (meeting.status === 'COMPLETED' && prevStatus === 'PLAYING') {
+        setToastMessage('모임이 종료되었습니다! 참여자를 평가해주세요.')
+        setShowToast(true)
+        setTimeout(() => setShowToast(false), 5000)
+      }
+    }
+    if (meeting) {
+      setPrevStatus(meeting.status)
+    }
+  }, [meeting?.status, prevStatus])
+
+  // 평가 정보 가져오기
+  useEffect(() => {
+    if (meeting?.status === 'COMPLETED' && session?.user?.id) {
+      fetchReviewInfo()
+    }
+  }, [meeting?.status, session?.user?.id, meetingId])
+
+  const fetchReviewInfo = async () => {
+    try {
+      const res = await fetch(`/api/meetings/${meetingId}/review`)
+      if (res.ok) {
+        const data = await res.json()
+        setReviewedUserIds(data.reviewedUserIds || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch review info:', error)
+    }
+  }
 
   // 모달이 열릴 때 body 스크롤 방지
   useEffect(() => {
@@ -283,6 +334,51 @@ function MeetingDetailContent() {
     } finally {
       setIsKicking(null)
     }
+  }
+
+  const handleReview = async () => {
+    if (!reviewTarget || !session?.user?.id) return
+
+    setIsSubmittingReview(true)
+    try {
+      const res = await fetch(`/api/meetings/${meetingId}/review`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          revieweeId: reviewTarget.id,
+          rating: reviewRating,
+          comment: reviewComment || undefined,
+          isLike: reviewIsLike,
+        }),
+      })
+
+      if (res.ok) {
+        setToastMessage(`${reviewTarget.nickname}님을 평가했습니다!`)
+        setShowToast(true)
+        setTimeout(() => setShowToast(false), 3000)
+        setReviewedUserIds([...reviewedUserIds, reviewTarget.id])
+        setShowReviewModal(false)
+        setReviewTarget(null)
+        setReviewRating(5)
+        setReviewComment('')
+        setReviewIsLike(false)
+      } else {
+        const data = await res.json()
+        alert(data.message || '평가에 실패했습니다')
+      }
+    } catch (error) {
+      console.error('Failed to submit review:', error)
+    } finally {
+      setIsSubmittingReview(false)
+    }
+  }
+
+  const openReviewModal = (userId: string, nickname: string) => {
+    setReviewTarget({ id: userId, nickname })
+    setReviewRating(5)
+    setReviewComment('')
+    setReviewIsLike(false)
+    setShowReviewModal(true)
   }
 
   const handleBack = () => {
@@ -617,11 +713,27 @@ function MeetingDetailContent() {
             </div>
 
             <div className="space-y-2">
-              {meeting.participants
-                .filter((p) => p.status !== 'CANCELLED')
-                .map((participant) => {
+              {/* 호스트를 참여자 리스트에 포함 */}
+              {(() => {
+                const hostAsParticipant = {
+                  id: 'host',
+                  user: meeting.host,
+                  isReady: meeting.participants.find(p => p.userId === meeting.hostId)?.isReady || false,
+                  readyLat: meeting.participants.find(p => p.userId === meeting.hostId)?.readyLat || null,
+                  readyLng: meeting.participants.find(p => p.userId === meeting.hostId)?.readyLng || null,
+                  isHost: true,
+                }
+                const allParticipants = [
+                  hostAsParticipant,
+                  ...meeting.participants
+                    .filter((p) => p.status !== 'CANCELLED' && p.userId !== meeting.hostId)
+                    .map(p => ({ ...p, isHost: false }))
+                ]
+
+                return allParticipants.map((participant) => {
                   const pLevel = (participant.user.level || 1) as 1 | 2 | 3 | 4 | 5
                   const isMe = participant.user.id === session?.user?.id
+                  const isThisHost = participant.isHost
                   // 레디한 참가자의 약속장소와의 거리 계산
                   const readyDistance = participant.isReady && participant.readyLat && participant.readyLng
                     ? calculateDistance(
@@ -631,13 +743,18 @@ function MeetingDetailContent() {
                         meeting.longitude
                       )
                     : null
+                  const alreadyReviewed = reviewedUserIds.includes(participant.user.id)
+                  const isCompleted = meeting.status === 'COMPLETED'
+
                   return (
                     <div
                       key={participant.id}
                       className={`flex items-center justify-between rounded-xl px-3 py-3 transition-colors ${
-                        participant.isReady
-                          ? 'bg-green-50 border border-green-200'
-                          : 'bg-gray-50 border border-gray-100'
+                        isCompleted
+                          ? 'bg-gray-50 border border-gray-100'
+                          : participant.isReady
+                            ? 'bg-green-50 border border-green-200'
+                            : 'bg-gray-50 border border-gray-100'
                       }`}
                     >
                       <button
@@ -646,7 +763,9 @@ function MeetingDetailContent() {
                       >
                         <div className="relative">
                           <div className={`w-10 h-10 rounded-full border-2 overflow-hidden bg-gray-100 ${
-                            participant.isReady ? 'border-green-400' : 'border-gray-200'
+                            isCompleted
+                              ? 'border-gray-300'
+                              : participant.isReady ? 'border-green-400' : 'border-gray-200'
                           }`}>
                             <Avatar
                               src={participant.user.profileImage}
@@ -664,6 +783,9 @@ function MeetingDetailContent() {
                             <span className="font-semibold text-gray-900">
                               {participant.user.nickname}
                             </span>
+                            {isThisHost && (
+                              <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded font-medium">호스트</span>
+                            )}
                             {isMe && (
                               <span className="text-xs text-primary font-medium">(나)</span>
                             )}
@@ -679,7 +801,7 @@ function MeetingDetailContent() {
                             )}
                           </div>
                           {/* 레디한 사람의 약속장소와의 거리 표시 */}
-                          {readyDistance !== null && (
+                          {!isCompleted && readyDistance !== null && (
                             <span className="text-xs text-green-600 mt-0.5">
                               📍 약속장소에서 {formatDistance(readyDistance)}
                             </span>
@@ -688,8 +810,27 @@ function MeetingDetailContent() {
                       </button>
 
                       <div className="flex items-center gap-2">
+                        {/* 완료된 모임: 평가 버튼 */}
+                        {isCompleted && !isMe && (isHost || isParticipant) && (
+                          alreadyReviewed ? (
+                            <div className="px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-100 text-gray-500">
+                              평가완료
+                            </div>
+                          ) : (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                openReviewModal(participant.user.id, participant.user.nickname)
+                              }}
+                              className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-yellow-400 text-yellow-900 hover:bg-yellow-500 transition-colors"
+                            >
+                              ⭐ 평가
+                            </button>
+                          )
+                        )}
+
                         {/* 호스트가 아닌 참가자에 대해 강퇴 버튼 (모임 시작 전에만) */}
-                        {isHost && !isMe && !isPlaying && meeting.status !== 'COMPLETED' && (
+                        {!isCompleted && isHost && !isMe && !isThisHost && !isPlaying && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation()
@@ -702,32 +843,35 @@ function MeetingDetailContent() {
                           </button>
                         )}
 
-                        {/* 레디 상태 또는 레디 버튼 */}
-                        {isMe && canReady ? (
-                          <button
-                            onClick={participant.isReady ? handleCancelReady : handleReady}
-                            disabled={isReadying}
-                            className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                        {/* 레디 상태 또는 레디 버튼 (완료되지 않은 경우만) */}
+                        {!isCompleted && (
+                          isMe && canReady ? (
+                            <button
+                              onClick={participant.isReady ? handleCancelReady : handleReady}
+                              disabled={isReadying}
+                              className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                                participant.isReady
+                                  ? 'bg-green-500 text-white'
+                                  : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                              }`}
+                            >
+                              {isReadying ? '...' : participant.isReady ? '✓ 레디' : '레디'}
+                            </button>
+                          ) : !isPlaying && (
+                            <div className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
                               participant.isReady
-                                ? 'bg-green-500 text-white'
-                                : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                            }`}
-                          >
-                            {isReadying ? '...' : participant.isReady ? '✓ 레디' : '레디'}
-                          </button>
-                        ) : (
-                          <div className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
-                            participant.isReady
-                              ? 'bg-green-100 text-green-700'
-                              : 'bg-gray-100 text-gray-500'
-                          }`}>
-                            {participant.isReady ? '✓ 레디' : '대기중'}
-                          </div>
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-gray-100 text-gray-500'
+                            }`}>
+                              {participant.isReady ? '✓ 레디' : '대기중'}
+                            </div>
+                          )
                         )}
                       </div>
                     </div>
                   )
-                })}
+                })
+              })()}
               {totalParticipants < meeting.maxParticipants && (
                 <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-4 py-2 border-2 border-dashed border-gray-200">
                   <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -745,8 +889,20 @@ function MeetingDetailContent() {
 
       {/* 하단 고정 버튼 */}
       <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-t border-gray-100 px-4 pt-4 pb-8 safe-bottom">
-        {/* 모임 진행중일 때 */}
-        {isPlaying ? (
+        {/* 완료된 모임 */}
+        {meeting.status === 'COMPLETED' ? (
+          <div className="space-y-3">
+            <div className="text-center text-sm text-gray-500 mb-2">
+              ✅ 모임이 완료되었습니다. 참여자를 평가해주세요!
+            </div>
+            <button
+              onClick={() => router.push('/home')}
+              className="w-full py-4 px-6 rounded-2xl font-bold text-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all flex items-center justify-center gap-2"
+            >
+              🏠 홈으로 가기
+            </button>
+          </div>
+        ) : isPlaying ? (
           isHost ? (
             <button
               onClick={handleEnd}
@@ -918,6 +1074,90 @@ function MeetingDetailContent() {
             >
               닫기
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* 평가 모달 */}
+      {showReviewModal && reviewTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl p-6 mx-4 w-full max-w-sm">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">
+              {reviewTarget.nickname}님 평가하기
+            </h3>
+
+            {/* 별점 */}
+            <div className="mb-4">
+              <p className="text-sm text-gray-500 mb-2">별점</p>
+              <div className="flex gap-2 justify-center">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    onClick={() => setReviewRating(star)}
+                    className="text-3xl transition-transform hover:scale-110"
+                  >
+                    {star <= reviewRating ? '⭐' : '☆'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 좋아요 */}
+            <div className="mb-4">
+              <button
+                onClick={() => setReviewIsLike(!reviewIsLike)}
+                className={`w-full py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors ${
+                  reviewIsLike
+                    ? 'bg-pink-100 text-pink-600 border-2 border-pink-300'
+                    : 'bg-gray-100 text-gray-600 border-2 border-transparent'
+                }`}
+              >
+                <span className="text-xl">{reviewIsLike ? '❤️' : '🤍'}</span>
+                {reviewIsLike ? '좋아요!' : '좋아요 보내기'}
+              </button>
+            </div>
+
+            {/* 코멘트 */}
+            <div className="mb-4">
+              <p className="text-sm text-gray-500 mb-2">한줄평 (선택)</p>
+              <input
+                type="text"
+                value={reviewComment}
+                onChange={(e) => setReviewComment(e.target.value)}
+                placeholder="함께해서 즐거웠어요!"
+                maxLength={100}
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  setShowReviewModal(false)
+                  setReviewTarget(null)
+                }}
+                className="flex-1 py-3 text-gray-500 font-semibold rounded-xl hover:bg-gray-100 transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleReview}
+                disabled={isSubmittingReview}
+                className="flex-1 py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-dark transition-colors flex items-center justify-center gap-2"
+              >
+                {isSubmittingReview ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    제출 중...
+                  </>
+                ) : (
+                  '평가 제출'
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

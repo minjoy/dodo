@@ -181,6 +181,30 @@ export async function DELETE(
       )
     }
 
+    // 모임 상태 확인
+    const meeting = await prisma.meeting.findUnique({
+      where: { id: meetingId },
+    })
+
+    if (!meeting) {
+      return NextResponse.json({ message: '모임을 찾을 수 없습니다' }, { status: 404 })
+    }
+
+    // 진행중이거나 완료된 모임은 참여 취소 불가
+    if (meeting.status === 'PLAYING') {
+      return NextResponse.json(
+        { message: '진행중인 모임은 참여를 취소할 수 없습니다' },
+        { status: 400 }
+      )
+    }
+
+    if (meeting.status === 'COMPLETED') {
+      return NextResponse.json(
+        { message: '완료된 모임은 참여를 취소할 수 없습니다' },
+        { status: 400 }
+      )
+    }
+
     // 참여 취소
     await prisma.participant.update({
       where: { id: participant.id },

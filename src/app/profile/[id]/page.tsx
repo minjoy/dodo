@@ -35,6 +35,8 @@ interface UserProfile {
   badges: UserBadge[]
   representativeBadge: Badge | null
   representativeBadge2: Badge | null
+  avgRating: number | null
+  reviewCount: number
 }
 
 const LEVEL_COLORS = {
@@ -254,18 +256,31 @@ export default function ProfilePage() {
             )}
 
             {/* 통계 */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-4 gap-2">
               <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-3 text-center">
-                <p className="text-2xl font-bold">{profile.meetingCount}</p>
+                <p className="text-xl font-bold">{profile.meetingCount}</p>
                 <p className="text-xs text-white/80">참여</p>
               </div>
               <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-3 text-center">
-                <p className="text-2xl font-bold">{profile.hostCount}</p>
+                <p className="text-xl font-bold">{profile.hostCount}</p>
                 <p className="text-xs text-white/80">개설</p>
               </div>
               <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-3 text-center">
-                <p className="text-2xl font-bold">{profile.likeReceived}</p>
+                <p className="text-xl font-bold">{profile.likeReceived}</p>
                 <p className="text-xs text-white/80">좋아요</p>
+              </div>
+              <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-3 text-center">
+                <p className="text-xl font-bold flex items-center justify-center gap-0.5">
+                  {profile.avgRating ? (
+                    <>
+                      <span className="text-yellow-300">⭐</span>
+                      {profile.avgRating}
+                    </>
+                  ) : (
+                    '-'
+                  )}
+                </p>
+                <p className="text-xs text-white/80">평점{profile.reviewCount > 0 ? `(${profile.reviewCount})` : ''}</p>
               </div>
             </div>
           </div>
