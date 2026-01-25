@@ -116,7 +116,7 @@ export default function EditMeetingPage() {
       })
 
       if (res.ok) {
-        router.push(`/meeting/${meetingId}`)
+        router.replace(`/meeting/${meetingId}?fromEdit=true`)
       } else {
         const error = await res.json()
         alert(error.message || '수정에 실패했습니다')

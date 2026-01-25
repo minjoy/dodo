@@ -87,7 +87,7 @@ export default function CreateMeetingPage() {
 
       if (res.ok) {
         const meeting = await res.json()
-        router.replace(`/meeting/${meeting.id}`)
+        router.replace(`/meeting/${meeting.id}?fromCreate=true`)
       } else {
         const error = await res.json()
         alert(error.message || '모임 생성에 실패했습니다')

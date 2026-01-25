@@ -46,12 +46,16 @@ function MeetingDetailContent() {
   const meetingId = params.id as string
   const joinedFromInvite = searchParams.get('joined') === 'true'
   const fromInviteLink = searchParams.get('fromInvite') === 'true'
+  const fromCreate = searchParams.get('fromCreate') === 'true'
+  const fromEdit = searchParams.get('fromEdit') === 'true'
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
 
-  // 초대링크로 참여한 경우 또는 링크에서 바로 이동한 경우 뒤로가기 시 홈으로 이동
+  // 초대링크, 생성, 수정에서 온 경우 뒤로가기 시 홈으로 이동
+  const shouldRedirectToHome = joinedFromInvite || fromInviteLink || fromCreate || fromEdit
+
   useEffect(() => {
-    if (joinedFromInvite || fromInviteLink) {
+    if (shouldRedirectToHome) {
       window.history.pushState(null, '', window.location.href)
 
       const handlePopState = () => {
@@ -61,7 +65,7 @@ function MeetingDetailContent() {
       window.addEventListener('popstate', handlePopState)
       return () => window.removeEventListener('popstate', handlePopState)
     }
-  }, [joinedFromInvite, fromInviteLink, router])
+  }, [shouldRedirectToHome, router])
 
   useEffect(() => {
     fetchMeeting()
@@ -226,9 +230,9 @@ function MeetingDetailContent() {
   }
 
   const handleBack = () => {
-    // 이전 페이지가 모임 생성 페이지라면 홈으로 이동
-    if (document.referrer.includes('/create')) {
-      router.push('/home')
+    // 생성/수정/초대링크에서 온 경우 홈으로 이동
+    if (shouldRedirectToHome || document.referrer.includes('/create') || document.referrer.includes('/edit')) {
+      router.replace('/home')
     } else {
       router.back()
     }
