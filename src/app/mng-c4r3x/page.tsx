@@ -50,6 +50,11 @@ interface Stats {
   }
 }
 
+interface PushStats {
+  totalSubscriptions: number
+  uniqueUsers: number
+}
+
 const ADMIN_COOKIE_KEY = 'mng_auth_x7k9'
 const ADMIN_PASSWORD = 'care'
 
@@ -75,7 +80,13 @@ export default function AdminPage() {
   const [error, setError] = useState('')
   const [stats, setStats] = useState<Stats | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'meetings'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'meetings' | 'push'>('overview')
+  const [pushStats, setPushStats] = useState<PushStats | null>(null)
+  const [pushTitle, setPushTitle] = useState('')
+  const [pushMessage, setPushMessage] = useState('')
+  const [pushUrl, setPushUrl] = useState('/home')
+  const [isSendingPush, setIsSendingPush] = useState(false)
+  const [pushResult, setPushResult] = useState<string | null>(null)
 
   useEffect(() => {
     const savedAuth = Cookies.get(ADMIN_COOKIE_KEY)
@@ -111,10 +122,62 @@ export default function AdminPage() {
         const data = await res.json()
         setStats(data)
       }
+      // 푸시 통계도 함께 가져오기
+      fetchPushStats()
     } catch (error) {
       console.error('Failed to fetch stats:', error)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const fetchPushStats = async () => {
+    try {
+      const res = await fetch('/api/admin/push')
+      if (res.ok) {
+        const data = await res.json()
+        setPushStats(data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch push stats:', error)
+    }
+  }
+
+  const sendPush = async () => {
+    if (!pushTitle || !pushMessage) {
+      setPushResult('제목과 메시지를 입력해주세요')
+      return
+    }
+
+    setIsSendingPush(true)
+    setPushResult(null)
+
+    try {
+      const res = await fetch('/api/admin/push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: pushTitle,
+          message: pushMessage,
+          url: pushUrl,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        setPushResult(`발송 완료! 성공: ${data.sent}건, 실패: ${data.failed}건, 만료제거: ${data.expiredRemoved}건`)
+        setPushTitle('')
+        setPushMessage('')
+        fetchPushStats()
+      } else {
+        setPushResult(data.message || '발송 실패')
+      }
+    } catch (error) {
+      console.error('Failed to send push:', error)
+      setPushResult('푸시 발송 중 오류가 발생했습니다')
+    } finally {
+      setIsSendingPush(false)
     }
   }
 
@@ -183,6 +246,7 @@ export default function AdminPage() {
             { key: 'overview', label: '개요' },
             { key: 'users', label: '사용자' },
             { key: 'meetings', label: '모임' },
+            { key: 'push', label: '푸시' },
           ].map((tab) => (
             <button
               key={tab.key}
@@ -509,6 +573,93 @@ export default function AdminPage() {
                   })}
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* 푸시 탭 */}
+        {activeTab === 'push' && (
+          <div className="space-y-6">
+            {/* 푸시 통계 */}
+            <div className="grid grid-cols-2 gap-4">
+              <StatCard
+                title="총 구독"
+                value={pushStats?.totalSubscriptions || 0}
+                color="blue"
+              />
+              <StatCard
+                title="구독 사용자"
+                value={pushStats?.uniqueUsers || 0}
+                color="green"
+              />
+            </div>
+
+            {/* 푸시 발송 폼 */}
+            <div className="bg-gray-800 rounded-2xl p-6">
+              <h3 className="text-lg font-bold mb-4">푸시 알림 발송</h3>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">제목</label>
+                  <input
+                    type="text"
+                    value={pushTitle}
+                    onChange={(e) => setPushTitle(e.target.value)}
+                    placeholder="알림 제목"
+                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">메시지</label>
+                  <textarea
+                    value={pushMessage}
+                    onChange={(e) => setPushMessage(e.target.value)}
+                    placeholder="알림 메시지 내용"
+                    rows={3}
+                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 resize-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">클릭시 이동 URL (선택)</label>
+                  <input
+                    type="text"
+                    value={pushUrl}
+                    onChange={(e) => setPushUrl(e.target.value)}
+                    placeholder="/home"
+                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                {pushResult && (
+                  <div className={`p-3 rounded-xl text-sm ${
+                    pushResult.includes('완료')
+                      ? 'bg-green-900/30 text-green-400 border border-green-800'
+                      : 'bg-red-900/30 text-red-400 border border-red-800'
+                  }`}>
+                    {pushResult}
+                  </div>
+                )}
+
+                <button
+                  onClick={sendPush}
+                  disabled={isSendingPush || !pushTitle || !pushMessage}
+                  className="w-full py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSendingPush ? '발송 중...' : '모든 구독자에게 푸시 발송'}
+                </button>
+              </div>
+            </div>
+
+            {/* 안내 */}
+            <div className="bg-gray-800/50 rounded-2xl p-5 border border-gray-700">
+              <h4 className="font-medium mb-2 text-gray-300">푸시 알림 안내</h4>
+              <ul className="text-sm text-gray-400 space-y-1">
+                <li>• iOS: PWA로 설치 후 알림 허용 필요 (iOS 16.4+)</li>
+                <li>• Android: 브라우저에서 알림 허용 필요</li>
+                <li>• 만료된 구독은 발송 시 자동으로 제거됩니다</li>
+              </ul>
             </div>
           </div>
         )}

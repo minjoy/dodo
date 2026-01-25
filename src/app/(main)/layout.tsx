@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
-import { BottomNav } from '@/components/common'
+import { BottomNav, PushNotificationPrompt } from '@/components/common'
 
 export default function MainLayout({
   children,
@@ -37,6 +37,7 @@ export default function MainLayout({
     <div className="min-h-screen bg-gray-50 pb-20">
       {children}
       <BottomNav />
+      <PushNotificationPrompt />
     </div>
   )
 }

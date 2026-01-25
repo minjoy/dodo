@@ -54,6 +54,7 @@ model User {
   reportsGiven      Report[]        @relation("ReportsGiven")
   reportsReceived   Report[]        @relation("ReportsReceived")
   gameRoles         GameRole[]
+  pushSubscriptions PushSubscription[]
 
   @@index([region])
   @@index([level])
@@ -277,4 +278,20 @@ enum ReportStatus {
   REVIEWED    // 검토됨
   RESOLVED    // 해결됨
   DISMISSED   // 기각됨
+}
+
+// 푸시 구독
+model PushSubscription {
+  id          String    @id @default(cuid())
+
+  endpoint    String    @unique @db.Text
+  p256dh      String    @db.Text
+  auth        String    @db.Text
+
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
 }
