@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { validateNickname } from '@/lib/nickname'
 import ImageCropper from '@/components/ImageCropper'
@@ -22,6 +22,8 @@ const POPULAR_REGIONS = [
 export default function OnboardingPage() {
   const { data: session, status, update } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const callbackUrl = searchParams.get('callbackUrl')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [step, setStep] = useState(1)
   const [nickname, setNickname] = useState('')
@@ -38,10 +40,10 @@ export default function OnboardingPage() {
     if (status === 'unauthenticated') {
       router.push('/')
     } else if (status === 'authenticated' && session?.user?.region) {
-      // 이미 온보딩을 완료한 사용자는 홈으로 리다이렉트
-      router.replace('/home')
+      // 이미 온보딩을 완료한 사용자는 callbackUrl 또는 홈으로 리다이렉트
+      router.replace(callbackUrl || '/home')
     }
-  }, [status, session, router])
+  }, [status, session, router, callbackUrl])
 
   // 닉네임 유효성 검사
   useEffect(() => {
@@ -129,7 +131,7 @@ export default function OnboardingPage() {
 
       if (res.ok) {
         await update({ region })
-        router.push('/home')
+        router.push(callbackUrl || '/home')
       } else if (res.status === 401) {
         alert('로그인이 만료되었습니다. 다시 로그인해주세요.')
         router.push('/')

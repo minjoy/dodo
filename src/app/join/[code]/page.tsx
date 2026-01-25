@@ -38,9 +38,27 @@ export default function JoinPage({ params }: { params: Promise<{ code: string }>
   const [isLoading, setIsLoading] = useState(true)
   const [isJoining, setIsJoining] = useState(false)
 
+  // 뒤로가기 시 홈으로 이동
   useEffect(() => {
+    window.history.pushState(null, '', window.location.href)
+
+    const handlePopState = () => {
+      router.replace('/home')
+    }
+
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [router])
+
+  useEffect(() => {
+    // 로그인 됐지만 닉네임/동네가 없으면 온보딩으로
+    if (status === 'authenticated' && session?.user && !session.user.region) {
+      router.replace(`/onboarding?callbackUrl=/join/${code}`)
+      return
+    }
+
     fetchMeeting()
-  }, [code, status])
+  }, [code, status, session, router])
 
   const fetchMeeting = async () => {
     try {
@@ -84,7 +102,8 @@ export default function JoinPage({ params }: { params: Promise<{ code: string }>
       })
 
       if (res.ok) {
-        router.push(`/meeting/${meeting.id}`)
+        // 뒤로가기 시 홈으로 가도록 replace 사용
+        router.replace(`/meeting/${meeting.id}?joined=true`)
       } else {
         const data = await res.json()
         setError(data.message || '입장에 실패했습니다')

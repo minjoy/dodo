@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { Button, Card, Badge, Avatar } from '@/components/common'
@@ -21,6 +21,7 @@ const LEVEL_EMOJIS = ['🌱', '👋', '⭐', '👑', '🏆']
 export default function MeetingDetailPage() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { data: session } = useSession()
   const [meeting, setMeeting] = useState<MeetingWithDetails | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -29,6 +30,21 @@ export default function MeetingDetailPage() {
   const [copied, setCopied] = useState(false)
 
   const meetingId = params.id as string
+  const joinedFromInvite = searchParams.get('joined') === 'true'
+
+  // 초대링크로 참여한 경우 뒤로가기 시 홈으로 이동
+  useEffect(() => {
+    if (joinedFromInvite) {
+      window.history.pushState(null, '', window.location.href)
+
+      const handlePopState = () => {
+        router.replace('/home')
+      }
+
+      window.addEventListener('popstate', handlePopState)
+      return () => window.removeEventListener('popstate', handlePopState)
+    }
+  }, [joinedFromInvite, router])
 
   useEffect(() => {
     fetchMeeting()
