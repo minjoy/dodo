@@ -37,14 +37,19 @@ const LEVEL_COLORS = {
   5: 'from-yellow-400 to-amber-500',
 }
 
-const LEVEL_EMOJIS = ['🌱', '👋', '⭐', '👑', '🏆']
+const LEVEL_EMOJIS = ['🌱', '👋', '⭐', '🌟', '👑', '💎', '🔥', '⚡', '🏆', '🌈']
 
 const LEVEL_INFO = [
   { level: 1, name: '새싹', emoji: '🌱', exp: 0, description: '경도의 세계에 오신 것을 환영해요!' },
-  { level: 2, name: '루키', emoji: '👋', exp: 30, description: '모임에 참여하며 경험을 쌓고 있어요' },
-  { level: 3, name: '레귤러', emoji: '⭐', exp: 100, description: '활발하게 활동하는 경도 플레이어에요' },
-  { level: 4, name: '베테랑', emoji: '👑', exp: 200, description: '다양한 모임을 경험한 베테랑이에요' },
-  { level: 5, name: '마스터', emoji: '🏆', exp: 500, description: '경도의 전설이 되었어요!' },
+  { level: 2, name: '동네친구', emoji: '👋', exp: 30, description: '첫 게임 2~3회 참여' },
+  { level: 3, name: '단골멤버', emoji: '⭐', exp: 80, description: '게임 5~6회 참여' },
+  { level: 4, name: '인싸', emoji: '🌟', exp: 180, description: '게임 12~15회 참여' },
+  { level: 5, name: '동네대장', emoji: '👑', exp: 350, description: '게임 25회 이상, 호스팅 경험' },
+  { level: 6, name: '베테랑', emoji: '💎', exp: 600, description: '꾸준한 활동이 필요해요' },
+  { level: 7, name: '마스터', emoji: '🔥', exp: 1000, description: '활발한 커뮤니티 멤버' },
+  { level: 8, name: '그랜드마스터', emoji: '⚡', exp: 1600, description: '경험이 풍부한 베테랑' },
+  { level: 9, name: '챔피언', emoji: '🏆', exp: 2500, description: '최상위 레벨의 플레이어' },
+  { level: 10, name: '전설', emoji: '🌈', exp: 4000, description: '경도의 전설이 되었어요!' },
 ]
 
 export default function MyPage() {
@@ -176,9 +181,9 @@ export default function MyPage() {
   }
 
   // 레벨별 경험치 요구량
-  const levelExpRequirements = [0, 30, 100, 200, 500]
+  const levelExpRequirements = [0, 30, 80, 180, 350, 600, 1000, 1600, 2500, 4000]
   const currentLevelExp = user ? levelExpRequirements[user.level - 1] || 0 : 0
-  const nextLevelExp = user ? levelExpRequirements[user.level] || 999 : 999
+  const nextLevelExp = user ? levelExpRequirements[user.level] || 4000 : 4000
   const expProgress = user
     ? ((user.exp - currentLevelExp) / (nextLevelExp - currentLevelExp)) * 100
     : 0
@@ -504,9 +509,9 @@ export default function MyPage() {
 
       {/* 레벨 설명 모달 */}
       {showLevelModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-3xl w-full max-w-sm max-h-[85vh] flex flex-col overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-4 pb-20">
+          <div className="bg-white rounded-3xl w-full max-w-sm max-h-[65vh] flex flex-col overflow-hidden">
+            <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
               <h3 className="text-lg font-bold text-gray-900">레벨 시스템</h3>
               <button
                 onClick={() => setShowLevelModal(false)}
@@ -517,45 +522,40 @@ export default function MyPage() {
                 </svg>
               </button>
             </div>
-            <div className="p-5 overflow-y-auto flex-1">
-              <p className="text-sm text-gray-500 mb-4">
-                모임 참여와 호스팅으로 경험치를 얻어 레벨업하세요!
-              </p>
-              <div className="space-y-3">
+            <div className="p-4 overflow-y-auto flex-1">
+              <div className="space-y-2">
                 {LEVEL_INFO.map((info) => (
                   <div
                     key={info.level}
-                    className={`flex items-center gap-3 p-3 rounded-xl ${
+                    className={`flex items-center gap-2 p-2 rounded-xl ${
                       userLevel === info.level
                         ? 'bg-primary/10 border-2 border-primary'
-                        : 'bg-gray-50'
+                        : userLevel > info.level
+                          ? 'bg-gray-50 opacity-60'
+                          : 'bg-gray-50'
                     }`}
                   >
-                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm flex-shrink-0">
-                      <span className="text-xl">{info.emoji}</span>
+                    <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm flex-shrink-0">
+                      <span className="text-lg">{info.emoji}</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-gray-900">Lv.{info.level} {info.name}</span>
+                      <div className="flex items-center gap-1">
+                        <span className="font-bold text-gray-900 text-sm">Lv.{info.level}</span>
+                        <span className="text-sm text-gray-700">{info.name}</span>
                         {userLevel === info.level && (
-                          <span className="text-xs bg-primary text-white px-2 py-0.5 rounded-full">현재</span>
+                          <span className="text-[10px] bg-primary text-white px-1.5 py-0.5 rounded-full ml-1">현재</span>
                         )}
                       </div>
-                      <p className="text-xs text-gray-500 mt-0.5">{info.description}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">필요 경험치: {info.exp} EXP</p>
+                      <p className="text-[11px] text-gray-400">{info.exp} EXP</p>
                     </div>
                   </div>
                 ))}
               </div>
-              <div className="mt-4 p-3 bg-gray-50 rounded-xl">
-                <p className="text-xs text-gray-600">
-                  <span className="font-semibold">경험치 획득 방법</span>
+              <div className="mt-3 p-2.5 bg-blue-50 rounded-xl">
+                <p className="text-xs text-blue-800 font-semibold mb-1">경험치 획득</p>
+                <p className="text-[11px] text-blue-600">
+                  모임 참여 +10 · 호스팅 +15 · 좋아요 받기 +5
                 </p>
-                <ul className="text-xs text-gray-500 mt-2 space-y-1">
-                  <li>• 모임 참여 완료: +10 EXP</li>
-                  <li>• 모임 개설 및 완료: +15 EXP</li>
-                  <li>• 좋아요 받기: +2 EXP</li>
-                </ul>
               </div>
             </div>
           </div>

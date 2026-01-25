@@ -1120,11 +1120,34 @@ function MeetingDetailContent() {
             {/* 코멘트 */}
             <div className="mb-4">
               <p className="text-sm text-gray-500 mb-2">한줄평 (선택)</p>
+              {/* 빠른 선택지 */}
+              <div className="flex flex-wrap gap-2 mb-2">
+                {[
+                  '함께해서 즐거웠어요!',
+                  '매너가 좋아요',
+                  '다음에 또 만나요!',
+                  '게임 실력이 좋아요',
+                  '친절하고 재밌어요',
+                ].map((text) => (
+                  <button
+                    key={text}
+                    type="button"
+                    onClick={() => setReviewComment(text)}
+                    className={`px-3 py-1.5 text-sm rounded-full transition-colors ${
+                      reviewComment === text
+                        ? 'bg-primary text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    {text}
+                  </button>
+                ))}
+              </div>
               <input
                 type="text"
                 value={reviewComment}
                 onChange={(e) => setReviewComment(e.target.value)}
-                placeholder="함께해서 즐거웠어요!"
+                placeholder="직접 입력..."
                 maxLength={100}
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50"
               />
