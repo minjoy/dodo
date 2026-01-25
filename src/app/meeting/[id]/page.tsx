@@ -40,6 +40,7 @@ function MeetingDetailContent() {
   const [isJoining, setIsJoining] = useState(false)
   const [isReadying, setIsReadying] = useState(false)
   const [isStarting, setIsStarting] = useState(false)
+  const [isEnding, setIsEnding] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
   const [copied, setCopied] = useState(false)
 
@@ -226,6 +227,31 @@ function MeetingDetailContent() {
       console.error('Failed to start meeting:', error)
     } finally {
       setIsStarting(false)
+    }
+  }
+
+  const handleEnd = async () => {
+    if (!session?.user?.id) return
+    if (!confirm('모임을 종료하시겠습니까? 종료 후에는 참여자들이 서로 평가할 수 있습니다.')) return
+
+    setIsEnding(true)
+    try {
+      const res = await fetch(`/api/meetings/${meetingId}/end`, {
+        method: 'POST',
+      })
+      if (res.ok) {
+        setToastMessage('모임이 종료되었습니다!')
+        setShowToast(true)
+        setTimeout(() => setShowToast(false), 3000)
+        fetchMeeting()
+      } else {
+        const data = await res.json()
+        alert(data.message || '모임 종료에 실패했습니다')
+      }
+    } catch (error) {
+      console.error('Failed to end meeting:', error)
+    } finally {
+      setIsEnding(false)
     }
   }
 
@@ -658,11 +684,34 @@ function MeetingDetailContent() {
 
       {/* 하단 고정 버튼 */}
       <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-t border-gray-100 px-4 pt-4 pb-8 safe-bottom">
-        {/* 모임 진행중 표시 */}
+        {/* 모임 진행중일 때 */}
         {isPlaying ? (
-          <div className="w-full py-4 px-6 rounded-2xl font-bold text-lg bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-center">
-            🎮 모임 진행중
-          </div>
+          isHost ? (
+            <button
+              onClick={handleEnd}
+              disabled={isEnding}
+              className="w-full py-4 px-6 rounded-2xl font-bold text-lg bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg shadow-red-500/30 hover:shadow-xl transition-all flex items-center justify-center gap-2"
+            >
+              {isEnding ? (
+                <>
+                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  종료 중...
+                </>
+              ) : (
+                <>
+                  <span className="text-xl">🏁</span>
+                  모임 종료하기
+                </>
+              )}
+            </button>
+          ) : (
+            <div className="w-full py-4 px-6 rounded-2xl font-bold text-lg bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-center">
+              🎮 모임 진행중
+            </div>
+          )
         ) : isHost ? (
           <div className="space-y-3">
             {/* 호스트: 시작 버튼 또는 관리 버튼 */}

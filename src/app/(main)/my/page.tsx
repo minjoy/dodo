@@ -51,6 +51,7 @@ export default function MyPage() {
   const router = useRouter()
   const { data: session } = useSession()
   const [user, setUser] = useState<User | null>(null)
+  const [playingMeetings, setPlayingMeetings] = useState<MeetingWithDetails[]>([])
   const [upcomingMeetings, setUpcomingMeetings] = useState<MeetingWithDetails[]>([])
   const [pastMeetings, setPastMeetings] = useState<MeetingWithDetails[]>([])
   const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming')
@@ -101,11 +102,21 @@ export default function MyPage() {
       if (meetingsRes.ok) {
         const meetingsData = await meetingsRes.json()
         const now = new Date()
-        setUpcomingMeetings(
-          meetingsData.filter((m: MeetingWithDetails) => new Date(m.meetingDate) >= now)
+        // 진행중인 모임 (PLAYING 상태)
+        setPlayingMeetings(
+          meetingsData.filter((m: MeetingWithDetails) => m.status === 'PLAYING')
         )
+        // 예정된 모임 (PLAYING이 아니고 미래 날짜)
+        setUpcomingMeetings(
+          meetingsData.filter((m: MeetingWithDetails) =>
+            m.status !== 'PLAYING' && m.status !== 'COMPLETED' && new Date(m.meetingDate) >= now
+          )
+        )
+        // 지난 모임 (완료된 모임 또는 과거 날짜)
         setPastMeetings(
-          meetingsData.filter((m: MeetingWithDetails) => new Date(m.meetingDate) < now)
+          meetingsData.filter((m: MeetingWithDetails) =>
+            m.status === 'COMPLETED' || (m.status !== 'PLAYING' && new Date(m.meetingDate) < now)
+          )
         )
       }
 
@@ -316,6 +327,41 @@ export default function MyPage() {
             </div>
           </div>
         </div>
+
+        {/* 진행중인 모임 */}
+        {playingMeetings.length > 0 && (
+          <div className="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-3xl p-5 shadow-xl">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-2xl animate-pulse">🎮</span>
+              <h2 className="text-lg font-bold text-white">진행중인 모임</h2>
+              <span className="bg-white/20 text-white text-xs font-bold px-2 py-1 rounded-full">
+                {playingMeetings.length}
+              </span>
+            </div>
+            <div className="space-y-3">
+              {playingMeetings.map((meeting) => (
+                <Link
+                  key={meeting.id}
+                  href={`/meeting/${meeting.id}`}
+                  className="block bg-white/95 rounded-2xl p-4 hover:bg-white transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-xl flex items-center justify-center">
+                      <span className="text-2xl">🏃</span>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-gray-900">{meeting.title}</h3>
+                      <p className="text-sm text-gray-500">{meeting.placeName}</p>
+                    </div>
+                    <div className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-bold">
+                      진행중
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* 모임 탭 */}
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">

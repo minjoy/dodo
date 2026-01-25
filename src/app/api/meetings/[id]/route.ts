@@ -5,6 +5,57 @@ import { prisma } from '@/lib/prisma'
 import { checkAndAwardBadges } from '@/lib/badges'
 import { calculateLevel } from '@/lib/utils'
 
+// 자동 종료 처리 헬퍼 함수
+async function autoEndMeeting(meetingId: string, hostId: string, participantUserIds: string[]) {
+  const allUserIds = [hostId, ...participantUserIds]
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await prisma.$transaction(async (tx: any) => {
+    // 모임 상태 업데이트
+    await tx.meeting.update({
+      where: { id: meetingId },
+      data: {
+        status: 'COMPLETED',
+        gameEndedAt: new Date(),
+      },
+    })
+
+    // 참여 상태 업데이트
+    await tx.participant.updateMany({
+      where: {
+        meetingId: meetingId,
+        status: { not: 'CANCELLED' },
+      },
+      data: { status: 'ATTENDED' },
+    })
+
+    // 모든 참여자 meetingCount, exp 증가
+    for (const userId of allUserIds) {
+      const user = await tx.user.update({
+        where: { id: userId },
+        data: {
+          meetingCount: { increment: 1 },
+          exp: { increment: 10 },
+        },
+      })
+
+      // 레벨 업 확인
+      const newLevel = calculateLevel(user.exp)
+      if (newLevel > user.level) {
+        await tx.user.update({
+          where: { id: userId },
+          data: { level: newLevel },
+        })
+      }
+    }
+  })
+
+  // 뱃지 체크 (트랜잭션 외부에서 비동기로 실행)
+  Promise.all(allUserIds.map((userId) => checkAndAwardBadges(userId))).catch(
+    (error) => console.error('Failed to check badges:', error)
+  )
+}
+
 // GET /api/meetings/[id] - 모임 상세 조회
 export async function GET(
   request: NextRequest,
@@ -13,7 +64,7 @@ export async function GET(
   try {
     const { id } = await params
 
-    const meeting = await prisma.meeting.findUnique({
+    let meeting = await prisma.meeting.findUnique({
       where: { id },
       include: {
         host: {
@@ -75,6 +126,79 @@ export async function GET(
 
     if (!meeting) {
       return NextResponse.json({ message: '모임을 찾을 수 없습니다' }, { status: 404 })
+    }
+
+    // 자동 종료 체크: PLAYING 상태이고 시작 후 5시간이 지났으면 자동 종료
+    if (meeting.status === 'PLAYING' && meeting.gameStartedAt) {
+      const fiveHoursInMs = 5 * 60 * 60 * 1000
+      const autoEndTime = new Date(meeting.gameStartedAt.getTime() + fiveHoursInMs)
+
+      if (new Date() > autoEndTime) {
+        // 자동 종료 처리
+        const participantUserIds = meeting.participants.map((p) => p.userId)
+        await autoEndMeeting(meeting.id, meeting.hostId, participantUserIds)
+
+        // 업데이트된 모임 정보 다시 조회
+        meeting = await prisma.meeting.findUnique({
+          where: { id },
+          include: {
+            host: {
+              select: {
+                id: true,
+                nickname: true,
+                profileImage: true,
+                level: true,
+                meetingCount: true,
+                hostCount: true,
+                likeReceived: true,
+                representativeBadge: true,
+                representativeBadge2: true,
+              },
+            },
+            participants: {
+              where: {
+                status: {
+                  not: 'CANCELLED',
+                },
+              },
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    nickname: true,
+                    profileImage: true,
+                    level: true,
+                    representativeBadge: true,
+                    representativeBadge2: true,
+                  },
+                },
+              },
+            },
+            gameRoles: {
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    nickname: true,
+                    profileImage: true,
+                  },
+                },
+              },
+            },
+            _count: {
+              select: {
+                participants: {
+                  where: {
+                    status: {
+                      not: 'CANCELLED',
+                    },
+                  },
+                },
+              },
+            },
+          },
+        })
+      }
     }
 
     return NextResponse.json(meeting)

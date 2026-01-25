@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { checkAndAwardBadges } from '@/lib/badges'
 import { calculateLevel } from '@/lib/utils'
 
-// POST /api/meetings/[id]/end - 게임 종료
+// POST /api/meetings/[id]/end - 모임 종료
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -18,7 +18,6 @@ export async function POST(
 
     const { id } = await params
 
-    // 모임 조회
     const meeting = await prisma.meeting.findUnique({
       where: { id },
       include: {
@@ -34,18 +33,18 @@ export async function POST(
 
     // 호스트만 종료 가능
     if (meeting.hostId !== session.user.id) {
-      return NextResponse.json({ message: '호스트만 게임을 종료할 수 있습니다' }, { status: 403 })
+      return NextResponse.json({ message: '호스트만 모임을 종료할 수 있습니다' }, { status: 403 })
     }
 
-    // 게임이 진행 중이어야 종료 가능
+    // 진행중인 모임만 종료 가능
     if (meeting.status !== 'PLAYING') {
-      return NextResponse.json({ message: '진행 중인 게임만 종료할 수 있습니다' }, { status: 400 })
+      return NextResponse.json({ message: '진행중인 모임만 종료할 수 있습니다' }, { status: 400 })
     }
 
-    // 모든 참가자 ID (호스트 포함)
-    const allPlayerIds = [meeting.hostId, ...meeting.participants.map((p) => p.userId)]
+    // 모임 상태를 COMPLETED로 변경하고 참여자들 처리
+    const participantIds = meeting.participants.map((p) => p.userId)
+    const allUserIds = [meeting.hostId, ...participantIds]
 
-    // 트랜잭션으로 게임 종료 처리
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await prisma.$transaction(async (tx: any) => {
       // 모임 상태 업데이트
@@ -57,7 +56,7 @@ export async function POST(
         },
       })
 
-      // 참가자 상태를 ATTENDED로 변경
+      // 참여 상태 업데이트
       await tx.participant.updateMany({
         where: {
           meetingId: id,
@@ -67,12 +66,12 @@ export async function POST(
       })
 
       // 모든 참여자 meetingCount, exp 증가
-      for (const userId of allPlayerIds) {
+      for (const userId of allUserIds) {
         const user = await tx.user.update({
           where: { id: userId },
           data: {
             meetingCount: { increment: 1 },
-            exp: { increment: 15 }, // 게임 완료 시 더 많은 경험치
+            exp: { increment: 10 },
           },
         })
 
@@ -88,19 +87,15 @@ export async function POST(
     })
 
     // 뱃지 체크 (트랜잭션 외부에서 비동기로 실행)
-    Promise.all(allPlayerIds.map((userId) => checkAndAwardBadges(userId))).catch(
+    Promise.all(allUserIds.map((userId) => checkAndAwardBadges(userId))).catch(
       (error) => console.error('Failed to check badges:', error)
     )
 
-    return NextResponse.json({
-      success: true,
-      gameEndedAt: new Date(),
-      message: '게임이 종료되었습니다. 참가자들에게 익명 평점을 남겨보세요!',
-    })
+    return NextResponse.json({ success: true, status: 'COMPLETED' })
   } catch (error) {
-    console.error('Failed to end game:', error)
+    console.error('Failed to end meeting:', error)
     return NextResponse.json(
-      { message: '게임 종료에 실패했습니다' },
+      { message: '모임 종료에 실패했습니다' },
       { status: 500 }
     )
   }
