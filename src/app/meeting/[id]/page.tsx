@@ -83,9 +83,9 @@ function MeetingDetailContent() {
     fetchMeeting()
   }, [meetingId])
 
-  // 실시간 업데이트 - 모임 진행중일 때 5초마다 갱신
+  // 실시간 업데이트 - 모임 진행 전/중일 때 5초마다 갱신 (레디 상태 반영)
   useEffect(() => {
-    if (meeting?.status === 'PLAYING' || meeting?.status === 'READY') {
+    if (meeting?.status === 'RECRUITING' || meeting?.status === 'CLOSED' || meeting?.status === 'READY' || meeting?.status === 'PLAYING') {
       const interval = setInterval(() => {
         fetchMeeting()
       }, 5000)
@@ -438,8 +438,8 @@ function MeetingDetailContent() {
   const readyCount = meeting.participants.filter(p => p.status !== 'CANCELLED' && p.isReady).length
   const allParticipantsReady = meeting.participants.filter(p => p.status !== 'CANCELLED').every(p => p.isReady)
 
-  // 모임 시작 가능 여부 (호스트이고, 모임 시작 1시간 전이고, 참가자가 있는 경우)
-  const canStart = isHost && canReady && (meeting.status === 'READY' || meeting.status === 'RECRUITING' || meeting.status === 'CLOSED')
+  // 모임 시작 가능 여부 (호스트이고, 호스트가 레디했고, 모임 시작 1시간 전인 경우)
+  const canStart = isHost && canReady && isMyReady && (meeting.status === 'READY' || meeting.status === 'RECRUITING' || meeting.status === 'CLOSED')
   const isPlaying = meeting.status === 'PLAYING'
 
   return (
@@ -984,6 +984,19 @@ function MeetingDetailContent() {
                 <>
                   <span className="text-xl">🚀</span>
                   모임 시작하기
+                </>
+              )}
+            </button>
+          ) : canReady && !isMyReady ? (
+            <button
+              onClick={handleReady}
+              disabled={isReadying}
+              className="w-full py-4 px-6 rounded-2xl font-bold text-lg bg-gradient-to-r from-yellow-500 to-orange-500 text-white shadow-lg shadow-yellow-500/30 hover:shadow-xl transition-all flex items-center justify-center gap-2"
+            >
+              {isReadying ? '레디 중...' : (
+                <>
+                  <span className="text-xl">✋</span>
+                  레디하고 시작하기
                 </>
               )}
             </button>
