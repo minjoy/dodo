@@ -221,24 +221,26 @@ export default function ReviewPage() {
       </div>
 
       {/* 제출 버튼 */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 pb-8">
-        <button
-          onClick={handleSubmit}
-          disabled={isSubmitting || Object.keys(reviews).length === 0}
-          className={`w-full py-4 rounded-2xl font-bold text-lg transition-all ${
-            Object.keys(reviews).length > 0 && !isSubmitting
-              ? 'bg-gradient-to-r from-primary to-accent text-white shadow-lg shadow-primary/30'
-              : 'bg-gray-200 text-gray-400'
-          }`}
-        >
-          {isSubmitting ? '제출 중...' : '평가 완료하기'}
-        </button>
-        <button
-          onClick={() => router.push('/home')}
-          className="w-full py-3 text-gray-500 text-sm mt-2"
-        >
-          나중에 하기
-        </button>
+      <div className="fixed bottom-0 left-0 right-0 z-40">
+        <div className="max-w-[1000px] mx-auto bg-white border-t border-gray-100 p-4 pb-8">
+          <button
+            onClick={handleSubmit}
+            disabled={isSubmitting || Object.keys(reviews).length === 0}
+            className={`w-full py-4 rounded-2xl font-bold text-lg transition-all ${
+              Object.keys(reviews).length > 0 && !isSubmitting
+                ? 'bg-gradient-to-r from-primary to-accent text-white shadow-lg shadow-primary/30'
+                : 'bg-gray-200 text-gray-400'
+            }`}
+          >
+            {isSubmitting ? '제출 중...' : '평가 완료하기'}
+          </button>
+          <button
+            onClick={() => router.push('/home')}
+            className="w-full py-3 text-gray-500 text-sm mt-2"
+          >
+            나중에 하기
+          </button>
+        </div>
       </div>
     </div>
   )

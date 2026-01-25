@@ -307,8 +307,9 @@ function OnboardingContent() {
       )}
 
       {/* 하단 버튼 */}
-      <div className="fixed bottom-0 left-0 right-0 px-4 pt-4 pb-8 bg-white border-t border-gray-100 safe-bottom">
-        {step === 1 ? (
+      <div className="fixed bottom-0 left-0 right-0 z-40">
+        <div className="max-w-[1000px] mx-auto px-4 pt-4 pb-8 bg-white border-t border-gray-100 safe-bottom">
+          {step === 1 ? (
           <button
             onClick={() => setStep(2)}
             disabled={!isNicknameValid}
@@ -340,8 +341,9 @@ function OnboardingContent() {
             >
               {isLoading ? '설정 중...' : '시작하기'}
             </button>
-          </div>
-        )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* 이미지 크롭 모달 */}

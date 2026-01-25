@@ -32,9 +32,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
-      <body className="antialiased">
+      <body className="antialiased bg-gray-100">
         <AuthProvider>
-          <main className="min-h-screen bg-gray-50">{children}</main>
+          <main className="min-h-screen bg-gray-50 max-w-[1000px] mx-auto shadow-sm">{children}</main>
         </AuthProvider>
       </body>
     </html>

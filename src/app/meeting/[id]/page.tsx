@@ -903,7 +903,8 @@ function MeetingDetailContent() {
       </div>
 
       {/* 하단 고정 버튼 */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-t border-gray-100 px-4 pt-4 pb-8 safe-bottom">
+      <div className="fixed bottom-0 left-0 right-0 z-40">
+        <div className="max-w-[1000px] mx-auto bg-white/80 backdrop-blur-lg border-t border-gray-100 px-4 pt-4 pb-8 safe-bottom">
         {/* 완료된 모임 */}
         {meeting.status === 'COMPLETED' ? (
           <div className="space-y-3">
@@ -1032,6 +1033,7 @@ function MeetingDetailContent() {
             참여 불가 (레벨 {meeting.minLevel} 이상 필요)
           </button>
         )}
+        </div>
       </div>
 
       {/* 공유 모달 */}

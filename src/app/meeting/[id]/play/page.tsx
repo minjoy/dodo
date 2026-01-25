@@ -487,41 +487,43 @@ export default function GamePlayPage() {
           </div>
 
           {/* 액션 버튼 */}
-          <div className="fixed bottom-0 left-0 right-0 bg-gray-900/95 backdrop-blur-lg border-t border-white/10 p-4 pb-8">
-            {isHost ? (
-              <div className="space-y-3">
-                {!allReady && (
-                  <p className="text-center text-yellow-400 text-sm">
-                    모든 참가자가 레디해야 시작할 수 있습니다
-                  </p>
-                )}
+          <div className="fixed bottom-0 left-0 right-0 z-40">
+            <div className="max-w-[1000px] mx-auto bg-gray-900/95 backdrop-blur-lg border-t border-white/10 p-4 pb-8">
+              {isHost ? (
+                <div className="space-y-3">
+                  {!allReady && (
+                    <p className="text-center text-yellow-400 text-sm">
+                      모든 참가자가 레디해야 시작할 수 있습니다
+                    </p>
+                  )}
+                  <button
+                    onClick={() => setShowRoleSetup(true)}
+                    disabled={!allReady || !isWithinRange}
+                    className={`w-full py-4 rounded-2xl font-bold text-lg transition-all ${
+                      allReady && isWithinRange
+                        ? 'bg-gradient-to-r from-primary to-accent shadow-lg shadow-primary/30'
+                        : 'bg-gray-700 text-gray-400'
+                    }`}
+                  >
+                    🎮 게임 시작하기
+                  </button>
+                </div>
+              ) : (
                 <button
-                  onClick={() => setShowRoleSetup(true)}
-                  disabled={!allReady || !isWithinRange}
+                  onClick={handleReady}
+                  disabled={!isWithinRange}
                   className={`w-full py-4 rounded-2xl font-bold text-lg transition-all ${
-                    allReady && isWithinRange
-                      ? 'bg-gradient-to-r from-primary to-accent shadow-lg shadow-primary/30'
-                      : 'bg-gray-700 text-gray-400'
+                    isReady
+                      ? 'bg-green-500 shadow-lg shadow-green-500/30'
+                      : isWithinRange
+                        ? 'bg-gradient-to-r from-primary to-accent shadow-lg shadow-primary/30'
+                        : 'bg-gray-700 text-gray-400'
                   }`}
                 >
-                  🎮 게임 시작하기
+                  {isReady ? '✓ 레디 완료!' : '👋 레디'}
                 </button>
-              </div>
-            ) : (
-              <button
-                onClick={handleReady}
-                disabled={!isWithinRange}
-                className={`w-full py-4 rounded-2xl font-bold text-lg transition-all ${
-                  isReady
-                    ? 'bg-green-500 shadow-lg shadow-green-500/30'
-                    : isWithinRange
-                      ? 'bg-gradient-to-r from-primary to-accent shadow-lg shadow-primary/30'
-                      : 'bg-gray-700 text-gray-400'
-                }`}
-              >
-                {isReady ? '✓ 레디 완료!' : '👋 레디'}
-              </button>
-            )}
+              )}
+            </div>
           </div>
         </div>
       )}
