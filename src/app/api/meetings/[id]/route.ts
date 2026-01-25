@@ -243,7 +243,8 @@ export async function PUT(
     }
 
     // 상태가 COMPLETED로 변경되는 경우 참여자들 처리
-    const isCompletingMeeting = body.status === 'COMPLETED' && meeting.status !== 'COMPLETED'
+    // (이미 위에서 COMPLETED 상태면 return했으므로 meeting.status !== 'COMPLETED' 체크 불필요)
+    const isCompletingMeeting = body.status === 'COMPLETED'
 
     const updatedMeeting = await prisma.meeting.update({
       where: { id },
