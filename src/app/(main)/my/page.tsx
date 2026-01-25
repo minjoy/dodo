@@ -24,6 +24,14 @@ const LEVEL_COLORS = {
 
 const LEVEL_EMOJIS = ['🌱', '👋', '⭐', '👑', '🏆']
 
+const LEVEL_INFO = [
+  { level: 1, name: '새싹', emoji: '🌱', exp: 0, description: '경도의 세계에 오신 것을 환영해요!' },
+  { level: 2, name: '루키', emoji: '👋', exp: 30, description: '모임에 참여하며 경험을 쌓고 있어요' },
+  { level: 3, name: '레귤러', emoji: '⭐', exp: 100, description: '활발하게 활동하는 경도 플레이어에요' },
+  { level: 4, name: '베테랑', emoji: '👑', exp: 200, description: '다양한 모임을 경험한 베테랑이에요' },
+  { level: 5, name: '마스터', emoji: '🏆', exp: 500, description: '경도의 전설이 되었어요!' },
+]
+
 export default function MyPage() {
   const router = useRouter()
   const { data: session } = useSession()
@@ -32,6 +40,7 @@ export default function MyPage() {
   const [pastMeetings, setPastMeetings] = useState<MeetingWithDetails[]>([])
   const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming')
   const [isLoading, setIsLoading] = useState(true)
+  const [showLevelModal, setShowLevelModal] = useState(false)
 
   useEffect(() => {
     fetchUserData()
@@ -135,7 +144,7 @@ export default function MyPage() {
           <div className="relative">
             <div className="flex items-center gap-4 mb-6">
               <div className="relative">
-                <div className="w-[76px] h-[76px] rounded-2xl bg-white/20 flex items-center justify-center shadow-lg">
+                <div className="w-[76px] h-[76px] rounded-full border border-white/30 overflow-hidden bg-white/20 flex items-center justify-center shadow-lg">
                   <Avatar
                     src={user?.profileImage || session?.user?.profileImage}
                     alt={user?.nickname || session?.user?.nickname || ''}
@@ -143,7 +152,7 @@ export default function MyPage() {
                     fallback={user?.nickname || session?.user?.nickname || ''}
                   />
                 </div>
-                <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg">
+                <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg">
                   <span className="text-xl">{LEVEL_EMOJIS[userLevel - 1]}</span>
                 </div>
               </div>
@@ -153,11 +162,15 @@ export default function MyPage() {
                     {user?.nickname || session?.user?.nickname}
                   </h2>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">
-                    <span className="text-sm font-semibold">Lv.{userLevel} {getLevelName(userLevel)}</span>
-                  </div>
-                </div>
+                <button
+                  onClick={() => setShowLevelModal(true)}
+                  className="flex items-center gap-1 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full hover:bg-white/30 transition-colors"
+                >
+                  <span className="text-sm font-semibold">Lv.{userLevel} {getLevelName(userLevel)}</span>
+                  <svg className="w-4 h-4 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </button>
                 <p className="text-white/80 text-sm flex items-center gap-1 mt-2">
                   <svg
                     className="w-4 h-4"
@@ -343,6 +356,66 @@ export default function MyPage() {
           </button>
         </div>
       </div>
+
+      {/* 레벨 설명 모달 */}
+      {showLevelModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-gray-900">레벨 시스템</h3>
+              <button
+                onClick={() => setShowLevelModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-full"
+              >
+                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-5">
+              <p className="text-sm text-gray-500 mb-4">
+                모임 참여와 호스팅으로 경험치를 얻어 레벨업하세요!
+              </p>
+              <div className="space-y-3">
+                {LEVEL_INFO.map((info) => (
+                  <div
+                    key={info.level}
+                    className={`flex items-center gap-3 p-3 rounded-xl ${
+                      userLevel === info.level
+                        ? 'bg-primary/10 border-2 border-primary'
+                        : 'bg-gray-50'
+                    }`}
+                  >
+                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm">
+                      <span className="text-xl">{info.emoji}</span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-gray-900">Lv.{info.level} {info.name}</span>
+                        {userLevel === info.level && (
+                          <span className="text-xs bg-primary text-white px-2 py-0.5 rounded-full">현재</span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-0.5">{info.description}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">필요 경험치: {info.exp} EXP</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 p-3 bg-gray-50 rounded-xl">
+                <p className="text-xs text-gray-600">
+                  <span className="font-semibold">경험치 획득 방법</span>
+                </p>
+                <ul className="text-xs text-gray-500 mt-2 space-y-1">
+                  <li>• 모임 참여 완료: +10 EXP</li>
+                  <li>• 모임 개설 및 완료: +15 EXP</li>
+                  <li>• 좋아요 받기: +2 EXP</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -156,7 +156,7 @@ export default function ProfileEditPage() {
         {/* 프로필 이미지 */}
         <div className="flex flex-col items-center">
           <div className="relative">
-            <div className="w-[92px] h-[92px] rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
+            <div className="w-[92px] h-[92px] rounded-full border border-gray-200 overflow-hidden bg-gray-100 flex items-center justify-center">
               <Avatar
                 src={profileImage}
                 alt={nickname}

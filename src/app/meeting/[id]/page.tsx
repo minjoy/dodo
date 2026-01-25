@@ -262,7 +262,7 @@ export default function MeetingDetailPage() {
               className="flex items-center gap-4 text-left"
             >
               <div className="relative">
-                <div className="w-14 h-14 rounded-2xl bg-gray-100 p-0.5 shadow-sm">
+                <div className="w-14 h-14 rounded-full border border-gray-200 overflow-hidden bg-gray-100">
                   <Avatar
                     src={meeting.host.profileImage}
                     alt={meeting.host.nickname}
@@ -270,7 +270,7 @@ export default function MeetingDetailPage() {
                     fallback={meeting.host.nickname}
                   />
                 </div>
-                <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-primary rounded-lg flex items-center justify-center border-2 border-white shadow-sm">
+                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center border-2 border-white shadow-sm">
                   <span className="text-xs">{LEVEL_EMOJIS[hostLevel - 1]}</span>
                 </div>
               </div>
@@ -362,12 +362,14 @@ export default function MeetingDetailPage() {
                     onClick={() => router.push(`/profile/${participant.user.id}`)}
                     className="flex items-center gap-2 bg-gray-50 hover:bg-gray-100 rounded-xl px-3 py-2 transition-colors"
                   >
-                    <Avatar
-                      src={participant.user.profileImage}
-                      alt={participant.user.nickname}
-                      size="xs"
-                      fallback={participant.user.nickname}
-                    />
+                    <div className="w-7 h-7 rounded-full border border-gray-200 overflow-hidden">
+                      <Avatar
+                        src={participant.user.profileImage}
+                        alt={participant.user.nickname}
+                        size="sm"
+                        fallback={participant.user.nickname}
+                      />
+                    </div>
                     <span className="text-sm font-medium text-gray-700">
                       {participant.user.nickname}
                     </span>
