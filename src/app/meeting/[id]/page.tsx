@@ -282,7 +282,7 @@ export default function MeetingDetailPage() {
                     fallback={meeting.host.nickname}
                   />
                 </div>
-                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center border-2 border-white shadow-sm">
+                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center border border-gray-200 shadow-sm">
                   <span className="text-xs">{LEVEL_EMOJIS[hostLevel - 1]}</span>
                 </div>
               </div>
@@ -290,9 +290,6 @@ export default function MeetingDetailPage() {
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-gray-900 text-lg">
                     {meeting.host.nickname}
-                  </span>
-                  <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded font-semibold">
-                    Lv.{hostLevel}
                   </span>
                   {(meeting.host.representativeBadge || meeting.host.representativeBadge2) && (
                     <div className="flex items-center gap-0.5 bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-full px-1.5 py-0.5">
@@ -381,42 +378,47 @@ export default function MeetingDetailPage() {
             <div className="flex flex-wrap gap-2">
               {meeting.participants
                 .filter((p) => p.status !== 'CANCELLED')
-                .map((participant) => (
-                  <button
-                    key={participant.id}
-                    onClick={() => router.push(`/profile/${participant.user.id}`)}
-                    className="flex items-center gap-2 bg-gray-50 hover:bg-gray-100 rounded-xl px-3 py-2 transition-colors"
-                  >
-                    <div className="w-7 h-7 rounded-full border border-gray-200 overflow-hidden">
-                      <Avatar
-                        src={participant.user.profileImage}
-                        alt={participant.user.nickname}
-                        size="sm"
-                        fallback={participant.user.nickname}
-                      />
-                    </div>
-                    <span className="text-sm font-medium text-gray-700">
-                      {participant.user.nickname}
-                    </span>
-                    <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded font-semibold">
-                      Lv.{participant.user.level}
-                    </span>
-                    {(participant.user.representativeBadge || participant.user.representativeBadge2) && (
-                      <div className="flex items-center gap-0.5 bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-full px-1 py-0.5">
-                        {participant.user.representativeBadge && (
-                          <span className="text-xs" title={participant.user.representativeBadge.name}>
-                            {participant.user.representativeBadge.icon}
-                          </span>
-                        )}
-                        {participant.user.representativeBadge2 && (
-                          <span className="text-xs" title={participant.user.representativeBadge2.name}>
-                            {participant.user.representativeBadge2.icon}
-                          </span>
-                        )}
+                .map((participant) => {
+                  const pLevel = (participant.user.level || 1) as 1 | 2 | 3 | 4 | 5
+                  return (
+                    <button
+                      key={participant.id}
+                      onClick={() => router.push(`/profile/${participant.user.id}`)}
+                      className="flex items-center gap-2 bg-gray-50 hover:bg-gray-100 rounded-xl px-3 py-2 transition-colors"
+                    >
+                      <div className="relative">
+                        <div className="w-7 h-7 rounded-full border border-gray-200 overflow-hidden">
+                          <Avatar
+                            src={participant.user.profileImage}
+                            alt={participant.user.nickname}
+                            size="sm"
+                            fallback={participant.user.nickname}
+                          />
+                        </div>
+                        <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-white rounded-full flex items-center justify-center border border-gray-200 shadow-sm">
+                          <span className="text-[10px]">{LEVEL_EMOJIS[pLevel - 1]}</span>
+                        </div>
                       </div>
-                    )}
-                  </button>
-                ))}
+                      <span className="text-sm font-medium text-gray-700">
+                        {participant.user.nickname}
+                      </span>
+                      {(participant.user.representativeBadge || participant.user.representativeBadge2) && (
+                        <div className="flex items-center gap-0.5 bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-full px-1 py-0.5">
+                          {participant.user.representativeBadge && (
+                            <span className="text-xs" title={participant.user.representativeBadge.name}>
+                              {participant.user.representativeBadge.icon}
+                            </span>
+                          )}
+                          {participant.user.representativeBadge2 && (
+                            <span className="text-xs" title={participant.user.representativeBadge2.name}>
+                              {participant.user.representativeBadge2.icon}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </button>
+                  )
+                })}
               {meeting._count.participants < meeting.maxParticipants && (
                 <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-4 py-2 border-2 border-dashed border-gray-200">
                   <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
