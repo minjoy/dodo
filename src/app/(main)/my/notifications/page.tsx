@@ -9,6 +9,23 @@ export default function NotificationSettingsPage() {
   const { isSupported, isSubscribed, permission, subscribe, unsubscribe } = usePushNotifications()
   const [isLoading, setIsLoading] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
+  const [deviceType, setDeviceType] = useState<'ios' | 'android' | 'desktop'>('desktop')
+  const [isPWA, setIsPWA] = useState(false)
+
+  useEffect(() => {
+    // 디바이스 타입 감지
+    const ua = navigator.userAgent
+    if (/iPhone|iPad|iPod/i.test(ua)) {
+      setDeviceType('ios')
+    } else if (/Android/i.test(ua)) {
+      setDeviceType('android')
+    } else {
+      setDeviceType('desktop')
+    }
+
+    // PWA 여부 감지
+    setIsPWA(window.matchMedia('(display-mode: standalone)').matches)
+  }, [])
 
   const handleToggle = async () => {
     setIsLoading(true)
@@ -28,7 +45,6 @@ export default function NotificationSettingsPage() {
   }
 
   const isBlocked = permission === 'denied'
-  const isPWA = typeof window !== 'undefined' && window.matchMedia('(display-mode: standalone)').matches
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -96,76 +112,124 @@ export default function NotificationSettingsPage() {
           )}
         </div>
 
-        {/* 알림 종류 안내 */}
+        {/* 알림 설정 방법 안내 */}
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-          <h3 className="font-bold text-gray-900 mb-4">받을 수 있는 알림</h3>
-          <div className="space-y-4">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                <span className="text-lg">⏰</span>
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">오늘의 모임 알림</p>
-                <p className="text-sm text-gray-500">매일 오전 10시, 오늘 참여할 모임이 있으면 알려드려요</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                <span className="text-lg">⭐</span>
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">평가 요청 알림</p>
-                <p className="text-sm text-gray-500">모임 종료 1시간 후, 함께한 멤버 평가를 잊지 않도록 알려드려요</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                <span className="text-lg">🎉</span>
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">모임 소식</p>
-                <p className="text-sm text-gray-500">새로운 모임, 참가 확정 등 중요한 소식을 알려드려요</p>
-              </div>
-            </div>
-          </div>
-        </div>
+          <h3 className="font-bold text-gray-900 mb-4">알림 받는 방법</h3>
 
-        {/* iOS 안내 */}
-        {!isPWA && /iPhone|iPad/i.test(navigator?.userAgent || '') && (
-          <div className="bg-blue-50 rounded-2xl p-5 border border-blue-200">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                <span className="text-lg">📱</span>
-              </div>
-              <div>
-                <h3 className="font-bold text-blue-900 mb-2">iPhone에서 알림 받기</h3>
-                <p className="text-sm text-blue-700 mb-3">
-                  iPhone에서 푸시 알림을 받으려면 앱처럼 설치해주세요.
+          {/* iPhone/iPad */}
+          {deviceType === 'ios' && (
+            <div className="space-y-4">
+              {!isPWA ? (
+                <>
+                  <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-2xl">📱</span>
+                      <p className="font-semibold text-blue-900">홈 화면에 앱 설치가 필요해요</p>
+                    </div>
+                    <p className="text-sm text-blue-700 mb-4">
+                      iPhone은 Safari에서 홈 화면에 추가한 후에만 알림을 받을 수 있어요.
+                    </p>
+                    <ol className="space-y-3">
+                      <li className="flex items-start gap-3">
+                        <span className="bg-blue-500 text-white w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">1</span>
+                        <div>
+                          <p className="font-medium text-gray-900">Safari 하단의 공유 버튼 탭</p>
+                          <p className="text-xs text-gray-500 mt-0.5">네모에서 화살표가 나오는 아이콘</p>
+                        </div>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <span className="bg-blue-500 text-white w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">2</span>
+                        <div>
+                          <p className="font-medium text-gray-900">&apos;홈 화면에 추가&apos; 선택</p>
+                          <p className="text-xs text-gray-500 mt-0.5">스크롤해서 찾아주세요</p>
+                        </div>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <span className="bg-blue-500 text-white w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold">3</span>
+                        <div>
+                          <p className="font-medium text-gray-900">홈 화면에서 경도 앱 실행</p>
+                          <p className="text-xs text-gray-500 mt-0.5">앱처럼 실행되면 알림 설정 가능!</p>
+                        </div>
+                      </li>
+                    </ol>
+                  </div>
+                  <p className="text-xs text-gray-400 text-center">
+                    iOS 16.4 이상에서 지원됩니다
+                  </p>
+                </>
+              ) : (
+                <div className="p-4 bg-green-50 rounded-xl border border-green-100">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-2xl">✅</span>
+                    <p className="font-semibold text-green-900">앱 설치 완료!</p>
+                  </div>
+                  <p className="text-sm text-green-700">
+                    위의 푸시 알림 토글을 켜면 알림을 받을 수 있어요.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Android */}
+          {deviceType === 'android' && (
+            <div className="space-y-4">
+              <div className="p-4 bg-green-50 rounded-xl border border-green-100">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-2xl">🤖</span>
+                  <p className="font-semibold text-green-900">Android는 바로 알림 설정 가능!</p>
+                </div>
+                <p className="text-sm text-green-700 mb-4">
+                  위의 푸시 알림 토글을 켜면 바로 알림을 받을 수 있어요.
                 </p>
-                <ol className="text-sm text-blue-700 space-y-2">
+              </div>
+
+              <div className="p-4 bg-gray-50 rounded-xl">
+                <p className="text-sm font-medium text-gray-700 mb-2">💡 더 편하게 사용하려면</p>
+                <ol className="text-sm text-gray-600 space-y-2">
                   <li className="flex items-start gap-2">
-                    <span className="bg-blue-200 text-blue-800 w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold">1</span>
-                    <span>Safari 하단의 공유 버튼 탭</span>
+                    <span className="text-gray-400">1.</span>
+                    <span>Chrome 메뉴(⋮) → &apos;홈 화면에 추가&apos;</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="bg-blue-200 text-blue-800 w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold">2</span>
-                    <span>&apos;홈 화면에 추가&apos; 선택</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="bg-blue-200 text-blue-800 w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold">3</span>
-                    <span>홈 화면에서 경도 앱 실행</span>
+                    <span className="text-gray-400">2.</span>
+                    <span>앱처럼 바로가기 아이콘이 생겨요!</span>
                   </li>
                 </ol>
               </div>
             </div>
-          </div>
-        )}
+          )}
+
+          {/* Desktop */}
+          {deviceType === 'desktop' && (
+            <div className="space-y-4">
+              <div className="p-4 bg-purple-50 rounded-xl border border-purple-100">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-2xl">💻</span>
+                  <p className="font-semibold text-purple-900">PC에서 알림 받기</p>
+                </div>
+                <p className="text-sm text-purple-700 mb-4">
+                  위의 푸시 알림 토글을 켜면 브라우저에서 알림을 받을 수 있어요.
+                </p>
+                <p className="text-xs text-purple-600">
+                  알림이 안 오면 브라우저 설정에서 이 사이트의 알림을 허용해주세요.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* 지원 안내 */}
         {!isSupported && (
-          <div className="bg-gray-100 rounded-2xl p-5">
-            <p className="text-center text-gray-500 text-sm">
-              이 브라우저에서는 푸시 알림을 지원하지 않습니다.
+          <div className="bg-red-50 rounded-2xl p-5 border border-red-100">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xl">⚠️</span>
+              <p className="font-medium text-red-800">알림을 지원하지 않는 환경이에요</p>
+            </div>
+            <p className="text-sm text-red-600">
+              {deviceType === 'ios'
+                ? 'Safari에서 홈 화면에 추가한 후 다시 시도해주세요.'
+                : '최신 버전의 Chrome, Safari, Edge 브라우저를 사용해주세요.'}
             </p>
           </div>
         )}
