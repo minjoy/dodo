@@ -212,12 +212,17 @@ export default function RegionChangePage() {
         </button>
       </div>
 
-      {/* 토스트 메시지 */}
+      {/* 성공 팝업 */}
       {showToast && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
-          <div className="bg-gray-900 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2">
-            <span className="text-lg">✅</span>
-            <span className="font-medium">동네가 변경되었습니다!</span>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl p-6 mx-4 shadow-xl text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <p className="text-lg font-bold text-gray-900">저장되었습니다!</p>
+            <p className="text-sm text-gray-500 mt-1">동네가 변경되었어요</p>
           </div>
         </div>
       )}
