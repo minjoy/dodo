@@ -56,6 +56,7 @@ model User {
   gameRoles         GameRole[]
   pushSubscriptions PushSubscription[]
   shouts            Shout[]
+  meetingComments   MeetingComment[]
 
   @@index([region])
   @@index([level])
@@ -105,6 +106,7 @@ model Meeting {
   participants  Participant[]
   reviews       Review[]
   gameRoles     GameRole[]    // 게임별 역할 기록
+  comments      MeetingComment[]
 
   @@index([region])
   @@index([meetingDate])
@@ -310,4 +312,23 @@ model Shout {
 
   @@index([userId])
   @@index([createdAt])
+}
+
+// 모임 게시판 댓글
+model MeetingComment {
+  id          String    @id @default(cuid())
+
+  content     String    @db.VarChar(200)  // 최대 200자
+
+  meetingId   String
+  meeting     Meeting   @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([meetingId])
+  @@index([userId])
 }

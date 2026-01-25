@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { Button, Card, Badge, Avatar } from '@/components/common'
 import KakaoMap from '@/components/KakaoMap'
+import CommentBoard from '@/components/meeting/CommentBoard'
 import {
   formatDate,
   formatTime,
@@ -957,6 +958,9 @@ function MeetingDetailContent() {
             </button>
           )}
         </div>
+
+        {/* 참여자 게시판 */}
+        <CommentBoard meetingId={meetingId} isParticipant={isHost || isParticipant} />
       </div>
 
       {/* 하단 고정 버튼 */}

@@ -11,14 +11,14 @@ export async function GET() {
       return NextResponse.json({ message: '로그인이 필요합니다' }, { status: 401 })
     }
 
-    // 최근 24시간 내 떠들기 메시지
-    const yesterday = new Date()
-    yesterday.setHours(yesterday.getHours() - 24)
+    // 최근 1시간 내 떠들기 메시지
+    const oneHourAgo = new Date()
+    oneHourAgo.setHours(oneHourAgo.getHours() - 1)
 
     const shouts = await prisma.shout.findMany({
       where: {
         createdAt: {
-          gte: yesterday,
+          gte: oneHourAgo,
         },
       },
       select: {
