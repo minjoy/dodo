@@ -51,14 +51,8 @@ export default function JoinPage({ params }: { params: Promise<{ code: string }>
   }, [router])
 
   useEffect(() => {
-    // 로그인 됐지만 닉네임/동네가 없으면 온보딩으로
-    if (status === 'authenticated' && session?.user && !session.user.region) {
-      router.replace(`/onboarding?callbackUrl=/join/${code}`)
-      return
-    }
-
     fetchMeeting()
-  }, [code, status, session, router])
+  }, [code])
 
   const fetchMeeting = async () => {
     try {
@@ -86,6 +80,12 @@ export default function JoinPage({ params }: { params: Promise<{ code: string }>
     if (!session) {
       // 로그인 후 이 페이지로 돌아오기
       signIn('kakao', { callbackUrl: `/join/${code}` })
+      return
+    }
+
+    // 프로필 설정이 안되어 있으면 온보딩으로
+    if (!session.user?.region) {
+      router.push(`/onboarding?callbackUrl=/join/${code}`)
       return
     }
 
