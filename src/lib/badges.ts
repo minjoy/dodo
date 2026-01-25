@@ -19,7 +19,7 @@ export async function checkAndAwardBadges(userId: string) {
 
   if (!user) return []
 
-  const earnedBadgeCodes = user.badges.map((ub) => ub.badge.code)
+  const earnedBadgeCodes = user.badges.map((ub: { badge: { code: string } }) => ub.badge.code)
   const newBadges: string[] = []
 
   // 참여 횟수 기반 뱃지
@@ -69,7 +69,7 @@ export async function checkAndAwardBadges(userId: string) {
 
   // 게임 종류별 뱃지
   const gameTypeCounts: Record<string, number> = {}
-  user.participations.forEach((p) => {
+  user.participations.forEach((p: { meeting: { gameType: string } }) => {
     const gameType = p.meeting.gameType
     gameTypeCounts[gameType] = (gameTypeCounts[gameType] || 0) + 1
   })
@@ -96,7 +96,7 @@ export async function checkAndAwardBadges(userId: string) {
     })
 
     await prisma.userBadge.createMany({
-      data: badges.map((badge) => ({
+      data: badges.map((badge: { id: string }) => ({
         userId,
         badgeId: badge.id,
       })),

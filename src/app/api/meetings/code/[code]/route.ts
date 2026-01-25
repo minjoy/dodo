@@ -59,7 +59,7 @@ export async function GET(
 
     // 현재 사용자가 이미 참가자인지 또는 호스트인지 확인
     const isHost = session?.user?.id === meeting.hostId
-    const isParticipant = meeting.participants.some(p => p.userId === session?.user?.id)
+    const isParticipant = meeting.participants.some((p: { userId: string }) => p.userId === session?.user?.id)
 
     // 비밀번호는 존재 여부만 반환
     return NextResponse.json({

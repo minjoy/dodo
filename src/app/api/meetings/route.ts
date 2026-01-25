@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { generateShareCode } from '@/lib/nickname'
+import { checkAndAwardBadges } from '@/lib/badges'
 
 // GET /api/meetings - 모임 목록 조회
 export async function GET(request: NextRequest) {
@@ -172,6 +173,11 @@ export async function POST(request: NextRequest) {
       where: { id: session.user.id },
       data: { hostCount: { increment: 1 } },
     })
+
+    // 호스트 뱃지 체크 (비동기로 실행)
+    checkAndAwardBadges(session.user.id).catch((error) =>
+      console.error('Failed to check badges:', error)
+    )
 
     return NextResponse.json(meeting, { status: 201 })
   } catch (error) {

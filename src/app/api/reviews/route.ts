@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { calculateLevel } from '@/lib/utils'
+import { checkAndAwardBadges } from '@/lib/badges'
 
 // POST /api/reviews - 리뷰 작성
 export async function POST(request: NextRequest) {
@@ -98,6 +99,11 @@ export async function POST(request: NextRequest) {
           data: { level: newLevel },
         })
       }
+
+      // 뱃지 체크 (비동기로 실행)
+      checkAndAwardBadges(revieweeId).catch((error) =>
+        console.error('Failed to check badges:', error)
+      )
     }
 
     return NextResponse.json(review, { status: 201 })
