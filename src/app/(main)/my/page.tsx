@@ -360,8 +360,8 @@ export default function MyPage() {
       {/* 레벨 설명 모달 */}
       {showLevelModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+          <div className="bg-white rounded-3xl w-full max-w-sm max-h-[85vh] flex flex-col overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
               <h3 className="text-lg font-bold text-gray-900">레벨 시스템</h3>
               <button
                 onClick={() => setShowLevelModal(false)}
@@ -372,7 +372,7 @@ export default function MyPage() {
                 </svg>
               </button>
             </div>
-            <div className="p-5">
+            <div className="p-5 overflow-y-auto flex-1">
               <p className="text-sm text-gray-500 mb-4">
                 모임 참여와 호스팅으로 경험치를 얻어 레벨업하세요!
               </p>
@@ -386,10 +386,10 @@ export default function MyPage() {
                         : 'bg-gray-50'
                     }`}
                   >
-                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm">
+                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm flex-shrink-0">
                       <span className="text-xl">{info.emoji}</span>
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-gray-900">Lv.{info.level} {info.name}</span>
                         {userLevel === info.level && (
