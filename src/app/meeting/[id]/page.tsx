@@ -271,10 +271,10 @@ export default function MeetingDetailPage() {
           <div className="flex items-center justify-between">
             <button
               onClick={() => router.push(`/profile/${meeting.host.id}`)}
-              className="flex items-center gap-4 text-left"
+              className="flex items-center gap-4 text-left flex-1"
             >
               <div className="relative">
-                <div className="w-14 h-14 rounded-full border border-gray-200 overflow-hidden bg-gray-100">
+                <div className="w-12 h-12 rounded-full border border-gray-200 overflow-hidden bg-gray-100">
                   <Avatar
                     src={meeting.host.profileImage}
                     alt={meeting.host.nickname}
@@ -283,7 +283,7 @@ export default function MeetingDetailPage() {
                   />
                 </div>
                 <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center border border-gray-200 shadow-sm">
-                  <span className="text-xs">{LEVEL_EMOJIS[hostLevel - 1]}</span>
+                  <span className="text-sm">{LEVEL_EMOJIS[hostLevel - 1]}</span>
                 </div>
               </div>
               <div>
@@ -384,10 +384,10 @@ export default function MeetingDetailPage() {
                     <button
                       key={participant.id}
                       onClick={() => router.push(`/profile/${participant.user.id}`)}
-                      className="flex items-center gap-2 bg-gray-50 hover:bg-gray-100 rounded-xl px-3 py-2 transition-colors"
+                      className="flex items-center gap-2 bg-gray-50 hover:bg-gray-100 rounded-xl px-3 py-2.5 transition-colors"
                     >
                       <div className="relative">
-                        <div className="w-7 h-7 rounded-full border border-gray-200 overflow-hidden">
+                        <div className="w-8 h-8 rounded-full border border-gray-200 overflow-hidden bg-gray-100">
                           <Avatar
                             src={participant.user.profileImage}
                             alt={participant.user.nickname}

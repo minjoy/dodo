@@ -200,38 +200,43 @@ export default function ProfilePage() {
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
 
+          {/* 대표 뱃지 - 우상단 */}
+          {(profile.representativeBadge || profile.representativeBadge2) && (
+            <div className="absolute top-4 right-4 z-10 bg-white/20 backdrop-blur-sm rounded-xl p-2 flex items-center gap-1">
+              {profile.representativeBadge && (
+                <span className="text-2xl" title={profile.representativeBadge.name}>
+                  {profile.representativeBadge.icon}
+                </span>
+              )}
+              {profile.representativeBadge2 && (
+                <span className="text-2xl" title={profile.representativeBadge2.name}>
+                  {profile.representativeBadge2.icon}
+                </span>
+              )}
+            </div>
+          )}
+
           <div className="relative">
             <div className="flex items-center gap-4 mb-4">
               <div className="relative">
-                <div className="w-20 h-20 rounded-2xl bg-white/20 p-1 shadow-lg">
+                <div className="w-[76px] h-[76px] rounded-full border border-white/30 overflow-hidden bg-white/20 flex items-center justify-center shadow-lg">
                   <Avatar
                     src={profile.profileImage}
                     alt={profile.nickname}
-                    size="xl"
+                    size="2xl"
                     fallback={profile.nickname}
                   />
                 </div>
-                {(profile.representativeBadge || profile.representativeBadge2) && (
-                  <div className="absolute -bottom-2 -right-2 bg-white rounded-xl flex items-center gap-0.5 px-1.5 py-1 shadow-lg">
-                    {profile.representativeBadge && (
-                      <span className="text-lg" title={profile.representativeBadge.name}>
-                        {profile.representativeBadge.icon}
-                      </span>
-                    )}
-                    {profile.representativeBadge2 && (
-                      <span className="text-lg" title={profile.representativeBadge2.name}>
-                        {profile.representativeBadge2.icon}
-                      </span>
-                    )}
-                  </div>
-                )}
+                <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg">
+                  <span className="text-xl">{LEVEL_EMOJIS[userLevel - 1]}</span>
+                </div>
               </div>
               <div className="flex-1">
                 <h2 className="text-2xl font-bold">{profile.nickname}</h2>
                 <div className="flex items-center gap-2 mt-1">
                   <div className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">
                     <span className="text-sm font-semibold">
-                      {LEVEL_EMOJIS[userLevel - 1]} Lv.{userLevel} {getLevelName(userLevel)}
+                      Lv.{userLevel} {getLevelName(userLevel)}
                     </span>
                   </div>
                 </div>
