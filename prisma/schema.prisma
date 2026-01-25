@@ -55,6 +55,7 @@ model User {
   reportsReceived   Report[]        @relation("ReportsReceived")
   gameRoles         GameRole[]
   pushSubscriptions PushSubscription[]
+  shouts            Shout[]
 
   @@index([region])
   @@index([level])
@@ -294,4 +295,19 @@ model PushSubscription {
   createdAt   DateTime  @default(now())
 
   @@index([userId])
+}
+
+// 떠들기 (전광판 메시지)
+model Shout {
+  id          String    @id @default(cuid())
+
+  message     String    @db.VarChar(50)  // 최대 50자
+
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
 }
