@@ -13,6 +13,8 @@ import {
   getGameTypeEmoji,
   getStatusName,
   getLevelName,
+  calculateDistance,
+  formatDistance,
 } from '@/lib/utils'
 import type { MeetingWithDetails } from '@/types'
 
@@ -41,6 +43,7 @@ function MeetingDetailContent() {
   const [isReadying, setIsReadying] = useState(false)
   const [isStarting, setIsStarting] = useState(false)
   const [isEnding, setIsEnding] = useState(false)
+  const [isKicking, setIsKicking] = useState<string | null>(null)
   const [showShareModal, setShowShareModal] = useState(false)
   const [copied, setCopied] = useState(false)
 
@@ -252,6 +255,33 @@ function MeetingDetailContent() {
       console.error('Failed to end meeting:', error)
     } finally {
       setIsEnding(false)
+    }
+  }
+
+  const handleKick = async (userId: string, nickname: string) => {
+    if (!session?.user?.id) return
+    if (!confirm(`${nickname}님을 강퇴하시겠습니까?`)) return
+
+    setIsKicking(userId)
+    try {
+      const res = await fetch(`/api/meetings/${meetingId}/kick`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      })
+      if (res.ok) {
+        setToastMessage(`${nickname}님이 강퇴되었습니다`)
+        setShowToast(true)
+        setTimeout(() => setShowToast(false), 3000)
+        fetchMeeting()
+      } else {
+        const data = await res.json()
+        alert(data.message || '강퇴에 실패했습니다')
+      }
+    } catch (error) {
+      console.error('Failed to kick participant:', error)
+    } finally {
+      setIsKicking(null)
     }
   }
 
@@ -592,6 +622,15 @@ function MeetingDetailContent() {
                 .map((participant) => {
                   const pLevel = (participant.user.level || 1) as 1 | 2 | 3 | 4 | 5
                   const isMe = participant.user.id === session?.user?.id
+                  // 레디한 참가자의 약속장소와의 거리 계산
+                  const readyDistance = participant.isReady && participant.readyLat && participant.readyLng
+                    ? calculateDistance(
+                        participant.readyLat,
+                        participant.readyLng,
+                        meeting.latitude,
+                        meeting.longitude
+                      )
+                    : null
                   return (
                     <div
                       key={participant.id}
@@ -639,31 +678,53 @@ function MeetingDetailContent() {
                               </div>
                             )}
                           </div>
+                          {/* 레디한 사람의 약속장소와의 거리 표시 */}
+                          {readyDistance !== null && (
+                            <span className="text-xs text-green-600 mt-0.5">
+                              📍 약속장소에서 {formatDistance(readyDistance)}
+                            </span>
+                          )}
                         </div>
                       </button>
 
-                      {/* 레디 상태 또는 레디 버튼 */}
-                      {isMe && canReady ? (
-                        <button
-                          onClick={participant.isReady ? handleCancelReady : handleReady}
-                          disabled={isReadying}
-                          className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                      <div className="flex items-center gap-2">
+                        {/* 호스트가 아닌 참가자에 대해 강퇴 버튼 (모임 시작 전에만) */}
+                        {isHost && !isMe && !isPlaying && meeting.status !== 'COMPLETED' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleKick(participant.user.id, participant.user.nickname)
+                            }}
+                            disabled={isKicking === participant.user.id}
+                            className="px-2 py-1.5 text-xs font-medium text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            {isKicking === participant.user.id ? '...' : '강퇴'}
+                          </button>
+                        )}
+
+                        {/* 레디 상태 또는 레디 버튼 */}
+                        {isMe && canReady ? (
+                          <button
+                            onClick={participant.isReady ? handleCancelReady : handleReady}
+                            disabled={isReadying}
+                            className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                              participant.isReady
+                                ? 'bg-green-500 text-white'
+                                : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                            }`}
+                          >
+                            {isReadying ? '...' : participant.isReady ? '✓ 레디' : '레디'}
+                          </button>
+                        ) : (
+                          <div className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
                             participant.isReady
-                              ? 'bg-green-500 text-white'
-                              : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                          }`}
-                        >
-                          {isReadying ? '...' : participant.isReady ? '✓ 레디' : '레디'}
-                        </button>
-                      ) : (
-                        <div className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
-                          participant.isReady
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-gray-100 text-gray-500'
-                        }`}>
-                          {participant.isReady ? '✓ 레디' : '대기중'}
-                        </div>
-                      )}
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-gray-100 text-gray-500'
+                          }`}>
+                            {participant.isReady ? '✓ 레디' : '대기중'}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )
                 })}

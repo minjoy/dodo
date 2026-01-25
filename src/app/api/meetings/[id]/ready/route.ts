@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { calculateDistance } from '@/lib/utils'
+
+// 레디 가능 최대 거리 (미터)
+const MAX_READY_DISTANCE = 500
 
 // POST /api/meetings/[id]/ready - 레디하기
 export async function POST(
@@ -56,6 +60,30 @@ export async function POST(
       }, { status: 400 })
     }
 
+    // 위치 정보 필수 확인
+    if (latitude === undefined || longitude === undefined) {
+      return NextResponse.json({
+        message: '위치 정보가 필요합니다. 위치 권한을 허용해주세요.',
+      }, { status: 400 })
+    }
+
+    // 약속 장소와의 거리 계산
+    const distance = calculateDistance(
+      latitude,
+      longitude,
+      meeting.latitude,
+      meeting.longitude
+    )
+
+    // 500m 이내에서만 레디 가능
+    if (distance > MAX_READY_DISTANCE) {
+      return NextResponse.json({
+        message: `약속 장소에서 ${MAX_READY_DISTANCE}m 이내에서만 레디할 수 있습니다`,
+        distance: Math.round(distance),
+        maxDistance: MAX_READY_DISTANCE,
+      }, { status: 400 })
+    }
+
     // 모임 상태가 RECRUITING이면 READY 상태로 변경
     if (meeting.status === 'RECRUITING' || meeting.status === 'CLOSED') {
       await prisma.meeting.update({
@@ -106,7 +134,7 @@ export async function POST(
       }
     }
 
-    return NextResponse.json({ success: true, isReady: true })
+    return NextResponse.json({ success: true, isReady: true, distance: Math.round(distance) })
   } catch (error) {
     console.error('Failed to ready:', error)
     return NextResponse.json(
