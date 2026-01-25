@@ -9,6 +9,7 @@ declare module 'next-auth' {
       profileImage?: string | null
       region: string
       level: number
+      isBanned?: boolean
     } & DefaultSession['user']
   }
 }
