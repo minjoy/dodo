@@ -42,7 +42,9 @@ export default function RegionChangePage() {
       })
 
       if (res.ok) {
+        const scrollY = window.scrollY
         await update({ region: selectedRegion })
+        window.scrollTo(0, scrollY)
         setShowToast(true)
         setTimeout(() => {
           setShowToast(false)
@@ -212,17 +214,14 @@ export default function RegionChangePage() {
         </button>
       </div>
 
-      {/* 성공 팝업 */}
+      {/* 토스트 메시지 */}
       {showToast && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-2xl p-6 mx-4 shadow-xl text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <p className="text-lg font-bold text-gray-900">저장되었습니다!</p>
-            <p className="text-sm text-gray-500 mt-1">동네가 변경되었어요</p>
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50">
+          <div className="bg-gray-900 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2">
+            <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            <span className="font-medium">저장되었습니다!</span>
           </div>
         </div>
       )}
