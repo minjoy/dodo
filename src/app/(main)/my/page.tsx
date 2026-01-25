@@ -65,6 +65,18 @@ export default function MyPage() {
     fetchUserData()
   }, [])
 
+  // 모달이 열릴 때 body 스크롤 방지
+  useEffect(() => {
+    if (showLevelModal || showBadgeModal) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [showLevelModal, showBadgeModal])
+
   const fetchUserData = async () => {
     try {
       const [userRes, meetingsRes, badgesRes] = await Promise.all([

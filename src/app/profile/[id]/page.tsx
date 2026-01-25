@@ -73,6 +73,18 @@ export default function ProfilePage() {
     fetchProfile()
   }, [userId])
 
+  // 모달이 열릴 때 body 스크롤 방지
+  useEffect(() => {
+    if (showReportModal) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [showReportModal])
+
   const fetchProfile = async () => {
     try {
       const res = await fetch(`/api/users/${userId}`)

@@ -52,6 +52,18 @@ export default function ProfileEditPage() {
     fetchUser()
   }, [])
 
+  // 모달이 열릴 때 body 스크롤 방지
+  useEffect(() => {
+    if (showBadgeModal || showImageCropper) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [showBadgeModal, showImageCropper])
+
   const fetchUser = async () => {
     try {
       const res = await fetch('/api/users/me')
