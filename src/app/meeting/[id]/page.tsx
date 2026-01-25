@@ -291,24 +291,27 @@ export default function MeetingDetailPage() {
                   <span className="font-bold text-gray-900 text-lg">
                     {meeting.host.nickname}
                   </span>
-                  {meeting.host.representativeBadge && (
-                    <span className="text-lg" title={meeting.host.representativeBadge.name}>
-                      {meeting.host.representativeBadge.icon}
-                    </span>
-                  )}
-                  {meeting.host.representativeBadge2 && (
-                    <span className="text-lg" title={meeting.host.representativeBadge2.name}>
-                      {meeting.host.representativeBadge2.icon}
-                    </span>
+                  <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded font-semibold">
+                    Lv.{hostLevel}
+                  </span>
+                  {(meeting.host.representativeBadge || meeting.host.representativeBadge2) && (
+                    <div className="flex items-center gap-0.5 bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-full px-1.5 py-0.5">
+                      {meeting.host.representativeBadge && (
+                        <span className="text-sm" title={meeting.host.representativeBadge.name}>
+                          {meeting.host.representativeBadge.icon}
+                        </span>
+                      )}
+                      {meeting.host.representativeBadge2 && (
+                        <span className="text-sm" title={meeting.host.representativeBadge2.name}>
+                          {meeting.host.representativeBadge2.icon}
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
                 <div className="flex items-center gap-3 text-sm text-gray-500 mt-1">
-                  <span className="flex items-center gap-1">
-                    <span>🎮</span> 모임 {meeting.host.meetingCount}회
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span>❤️</span> 좋아요 {meeting.host.likeReceived}
-                  </span>
+                  <span>모임 {meeting.host.meetingCount}회</span>
+                  <span>좋아요 {meeting.host.likeReceived}</span>
                 </div>
               </div>
             </button>
@@ -395,19 +398,23 @@ export default function MeetingDetailPage() {
                     <span className="text-sm font-medium text-gray-700">
                       {participant.user.nickname}
                     </span>
-                    {participant.user.representativeBadge && (
-                      <span className="text-sm" title={participant.user.representativeBadge.name}>
-                        {participant.user.representativeBadge.icon}
-                      </span>
-                    )}
-                    {participant.user.representativeBadge2 && (
-                      <span className="text-sm" title={participant.user.representativeBadge2.name}>
-                        {participant.user.representativeBadge2.icon}
-                      </span>
-                    )}
                     <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded font-semibold">
                       Lv.{participant.user.level}
                     </span>
+                    {(participant.user.representativeBadge || participant.user.representativeBadge2) && (
+                      <div className="flex items-center gap-0.5 bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-full px-1 py-0.5">
+                        {participant.user.representativeBadge && (
+                          <span className="text-xs" title={participant.user.representativeBadge.name}>
+                            {participant.user.representativeBadge.icon}
+                          </span>
+                        )}
+                        {participant.user.representativeBadge2 && (
+                          <span className="text-xs" title={participant.user.representativeBadge2.name}>
+                            {participant.user.representativeBadge2.icon}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </button>
                 ))}
               {meeting._count.participants < meeting.maxParticipants && (
