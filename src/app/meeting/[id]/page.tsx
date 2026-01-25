@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
@@ -19,6 +19,18 @@ import type { MeetingWithDetails } from '@/types'
 const LEVEL_EMOJIS = ['🌱', '👋', '⭐', '👑', '🏆']
 
 export default function MeetingDetailPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="w-8 h-8 border-2 border-gray-200 border-t-primary rounded-full animate-spin" />
+      </div>
+    }>
+      <MeetingDetailContent />
+    </Suspense>
+  )
+}
+
+function MeetingDetailContent() {
   const params = useParams()
   const router = useRouter()
   const searchParams = useSearchParams()
