@@ -7,6 +7,7 @@ import Image from 'next/image'
 interface Comment {
   id: string
   content: string
+  isPinned: boolean
   createdAt: string
   updatedAt: string
   user: {
@@ -20,16 +21,15 @@ interface Comment {
 interface CommentBoardProps {
   meetingId: string
   isParticipant: boolean
+  isHost: boolean
 }
 
-export default function CommentBoard({ meetingId, isParticipant }: CommentBoardProps) {
+export default function CommentBoard({ meetingId, isParticipant, isHost }: CommentBoardProps) {
   const { data: session } = useSession()
   const [comments, setComments] = useState<Comment[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [newComment, setNewComment] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [editContent, setEditContent] = useState('')
 
   const fetchComments = async () => {
     try {
@@ -74,32 +74,6 @@ export default function CommentBoard({ meetingId, isParticipant }: CommentBoardP
     }
   }
 
-  const handleEdit = async (commentId: string) => {
-    if (!editContent.trim() || isSubmitting) return
-
-    setIsSubmitting(true)
-    try {
-      const res = await fetch(`/api/meetings/${meetingId}/comments/${commentId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: editContent.trim() }),
-      })
-
-      if (res.ok) {
-        setEditingId(null)
-        setEditContent('')
-        fetchComments()
-      } else {
-        const error = await res.json()
-        alert(error.message)
-      }
-    } catch (error) {
-      console.error('Failed to edit comment:', error)
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
   const handleDelete = async (commentId: string) => {
     if (!confirm('정말 삭제하시겠습니까?')) return
 
@@ -116,6 +90,23 @@ export default function CommentBoard({ meetingId, isParticipant }: CommentBoardP
       }
     } catch (error) {
       console.error('Failed to delete comment:', error)
+    }
+  }
+
+  const handleTogglePin = async (commentId: string) => {
+    try {
+      const res = await fetch(`/api/meetings/${meetingId}/comments/${commentId}`, {
+        method: 'PATCH',
+      })
+
+      if (res.ok) {
+        fetchComments()
+      } else {
+        const error = await res.json()
+        alert(error.message)
+      }
+    } catch (error) {
+      console.error('Failed to toggle pin:', error)
     }
   }
 
@@ -191,12 +182,15 @@ export default function CommentBoard({ meetingId, isParticipant }: CommentBoardP
         <div className="space-y-3">
           {comments.map((comment) => {
             const isMyComment = comment.user.id === session?.user?.id
-            const isEditing = editingId === comment.id
 
             return (
               <div
                 key={comment.id}
-                className="bg-gray-50 rounded-xl p-4"
+                className={`rounded-xl p-4 ${
+                  comment.isPinned
+                    ? 'bg-yellow-50 border border-yellow-200'
+                    : 'bg-gray-50'
+                }`}
               >
                 <div className="flex items-start gap-3">
                   {/* 프로필 */}
@@ -218,7 +212,12 @@ export default function CommentBoard({ meetingId, isParticipant }: CommentBoardP
 
                   {/* 내용 */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      {comment.isPinned && (
+                        <span className="text-xs bg-yellow-400 text-yellow-900 px-1.5 py-0.5 rounded font-medium">
+                          📌 고정
+                        </span>
+                      )}
                       <span className="font-semibold text-gray-900 text-sm">
                         {comment.user.nickname}
                       </span>
@@ -228,58 +227,34 @@ export default function CommentBoard({ meetingId, isParticipant }: CommentBoardP
                       <span className="text-xs text-gray-400">
                         {formatTime(comment.createdAt)}
                       </span>
-                      {comment.createdAt !== comment.updatedAt && (
-                        <span className="text-xs text-gray-400">(수정됨)</span>
-                      )}
                     </div>
 
-                    {isEditing ? (
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={editContent}
-                          onChange={(e) => setEditContent(e.target.value.slice(0, 200))}
-                          className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                          autoFocus
-                        />
-                        <button
-                          onClick={() => handleEdit(comment.id)}
-                          disabled={!editContent.trim() || isSubmitting}
-                          className="px-3 py-2 bg-primary text-white rounded-lg text-sm font-medium"
-                        >
-                          저장
-                        </button>
-                        <button
-                          onClick={() => {
-                            setEditingId(null)
-                            setEditContent('')
-                          }}
-                          className="px-3 py-2 bg-gray-200 text-gray-600 rounded-lg text-sm font-medium"
-                        >
-                          취소
-                        </button>
-                      </div>
-                    ) : (
-                      <p className="text-gray-700 text-sm break-words">
-                        {comment.content}
-                      </p>
-                    )}
+                    <p className="text-gray-700 text-sm break-words">
+                      {comment.content}
+                    </p>
                   </div>
 
-                  {/* 수정/삭제 버튼 */}
-                  {isMyComment && !isEditing && (
-                    <div className="flex items-center gap-1 flex-shrink-0">
+                  {/* 버튼 영역 */}
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    {/* 호스트용 고정/해제 버튼 */}
+                    {isHost && (
                       <button
-                        onClick={() => {
-                          setEditingId(comment.id)
-                          setEditContent(comment.content)
-                        }}
-                        className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-lg transition-colors"
+                        onClick={() => handleTogglePin(comment.id)}
+                        className={`p-1.5 rounded-lg transition-colors ${
+                          comment.isPinned
+                            ? 'text-yellow-600 hover:bg-yellow-100'
+                            : 'text-gray-400 hover:text-yellow-600 hover:bg-yellow-50'
+                        }`}
+                        title={comment.isPinned ? '고정 해제' : '상단 고정'}
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        <svg className="w-4 h-4" fill={comment.isPinned ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                         </svg>
                       </button>
+                    )}
+
+                    {/* 본인 글 삭제 버튼 */}
+                    {isMyComment && (
                       <button
                         onClick={() => handleDelete(comment.id)}
                         className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
@@ -288,8 +263,8 @@ export default function CommentBoard({ meetingId, isParticipant }: CommentBoardP
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
                       </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             )

@@ -319,6 +319,7 @@ model MeetingComment {
   id          String    @id @default(cuid())
 
   content     String    @db.VarChar(200)  // 최대 200자
+  isPinned    Boolean   @default(false)   // 상단 고정 여부 (호스트만 가능)
 
   meetingId   String
   meeting     Meeting   @relation(fields: [meetingId], references: [id], onDelete: Cascade)

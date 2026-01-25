@@ -28,7 +28,10 @@ export async function GET(
           },
         },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [
+        { isPinned: 'desc' },  // 고정된 글 먼저
+        { createdAt: 'desc' },
+      ],
     })
 
     return NextResponse.json(comments)

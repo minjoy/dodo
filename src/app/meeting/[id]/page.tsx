@@ -960,7 +960,7 @@ function MeetingDetailContent() {
         </div>
 
         {/* 참여자 게시판 */}
-        <CommentBoard meetingId={meetingId} isParticipant={isHost || isParticipant} />
+        <CommentBoard meetingId={meetingId} isParticipant={isHost || isParticipant} isHost={isHost} />
       </div>
 
       {/* 하단 고정 버튼 */}
