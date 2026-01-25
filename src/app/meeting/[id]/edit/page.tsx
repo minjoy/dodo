@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
+import AddressSearch from '@/components/AddressSearch'
+import KakaoMap from '@/components/KakaoMap'
 import type { GameType, MeetingWithDetails } from '@/types'
 
 const GAME_TYPES: { value: GameType; label: string }[] = [
@@ -20,6 +22,13 @@ const STATUS_OPTIONS = [
   { value: 'CANCELLED', label: '취소' },
 ]
 
+interface PlaceInfo {
+  placeName: string
+  address: string
+  latitude: number
+  longitude: number
+}
+
 export default function EditMeetingPage() {
   const params = useParams()
   const router = useRouter()
@@ -29,6 +38,8 @@ export default function EditMeetingPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [meeting, setMeeting] = useState<MeetingWithDetails | null>(null)
+  const [showAddressSearch, setShowAddressSearch] = useState(false)
+  const [selectedPlace, setSelectedPlace] = useState<PlaceInfo | null>(null)
 
   const [formData, setFormData] = useState({
     gameType: 'GYEONGDO' as GameType,
@@ -36,7 +47,6 @@ export default function EditMeetingPage() {
     description: '',
     meetingDate: '',
     meetingTime: '',
-    placeName: '',
     maxParticipants: 8,
     status: 'RECRUITING',
   })
@@ -66,9 +76,16 @@ export default function EditMeetingPage() {
           description: data.description || '',
           meetingDate: meetingDate.toISOString().split('T')[0],
           meetingTime: meetingDate.toTimeString().slice(0, 5),
-          placeName: data.placeName,
           maxParticipants: data.maxParticipants,
           status: data.status,
+        })
+
+        // 장소 정보 초기화
+        setSelectedPlace({
+          placeName: data.placeName,
+          address: data.address,
+          latitude: data.latitude,
+          longitude: data.longitude,
         })
       } else {
         router.push('/home')
@@ -88,11 +105,16 @@ export default function EditMeetingPage() {
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
-  const isValid = formData.title.length >= 2 && formData.meetingDate && formData.meetingTime && formData.placeName
+  const handlePlaceSelect = (place: PlaceInfo) => {
+    setSelectedPlace(place)
+    setShowAddressSearch(false)
+  }
+
+  const isValid = formData.title.length >= 2 && formData.meetingDate && formData.meetingTime && selectedPlace
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!isValid) return
+    if (!isValid || !selectedPlace) return
 
     setIsSaving(true)
     try {
@@ -108,8 +130,10 @@ export default function EditMeetingPage() {
           description: formData.description || undefined,
           gameType: formData.gameType,
           meetingDate: meetingDateTime,
-          placeName: formData.placeName,
-          address: formData.placeName,
+          placeName: selectedPlace.placeName,
+          address: selectedPlace.address,
+          latitude: selectedPlace.latitude,
+          longitude: selectedPlace.longitude,
           maxParticipants: formData.maxParticipants,
           status: formData.status,
         }),
@@ -269,14 +293,29 @@ export default function EditMeetingPage() {
           <label className="block text-sm font-semibold text-gray-700 mb-2">
             장소 <span className="text-red-500">*</span>
           </label>
-          <input
-            type="text"
-            name="placeName"
-            value={formData.placeName}
-            onChange={handleInputChange}
-            placeholder="예: 서울숲 잔디광장"
-            className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-          />
+          <button
+            type="button"
+            onClick={() => setShowAddressSearch(true)}
+            className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-left focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+          >
+            {selectedPlace ? (
+              <span className="text-gray-900">{selectedPlace.placeName}</span>
+            ) : (
+              <span className="text-gray-400">장소를 검색하세요</span>
+            )}
+          </button>
+
+          {/* 선택된 장소 정보 및 지도 미리보기 */}
+          {selectedPlace && (
+            <div className="mt-3 space-y-3">
+              <p className="text-sm text-gray-500">{selectedPlace.address}</p>
+              <KakaoMap
+                latitude={selectedPlace.latitude}
+                longitude={selectedPlace.longitude}
+                placeName={selectedPlace.placeName}
+              />
+            </div>
+          )}
         </div>
 
         {/* 모집 인원 */}
@@ -347,6 +386,14 @@ export default function EditMeetingPage() {
           </button>
         </div>
       </form>
+
+      {/* 주소 검색 모달 */}
+      {showAddressSearch && (
+        <AddressSearch
+          onSelect={handlePlaceSelect}
+          onCancel={() => setShowAddressSearch(false)}
+        />
+      )}
     </div>
   )
 }
