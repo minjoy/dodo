@@ -899,6 +899,26 @@ function MeetingDetailContent() {
               모임 설정
             </button>
           )}
+
+          {/* 참가자용 참여 취소 버튼 (스크롤 영역 내) */}
+          {!isHost && isParticipant && !isPlaying && meeting.status !== 'COMPLETED' && (
+            <button
+              onClick={handleLeave}
+              disabled={isJoining}
+              className="w-full mt-4 py-3 px-4 rounded-xl font-medium text-gray-500 hover:text-red-500 hover:bg-red-50 transition-all flex items-center justify-center gap-2"
+            >
+              {isJoining ? (
+                '처리 중...'
+              ) : (
+                <>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                  참여 취소
+                </>
+              )}
+            </button>
+          )}
         </div>
       </div>
 
@@ -980,26 +1000,13 @@ function MeetingDetailContent() {
           )
         ) : isParticipant ? (
           <button
-            onClick={handleLeave}
-            disabled={isJoining}
-            className="w-full py-4 px-6 rounded-2xl font-bold text-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all flex items-center justify-center gap-2"
+            onClick={() => setShowShareModal(true)}
+            className="w-full py-4 px-6 rounded-2xl font-bold text-lg bg-gradient-to-r from-primary to-primary-dark text-white shadow-lg shadow-primary/30 hover:shadow-xl transition-all flex items-center justify-center gap-2"
           >
-            {isJoining ? (
-              <>
-                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
-                처리 중...
-              </>
-            ) : (
-              <>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-                참여 취소
-              </>
-            )}
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+            </svg>
+            친구 초대하기
           </button>
         ) : canJoin ? (
           <button
