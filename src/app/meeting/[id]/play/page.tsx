@@ -165,6 +165,19 @@ export default function GamePlayPage() {
     setTimeout(() => setIsRefreshing(false), 300)
   }
 
+  // 게임 플레이 페이지에서는 5초마다 자동 폴링 (레디 상태, 게임 상태 반영)
+  useEffect(() => {
+    if (!meeting) return
+
+    const isActiveStatus = ['READY', 'PLAYING'].includes(meeting.status)
+    if (isActiveStatus) {
+      const interval = setInterval(() => {
+        fetchMeeting()
+      }, 5000)
+      return () => clearInterval(interval)
+    }
+  }, [meeting?.status, fetchMeeting])
+
   useEffect(() => {
     if (meeting) {
       checkLocation()

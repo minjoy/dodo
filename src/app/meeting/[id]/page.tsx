@@ -91,6 +91,26 @@ function MeetingDetailContent() {
     setTimeout(() => setIsRefreshing(false), 300)
   }
 
+  // 모임 시작 1시간 전부터 5초마다 자동 폴링 (참여자 변경, 모임 시작/종료 상태 반영)
+  useEffect(() => {
+    if (!meeting) return
+
+    const meetingDate = new Date(meeting.meetingDate)
+    const oneHourBefore = new Date(meetingDate.getTime() - 60 * 60 * 1000)
+    const now = new Date()
+
+    // 활성 상태이고 모임 1시간 전부터만 폴링
+    const isActiveStatus = ['RECRUITING', 'CLOSED', 'READY', 'PLAYING'].includes(meeting.status)
+    const isWithinPollingWindow = now >= oneHourBefore
+
+    if (isActiveStatus && isWithinPollingWindow) {
+      const interval = setInterval(() => {
+        fetchMeeting()
+      }, 5000)
+      return () => clearInterval(interval)
+    }
+  }, [meeting?.status, meeting?.meetingDate, meetingId])
+
   // 상태 변화 감지하여 토스트 표시
   useEffect(() => {
     if (meeting && prevStatus && prevStatus !== meeting.status) {
