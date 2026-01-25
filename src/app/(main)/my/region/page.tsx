@@ -36,7 +36,7 @@ export default function RegionChangePage() {
     setIsLoading(true)
     try {
       const res = await fetch('/api/users/me', {
-        method: 'PATCH',
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ region: selectedRegion }),
       })
