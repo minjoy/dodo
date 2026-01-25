@@ -284,7 +284,7 @@ enum ReportStatus {
 model PushSubscription {
   id          String    @id @default(cuid())
 
-  endpoint    String    @unique @db.Text
+  endpoint    String    @unique @db.VarChar(500)
   p256dh      String    @db.Text
   auth        String    @db.Text
 
