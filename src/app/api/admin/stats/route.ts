@@ -69,6 +69,12 @@ export async function GET() {
       orderBy: { level: 'asc' },
     })
 
+    // 연령대별 사용자 분포
+    const usersByAgeRange = await prisma.user.groupBy({
+      by: ['ageRange'],
+      _count: { id: true },
+    })
+
     // 게임 타입별 모임 수
     const meetingsByGameType = await prisma.meeting.groupBy({
       by: ['gameType'],
@@ -85,6 +91,7 @@ export async function GET() {
         region: true,
         level: true,
         exp: true,
+        ageRange: true,
         createdAt: true,
       },
     })
@@ -171,6 +178,7 @@ export async function GET() {
         today: todayUsers,
         thisWeek: weekUsers,
         byLevel: usersByLevel,
+        byAgeRange: usersByAgeRange,
         recent: recentUsers,
         dailySignups,
       },

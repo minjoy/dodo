@@ -9,12 +9,14 @@ interface Stats {
     today: number
     thisWeek: number
     byLevel: { level: number; _count: { id: number } }[]
+    byAgeRange: { ageRange: string | null; _count: { id: number } }[]
     recent: {
       id: string
       nickname: string
       region: string
       level: number
       exp: number
+      ageRange: string | null
       createdAt: string
     }[]
     dailySignups: { date: string; count: number }[]
@@ -271,7 +273,7 @@ export default function AdminPage() {
             </div>
 
             {/* 분포 */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {/* 레벨별 사용자 */}
               <div className="bg-gray-800 rounded-2xl p-5">
                 <h3 className="text-lg font-bold mb-4">레벨별 사용자</h3>
@@ -282,6 +284,21 @@ export default function AdminPage() {
                       <span className="font-medium">{item._count.id}명</span>
                     </div>
                   ))}
+                </div>
+              </div>
+
+              {/* 연령대별 사용자 */}
+              <div className="bg-gray-800 rounded-2xl p-5">
+                <h3 className="text-lg font-bold mb-4">연령대별 사용자</h3>
+                <div className="space-y-2">
+                  {stats.users.byAgeRange
+                    .sort((a, b) => (a.ageRange || '').localeCompare(b.ageRange || ''))
+                    .map((item) => (
+                      <div key={item.ageRange || 'unknown'} className="flex items-center justify-between">
+                        <span className="text-gray-400">{item.ageRange || '미제공'}</span>
+                        <span className="font-medium">{item._count.id}명</span>
+                      </div>
+                    ))}
                 </div>
               </div>
 
@@ -340,6 +357,7 @@ export default function AdminPage() {
                     <tr className="text-left text-gray-400 text-sm border-b border-gray-700">
                       <th className="pb-3">닉네임</th>
                       <th className="pb-3">지역</th>
+                      <th className="pb-3">연령대</th>
                       <th className="pb-3">레벨</th>
                       <th className="pb-3">경험치</th>
                       <th className="pb-3">가입일</th>
@@ -350,6 +368,7 @@ export default function AdminPage() {
                       <tr key={user.id} className="border-b border-gray-700/50">
                         <td className="py-3 font-medium">{user.nickname}</td>
                         <td className="py-3 text-gray-400">{user.region}</td>
+                        <td className="py-3 text-gray-400">{user.ageRange || '-'}</td>
                         <td className="py-3">Lv.{user.level}</td>
                         <td className="py-3 text-gray-400">{user.exp} EXP</td>
                         <td className="py-3 text-gray-400">

@@ -17,6 +17,7 @@ model User {
   nickname      String    @unique
   profileImage  String?   @db.Text
   bio           String?   @db.Text
+  ageRange      String?   // 카카오 연령대 (예: "20~29")
 
   // 동네 정보
   region        String    // 예: "성수동"
