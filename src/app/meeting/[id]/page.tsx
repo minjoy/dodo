@@ -45,10 +45,13 @@ function MeetingDetailContent() {
 
   const meetingId = params.id as string
   const joinedFromInvite = searchParams.get('joined') === 'true'
+  const fromInviteLink = searchParams.get('fromInvite') === 'true'
+  const [showToast, setShowToast] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
 
-  // 초대링크로 참여한 경우 뒤로가기 시 홈으로 이동
+  // 초대링크로 참여한 경우 또는 링크에서 바로 이동한 경우 뒤로가기 시 홈으로 이동
   useEffect(() => {
-    if (joinedFromInvite) {
+    if (joinedFromInvite || fromInviteLink) {
       window.history.pushState(null, '', window.location.href)
 
       const handlePopState = () => {
@@ -58,7 +61,7 @@ function MeetingDetailContent() {
       window.addEventListener('popstate', handlePopState)
       return () => window.removeEventListener('popstate', handlePopState)
     }
-  }, [joinedFromInvite, router])
+  }, [joinedFromInvite, fromInviteLink, router])
 
   useEffect(() => {
     fetchMeeting()
@@ -101,6 +104,9 @@ function MeetingDetailContent() {
         method: 'POST',
       })
       if (res.ok) {
+        setToastMessage('모임에 참여했습니다!')
+        setShowToast(true)
+        setTimeout(() => setShowToast(false), 3000)
         fetchMeeting()
       }
     } catch (error) {
@@ -819,6 +825,16 @@ function MeetingDetailContent() {
             >
               닫기
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* 토스트 메시지 */}
+      {showToast && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
+          <div className="bg-gray-900 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2">
+            <span className="text-lg">🎉</span>
+            <span className="font-medium">{toastMessage}</span>
           </div>
         </div>
       )}

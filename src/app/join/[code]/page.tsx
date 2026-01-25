@@ -70,7 +70,7 @@ export default function JoinPage({ params }: { params: Promise<{ code: string }>
 
         // 이미 참가자이거나 호스트면 모임 상세 페이지로 이동
         if (data.isHost || data.isParticipant) {
-          router.replace(`/meeting/${data.id}`)
+          router.replace(`/meeting/${data.id}?fromInvite=true`)
           return
         }
       } else {
