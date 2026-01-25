@@ -34,6 +34,7 @@ interface UserProfile {
   createdAt: string
   badges: UserBadge[]
   representativeBadge: Badge | null
+  representativeBadge2: Badge | null
 }
 
 const LEVEL_COLORS = {
@@ -198,9 +199,18 @@ export default function ProfilePage() {
                     fallback={profile.nickname}
                   />
                 </div>
-                {profile.representativeBadge && (
-                  <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg">
-                    <span className="text-xl">{profile.representativeBadge.icon}</span>
+                {(profile.representativeBadge || profile.representativeBadge2) && (
+                  <div className="absolute -bottom-2 -right-2 bg-white rounded-xl flex items-center gap-0.5 px-1.5 py-1 shadow-lg">
+                    {profile.representativeBadge && (
+                      <span className="text-lg" title={profile.representativeBadge.name}>
+                        {profile.representativeBadge.icon}
+                      </span>
+                    )}
+                    {profile.representativeBadge2 && (
+                      <span className="text-lg" title={profile.representativeBadge2.name}>
+                        {profile.representativeBadge2.icon}
+                      </span>
+                    )}
                   </div>
                 )}
               </div>

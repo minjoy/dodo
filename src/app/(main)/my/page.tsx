@@ -14,6 +14,21 @@ type MeetingWithDetails = Meeting & {
   _count: { participants: number }
 }
 
+interface BadgeType {
+  id: string
+  code: string
+  name: string
+  description: string
+  icon: string
+  category: string
+}
+
+interface UserBadge {
+  id: string
+  earnedAt: string
+  badge: BadgeType
+}
+
 const LEVEL_COLORS = {
   1: 'from-green-400 to-emerald-500',
   2: 'from-blue-400 to-indigo-500',
@@ -41,6 +56,10 @@ export default function MyPage() {
   const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming')
   const [isLoading, setIsLoading] = useState(true)
   const [showLevelModal, setShowLevelModal] = useState(false)
+  const [showBadgeModal, setShowBadgeModal] = useState(false)
+  const [userBadges, setUserBadges] = useState<UserBadge[]>([])
+  const [selectedBadges, setSelectedBadges] = useState<BadgeType[]>([])
+  const [isSavingBadge, setIsSavingBadge] = useState(false)
 
   useEffect(() => {
     fetchUserData()
@@ -48,14 +67,23 @@ export default function MyPage() {
 
   const fetchUserData = async () => {
     try {
-      const [userRes, meetingsRes] = await Promise.all([
+      const [userRes, meetingsRes, badgesRes] = await Promise.all([
         fetch('/api/users/me'),
         fetch('/api/users/me/meetings'),
+        fetch('/api/users/me/badges'),
       ])
 
       if (userRes.ok) {
         const userData = await userRes.json()
         setUser(userData)
+        const badges: BadgeType[] = []
+        if (userData.representativeBadge) {
+          badges.push(userData.representativeBadge)
+        }
+        if (userData.representativeBadge2) {
+          badges.push(userData.representativeBadge2)
+        }
+        setSelectedBadges(badges)
       }
 
       if (meetingsRes.ok) {
@@ -68,11 +96,56 @@ export default function MyPage() {
           meetingsData.filter((m: MeetingWithDetails) => new Date(m.meetingDate) < now)
         )
       }
+
+      if (badgesRes.ok) {
+        const badgesData = await badgesRes.json()
+        setUserBadges(badgesData)
+      }
     } catch (error) {
       console.error('Failed to fetch user data:', error)
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleToggleBadge = (badge: BadgeType) => {
+    setSelectedBadges((prev) => {
+      const isSelected = prev.some((b) => b.id === badge.id)
+      if (isSelected) {
+        // 이미 선택된 경우 제거
+        return prev.filter((b) => b.id !== badge.id)
+      } else if (prev.length < 2) {
+        // 2개 미만이면 추가
+        return [...prev, badge]
+      }
+      // 2개 이상이면 첫 번째를 제거하고 새로 추가
+      return [prev[1], badge]
+    })
+  }
+
+  const handleSaveBadges = async () => {
+    setIsSavingBadge(true)
+    try {
+      const res = await fetch('/api/users/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          representativeBadgeIds: selectedBadges.map((b) => b.id),
+        }),
+      })
+
+      if (res.ok) {
+        setShowBadgeModal(false)
+      }
+    } catch (error) {
+      console.error('Failed to update representative badges:', error)
+    } finally {
+      setIsSavingBadge(false)
+    }
+  }
+
+  const handleClearBadges = () => {
+    setSelectedBadges([])
   }
 
   const handleSignOut = () => {
@@ -140,6 +213,20 @@ export default function MyPage() {
           {/* 배경 장식 */}
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
+
+          {/* 대표 뱃지 버튼 - 우상단 */}
+          <button
+            onClick={() => setShowBadgeModal(true)}
+            className="absolute top-4 right-4 z-10 bg-white/20 backdrop-blur-sm rounded-xl p-2 hover:bg-white/30 transition-colors flex items-center gap-1"
+          >
+            {selectedBadges.length > 0 ? (
+              selectedBadges.map((badge) => (
+                <span key={badge.id} className="text-2xl">{badge.icon}</span>
+              ))
+            ) : (
+              <span className="text-xl opacity-70">🏅</span>
+            )}
+          </button>
 
           <div className="relative">
             <div className="flex items-center gap-4 mb-6">
@@ -413,6 +500,140 @@ export default function MyPage() {
                 </ul>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 대표 뱃지 선택 모달 */}
+      {showBadgeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-3xl w-full max-w-sm max-h-[85vh] flex flex-col overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
+              <h3 className="text-lg font-bold text-gray-900">대표 뱃지 선택</h3>
+              <button
+                onClick={() => setShowBadgeModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-full"
+              >
+                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-5 overflow-y-auto flex-1">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm text-gray-500">
+                  최대 2개까지 선택할 수 있어요
+                </p>
+                <span className="text-sm font-medium text-primary">
+                  {selectedBadges.length}/2
+                </span>
+              </div>
+
+              {/* 선택된 뱃지 미리보기 */}
+              {selectedBadges.length > 0 && (
+                <div className="flex items-center gap-2 mb-4 p-3 bg-primary/5 rounded-xl">
+                  <span className="text-sm text-gray-600">선택됨:</span>
+                  <div className="flex gap-2">
+                    {selectedBadges.map((badge) => (
+                      <div
+                        key={badge.id}
+                        className="flex items-center gap-1 bg-white px-2 py-1 rounded-lg shadow-sm"
+                      >
+                        <span className="text-lg">{badge.icon}</span>
+                        <span className="text-xs font-medium text-gray-700">{badge.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {userBadges.length > 0 ? (
+                <div className="space-y-2">
+                  {/* 선택 초기화 옵션 */}
+                  <button
+                    onClick={handleClearBadges}
+                    disabled={isSavingBadge || selectedBadges.length === 0}
+                    className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${
+                      selectedBadges.length === 0
+                        ? 'border-primary bg-primary/5'
+                        : 'border-gray-100 hover:border-gray-200'
+                    }`}
+                  >
+                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                      <span className="text-2xl opacity-40">🏅</span>
+                    </div>
+                    <div className="flex-1 text-left">
+                      <span className="font-medium text-gray-600">선택 안함</span>
+                      <p className="text-xs text-gray-400">대표 뱃지를 표시하지 않습니다</p>
+                    </div>
+                    {selectedBadges.length === 0 && (
+                      <svg className="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                  </button>
+
+                  {/* 획득한 뱃지 목록 */}
+                  {userBadges.map((userBadge) => {
+                    const isSelected = selectedBadges.some((b) => b.id === userBadge.badge.id)
+                    const selectionIndex = selectedBadges.findIndex((b) => b.id === userBadge.badge.id)
+                    return (
+                      <button
+                        key={userBadge.id}
+                        onClick={() => handleToggleBadge(userBadge.badge)}
+                        disabled={isSavingBadge}
+                        className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${
+                          isSelected
+                            ? 'border-primary bg-primary/5'
+                            : 'border-gray-100 hover:border-gray-200'
+                        }`}
+                      >
+                        <div className="relative">
+                          <div className="w-12 h-12 bg-gradient-to-br from-yellow-100 to-amber-100 rounded-full flex items-center justify-center shadow-sm">
+                            <span className="text-2xl">{userBadge.badge.icon}</span>
+                          </div>
+                          {isSelected && (
+                            <div className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white rounded-full flex items-center justify-center text-xs font-bold">
+                              {selectionIndex + 1}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 text-left">
+                          <span className="font-bold text-gray-900">{userBadge.badge.name}</span>
+                          <p className="text-xs text-gray-500">{userBadge.badge.description}</p>
+                        </div>
+                        {isSelected && (
+                          <svg className="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="text-3xl opacity-50">🏅</span>
+                  </div>
+                  <p className="text-gray-500 font-medium">아직 획득한 뱃지가 없어요</p>
+                  <p className="text-sm text-gray-400 mt-1">모임에 참여하여 뱃지를 모아보세요!</p>
+                </div>
+              )}
+            </div>
+
+            {/* 저장 버튼 */}
+            {userBadges.length > 0 && (
+              <div className="px-5 py-4 border-t border-gray-100 flex-shrink-0">
+                <button
+                  onClick={handleSaveBadges}
+                  disabled={isSavingBadge}
+                  className="w-full py-3 bg-primary text-white font-bold rounded-xl disabled:bg-gray-300 transition-colors"
+                >
+                  {isSavingBadge ? '저장 중...' : '저장하기'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

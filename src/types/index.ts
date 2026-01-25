@@ -1,6 +1,6 @@
 export type GameType = 'GYEONGDO' | 'SULRAE' | 'MUGUNGHWA' | 'PIGU' | 'OTHER'
 
-export type MeetingStatus = 'RECRUITING' | 'FULL' | 'ONGOING' | 'COMPLETED' | 'CANCELLED'
+export type MeetingStatus = 'RECRUITING' | 'CLOSED' | 'READY' | 'PLAYING' | 'COMPLETED' | 'CANCELLED'
 
 export type ParticipantStatus = 'PENDING' | 'CONFIRMED' | 'ATTENDED' | 'NOSHOW' | 'CANCELLED'
 
@@ -19,6 +19,10 @@ export interface User {
   hostCount: number
   likeReceived: number
   noShowCount: number
+  representativeBadgeId?: string | null
+  representativeBadge?: Badge | null
+  representativeBadge2Id?: string | null
+  representativeBadge2?: Badge | null
   createdAt: Date
   updatedAt: Date
 }

@@ -33,6 +33,7 @@ export async function GET(
           },
         },
         representativeBadge: true,
+        representativeBadge2: true,
       },
     })
 

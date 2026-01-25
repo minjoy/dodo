@@ -32,9 +32,11 @@ model User {
   likeReceived  Int       @default(0)  // 받은 좋아요
   noShowCount   Int       @default(0)  // 노쇼 횟수
 
-  // 대표 뱃지
-  representativeBadgeId String?
-  representativeBadge   Badge?    @relation("RepresentativeBadge", fields: [representativeBadgeId], references: [id])
+  // 대표 뱃지 (최대 2개)
+  representativeBadgeId  String?
+  representativeBadge    Badge?    @relation("RepresentativeBadge1", fields: [representativeBadgeId], references: [id])
+  representativeBadge2Id String?
+  representativeBadge2   Badge?    @relation("RepresentativeBadge2", fields: [representativeBadge2Id], references: [id])
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -216,8 +218,9 @@ model Badge {
   icon        String
   category    String    @default("general")  // general, meeting, host, social
 
-  userBadges        UserBadge[]
-  representedBy     User[]      @relation("RepresentativeBadge")
+  userBadges         UserBadge[]
+  representedBy1     User[]      @relation("RepresentativeBadge1")
+  representedBy2     User[]      @relation("RepresentativeBadge2")
 }
 
 // 사용자 배지 (획득)

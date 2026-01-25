@@ -25,6 +25,8 @@ export async function GET(
             meetingCount: true,
             hostCount: true,
             likeReceived: true,
+            representativeBadge: true,
+            representativeBadge2: true,
           },
         },
         participants: {
@@ -40,6 +42,8 @@ export async function GET(
                 nickname: true,
                 profileImage: true,
                 level: true,
+                representativeBadge: true,
+                representativeBadge2: true,
               },
             },
           },

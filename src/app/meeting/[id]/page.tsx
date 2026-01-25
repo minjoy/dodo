@@ -279,6 +279,16 @@ export default function MeetingDetailPage() {
                   <span className="font-bold text-gray-900 text-lg">
                     {meeting.host.nickname}
                   </span>
+                  {meeting.host.representativeBadge && (
+                    <span className="text-lg" title={meeting.host.representativeBadge.name}>
+                      {meeting.host.representativeBadge.icon}
+                    </span>
+                  )}
+                  {meeting.host.representativeBadge2 && (
+                    <span className="text-lg" title={meeting.host.representativeBadge2.name}>
+                      {meeting.host.representativeBadge2.icon}
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center gap-3 text-sm text-gray-500 mt-1">
                   <span className="flex items-center gap-1">
@@ -373,6 +383,16 @@ export default function MeetingDetailPage() {
                     <span className="text-sm font-medium text-gray-700">
                       {participant.user.nickname}
                     </span>
+                    {participant.user.representativeBadge && (
+                      <span className="text-sm" title={participant.user.representativeBadge.name}>
+                        {participant.user.representativeBadge.icon}
+                      </span>
+                    )}
+                    {participant.user.representativeBadge2 && (
+                      <span className="text-sm" title={participant.user.representativeBadge2.name}>
+                        {participant.user.representativeBadge2.icon}
+                      </span>
+                    )}
                     <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded font-semibold">
                       Lv.{participant.user.level}
                     </span>
