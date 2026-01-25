@@ -130,7 +130,8 @@ export async function PUT(
       const allUserIds = [meeting.hostId, ...participantIds]
 
       // 참여자들 상태를 ATTENDED로 변경하고 meetingCount, exp 증가
-      await prisma.$transaction(async (tx: typeof prisma) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await prisma.$transaction(async (tx: any) => {
         // 참여 상태 업데이트
         await tx.participant.updateMany({
           where: {
@@ -203,7 +204,8 @@ export async function DELETE(
     }
 
     // 트랜잭션으로 모임 삭제 및 hostCount 차감
-    await prisma.$transaction(async (tx: typeof prisma) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await prisma.$transaction(async (tx: any) => {
       // 모임 삭제
       await tx.meeting.delete({
         where: { id },
