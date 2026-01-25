@@ -16,9 +16,14 @@ export async function GET(request: NextRequest) {
     const offset = parseInt(searchParams.get('offset') || '0')
 
     const where: Record<string, unknown> = {}
+    const excludeRegion = searchParams.get('excludeRegion')
 
     if (region) {
       where.region = region
+    }
+    // 특정 지역 제외 (다른 동네 모임 조회용)
+    if (excludeRegion) {
+      where.region = { not: excludeRegion }
     }
     if (status) {
       where.status = status

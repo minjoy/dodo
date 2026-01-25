@@ -34,6 +34,8 @@ export default function HomePage() {
   const { data: session } = useSession()
   const router = useRouter()
   const [meetings, setMeetings] = useState<MeetingWithDetails[]>([])
+  const [otherRegionMeetings, setOtherRegionMeetings] = useState<MeetingWithDetails[]>([])
+  const [hasNoLocalMeetings, setHasNoLocalMeetings] = useState(false)
   const [selectedGameType, setSelectedGameType] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [showCodeInput, setShowCodeInput] = useState(false)
@@ -93,6 +95,9 @@ export default function HomePage() {
     if (!session?.user?.region) return
 
     setIsLoading(true)
+    setHasNoLocalMeetings(false)
+    setOtherRegionMeetings([])
+
     try {
       const params = new URLSearchParams({
         region: session.user.region,
@@ -106,6 +111,24 @@ export default function HomePage() {
       if (res.ok) {
         const data = await res.json()
         setMeetings(data)
+
+        // 내 동네에 모임이 없으면 다른 동네 모임 조회
+        if (data.length === 0) {
+          setHasNoLocalMeetings(true)
+          const otherParams = new URLSearchParams({
+            excludeRegion: session.user.region,
+            status: 'RECRUITING',
+          })
+          if (selectedGameType) {
+            otherParams.append('gameType', selectedGameType)
+          }
+
+          const otherRes = await fetch(`/api/meetings?${otherParams}`)
+          if (otherRes.ok) {
+            const otherData = await otherRes.json()
+            setOtherRegionMeetings(otherData)
+          }
+        }
       }
     } catch (error) {
       console.error('Failed to fetch meetings:', error)
@@ -171,7 +194,7 @@ export default function HomePage() {
           <div className="flex justify-center py-12">
             <div className="w-8 h-8 border-3 border-gray-200 border-t-primary rounded-full animate-spin" />
           </div>
-        ) : meetings.length === 0 ? (
+        ) : meetings.length === 0 && otherRegionMeetings.length === 0 ? (
           <div className="text-center py-16">
             <div className="text-6xl mb-4">🎮</div>
             <h2 className="text-xl font-bold text-gray-900 mb-2">
@@ -191,16 +214,50 @@ export default function HomePage() {
             </Link>
           </div>
         ) : (
-          <div className="space-y-3">
-            {meetings.map((meeting) => (
-              <MeetingCard key={meeting.id} meeting={meeting} />
-            ))}
+          <div className="space-y-4">
+            {/* 내 동네에 모임이 없을 때 메시지 */}
+            {hasNoLocalMeetings && (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">📍</span>
+                  <div>
+                    <p className="font-semibold text-amber-800">
+                      이 동네에 아직 모임이 없습니다
+                    </p>
+                    <p className="text-sm text-amber-600 mt-1">
+                      다른 동네의 모임을 확인해보세요!
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 내 동네 모임 */}
+            {meetings.length > 0 && (
+              <div className="space-y-3">
+                {meetings.map((meeting) => (
+                  <MeetingCard key={meeting.id} meeting={meeting} />
+                ))}
+              </div>
+            )}
+
+            {/* 다른 동네 모임 */}
+            {otherRegionMeetings.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-gray-500 px-1">
+                  다른 동네 모임
+                </h3>
+                {otherRegionMeetings.map((meeting) => (
+                  <MeetingCard key={meeting.id} meeting={meeting} />
+                ))}
+              </div>
+            )}
           </div>
         )}
       </main>
 
       {/* 플로팅 버튼 - 더 크고 명확하게 */}
-      {meetings.length > 0 && (
+      {(meetings.length > 0 || otherRegionMeetings.length > 0) && (
         <Link
           href="/create"
           className="fixed bottom-24 right-4 w-14 h-14 bg-primary text-white rounded-full shadow-lg flex items-center justify-center active:scale-95 transition-transform z-50"

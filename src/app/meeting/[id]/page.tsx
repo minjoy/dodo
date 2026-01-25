@@ -170,7 +170,9 @@ function MeetingDetailContent() {
   const isParticipant = meeting.participants.some(
     (p) => p.userId === session?.user?.id && p.status !== 'CANCELLED'
   )
-  const isFull = meeting._count.participants >= meeting.maxParticipants
+  // 참여자 수에 호스트 포함 (+1)
+  const totalParticipants = meeting._count.participants + 1
+  const isFull = totalParticipants >= meeting.maxParticipants
   const canJoin =
     meeting.status === 'RECRUITING' &&
     !isHost &&
@@ -178,7 +180,7 @@ function MeetingDetailContent() {
     !isFull &&
     (session?.user?.level || 1) >= meeting.minLevel
 
-  const participationRate = (meeting._count.participants / meeting.maxParticipants) * 100
+  const participationRate = (totalParticipants / meeting.maxParticipants) * 100
   const hostLevel = meeting.host.level as 1 | 2 | 3 | 4 | 5
 
   return (
@@ -385,7 +387,7 @@ function MeetingDetailContent() {
               <span className={`text-sm font-bold px-3 py-1 rounded-lg ${
                 isFull ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-600'
               }`}>
-                {meeting._count.participants}/{meeting.maxParticipants}명
+                {totalParticipants}/{meeting.maxParticipants}명
               </span>
             </div>
 
@@ -447,13 +449,13 @@ function MeetingDetailContent() {
                     </button>
                   )
                 })}
-              {meeting._count.participants < meeting.maxParticipants && (
+              {totalParticipants < meeting.maxParticipants && (
                 <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-4 py-2 border-2 border-dashed border-gray-200">
                   <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
                   <span className="text-sm text-gray-400 font-medium">
-                    {meeting.maxParticipants - meeting._count.participants}자리 남음
+                    {meeting.maxParticipants - totalParticipants}자리 남음
                   </span>
                 </div>
               )}
