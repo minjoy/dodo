@@ -126,9 +126,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (maxParticipants < 4 || maxParticipants > 20) {
+    if (maxParticipants < 2 || maxParticipants > 20) {
       return NextResponse.json(
-        { message: '모집 인원은 4~20명 사이여야 합니다' },
+        { message: '모집 인원은 2~20명 사이여야 합니다' },
         { status: 400 }
       )
     }

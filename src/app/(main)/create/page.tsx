@@ -222,7 +222,7 @@ export default function CreateMeetingPage() {
           <div className="flex items-center gap-4">
             <button
               type="button"
-              onClick={() => setFormData(prev => ({ ...prev, maxParticipants: Math.max(4, prev.maxParticipants - 1) }))}
+              onClick={() => setFormData(prev => ({ ...prev, maxParticipants: Math.max(2, prev.maxParticipants - 1) }))}
               className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center text-gray-600 active:bg-gray-200"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
