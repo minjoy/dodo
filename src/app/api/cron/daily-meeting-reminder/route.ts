@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
             lt: tomorrow,
           },
           status: {
-            in: ['RECRUITING', 'CONFIRMED'],
+            in: ['RECRUITING', 'CLOSED', 'READY'],
           },
         },
       },
