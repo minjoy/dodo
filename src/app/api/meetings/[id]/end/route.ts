@@ -42,7 +42,7 @@ export async function POST(
     }
 
     // 모임 상태를 COMPLETED로 변경하고 참여자들 처리
-    const participantIds = meeting.participants.map((p) => p.userId)
+    const participantIds = meeting.participants.map((p: { userId: string }) => p.userId)
     const allUserIds = [meeting.hostId, ...participantIds]
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

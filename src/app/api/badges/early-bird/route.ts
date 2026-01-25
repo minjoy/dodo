@@ -34,7 +34,7 @@ export async function POST() {
     }
 
     // 이미 얼리버드 뱃지가 있으면 스킵
-    const hasEarlyBird = user.badges.some((ub) => ub.badge.code === 'EARLY_BIRD')
+    const hasEarlyBird = user.badges.some((ub: { badge: { code: string } }) => ub.badge.code === 'EARLY_BIRD')
     if (hasEarlyBird) {
       // 열람 플래그만 업데이트
       await prisma.user.update({

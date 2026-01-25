@@ -3,6 +3,17 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
+interface MeetingParticipant {
+  userId: string
+}
+
+interface MeetingData {
+  id: string
+  hostId: string
+  status: string
+  participants: MeetingParticipant[]
+}
+
 // GET /api/users/me/meetings - 내 모임 목록
 export async function GET(request: NextRequest) {
   try {
@@ -116,7 +127,7 @@ export async function GET(request: NextRequest) {
 
       // 모임별 내가 평가한 사용자 맵 생성
       const reviewedMap = new Map<string, Set<string>>()
-      myReviews.forEach((review) => {
+      myReviews.forEach((review: { meetingId: string; revieweeId: string }) => {
         if (!reviewedMap.has(review.meetingId)) {
           reviewedMap.set(review.meetingId, new Set())
         }
@@ -124,18 +135,18 @@ export async function GET(request: NextRequest) {
       })
 
       // 미평가 여부 추가
-      const meetingsWithUnreviewed = meetings.map((meeting) => {
+      const meetingsWithUnreviewed = meetings.map((meeting: MeetingData) => {
         const reviewedUsers = reviewedMap.get(meeting.id) || new Set()
 
         // 평가 대상: 참여자 + 호스트 (나 제외)
         const targetUsers = [
-          ...meeting.participants.map(p => p.userId),
+          ...meeting.participants.map((p: MeetingParticipant) => p.userId),
           meeting.hostId,
-        ].filter(id => id !== userId)
+        ].filter((id: string) => id !== userId)
 
         // 미평가 사용자가 있는지 확인
         const hasUnreviewed = meeting.status === 'COMPLETED' &&
-          targetUsers.some(targetId => !reviewedUsers.has(targetId))
+          targetUsers.some((targetId: string) => !reviewedUsers.has(targetId))
 
         // participants 상세 정보 제거 (응답 크기 줄이기)
         const { participants, ...rest } = meeting
@@ -149,7 +160,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 일반 조회 시 participants 상세 정보 제거
-    const cleanMeetings = meetings.map(({ participants, ...rest }) => rest)
+    const cleanMeetings = meetings.map(({ participants, ...rest }: MeetingData) => rest)
     return NextResponse.json(cleanMeetings)
   } catch (error) {
     console.error('Failed to fetch user meetings:', error)

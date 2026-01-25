@@ -69,7 +69,7 @@ export async function POST(
     }
 
     // 모든 참여자가 레디했는지 체크 (호스트 제외한 참여자 중)
-    const notReadyParticipants = meeting.participants.filter(p => !p.isReady)
+    const notReadyParticipants = meeting.participants.filter((p: { isReady: boolean }) => !p.isReady)
     if (notReadyParticipants.length > 0) {
       return NextResponse.json({
         message: `아직 레디하지 않은 참여자가 ${notReadyParticipants.length}명 있습니다`,

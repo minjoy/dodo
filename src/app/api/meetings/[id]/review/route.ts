@@ -54,7 +54,7 @@ export async function POST(
 
     // 평가자가 모임 참여자인지 확인 (호스트 포함)
     const isReviewerHost = meeting.hostId === session.user.id
-    const isReviewerParticipant = meeting.participants.some(p => p.userId === session.user.id)
+    const isReviewerParticipant = meeting.participants.some((p: { userId: string }) => p.userId === session.user.id)
 
     if (!isReviewerHost && !isReviewerParticipant) {
       return NextResponse.json({ message: '모임 참여자만 평가할 수 있습니다' }, { status: 403 })
@@ -62,7 +62,7 @@ export async function POST(
 
     // 평가 대상이 모임 참여자인지 확인 (호스트 포함)
     const isRevieweeHost = meeting.hostId === revieweeId
-    const isRevieweeParticipant = meeting.participants.some(p => p.userId === revieweeId)
+    const isRevieweeParticipant = meeting.participants.some((p: { userId: string }) => p.userId === revieweeId)
 
     if (!isRevieweeHost && !isRevieweeParticipant) {
       return NextResponse.json({ message: '모임 참여자만 평가할 수 있습니다' }, { status: 400 })
@@ -174,7 +174,7 @@ export async function GET(
 
     return NextResponse.json({
       receivedReviews: reviews,
-      reviewedUserIds: myReviews.map(r => r.revieweeId),
+      reviewedUserIds: myReviews.map((r: { revieweeId: string }) => r.revieweeId),
     })
   } catch (error) {
     console.error('Failed to fetch reviews:', error)

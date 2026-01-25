@@ -135,7 +135,7 @@ export async function GET(
 
       if (new Date() > autoEndTime) {
         // 자동 종료 처리
-        const participantUserIds = meeting.participants.map((p) => p.userId)
+        const participantUserIds = meeting.participants.map((p: { userId: string }) => p.userId)
         await autoEndMeeting(meeting.id, meeting.hostId, participantUserIds)
 
         // 업데이트된 모임 정보 다시 조회

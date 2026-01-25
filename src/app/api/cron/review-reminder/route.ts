@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
     const usersNotified = new Set<string>()
 
     for (const meeting of completedMeetings) {
-      const participantUserIds = meeting.participants.map((p) => p.userId)
+      const participantUserIds = meeting.participants.map((p: { userId: string }) => p.userId)
 
       // 이 모임에서 각 참여자가 평가한 리뷰 조회
       const reviews = await prisma.review.findMany({
@@ -64,10 +64,10 @@ export async function GET(request: NextRequest) {
       // 각 참여자별로 평가해야 할 대상 수와 평가 완료 수 계산
       for (const participant of meeting.participants) {
         const userId = participant.userId
-        const otherParticipants = participantUserIds.filter((id) => id !== userId)
+        const otherParticipants = participantUserIds.filter((id: string) => id !== userId)
 
         // 내가 이 모임에서 작성한 리뷰 수
-        const myReviewCount = reviews.filter((r) => r.reviewerId === userId).length
+        const myReviewCount = reviews.filter((r: { reviewerId: string }) => r.reviewerId === userId).length
 
         // 아직 평가할 사람이 남아있다면 푸시 발송
         if (myReviewCount < otherParticipants.length) {

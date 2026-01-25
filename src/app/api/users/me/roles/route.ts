@@ -3,6 +3,15 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
+interface GameRoleWithMeeting {
+  role: string
+  assignedAt: Date
+  meeting: {
+    title: string
+    gameStartedAt: Date | null
+  }
+}
+
 // GET /api/users/me/roles - 내 역할 히스토리 조회
 export async function GET() {
   try {
@@ -26,7 +35,7 @@ export async function GET() {
     })
 
     return NextResponse.json(
-      roles.map((r) => ({
+      roles.map((r: GameRoleWithMeeting) => ({
         meetingTitle: r.meeting.title,
         role: r.role,
         date: r.meeting.gameStartedAt

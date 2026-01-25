@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
 
     // 각 구독에 푸시 발송
     await Promise.all(
-      subscriptions.map(async (sub) => {
+      subscriptions.map(async (sub: { endpoint: string; p256dh: string; auth: string }) => {
         try {
           await webpush.sendNotification(
             {
