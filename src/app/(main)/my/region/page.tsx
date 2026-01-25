@@ -168,6 +168,19 @@ export default function RegionChangePage() {
             </div>
           </div>
         </div>
+
+        {/* 추후 개선 안내 */}
+        <div className="mt-4 p-4 bg-blue-50 rounded-xl border border-blue-200">
+          <div className="flex gap-3">
+            <span className="text-xl">🚀</span>
+            <div>
+              <p className="font-semibold text-blue-800">더 많은 지역이 추가될 예정이에요!</p>
+              <p className="text-sm text-blue-700 mt-1">
+                추후 더 세분화된 지역 선택이 가능하도록 개선될 예정입니다.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* 하단 버튼 */}
@@ -195,7 +208,7 @@ export default function RegionChangePage() {
             ) : selectedRegion === currentRegion ? (
               '현재 동네입니다'
             ) : (
-              '변경 적용'
+              '저장하기'
             )}
           </button>
         </div>
