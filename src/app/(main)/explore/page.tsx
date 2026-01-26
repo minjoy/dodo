@@ -237,22 +237,19 @@ export default function ExplorePage() {
                       <span className="text-gray-400 text-lg">👤</span>
                     </div>
                   )}
-                  {/* 레벨 뱃지 */}
-                  <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-primary text-white rounded-full text-xs flex items-center justify-center font-bold">
-                    {user.level}
-                  </div>
+                  {/* 대표 뱃지 (프로필 이미지 우하단) */}
+                  {user.representativeBadge && (
+                    <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-white rounded-full text-sm flex items-center justify-center border border-gray-200 shadow-sm">
+                      <span title={user.representativeBadge.name}>{user.representativeBadge.icon}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* 유저 정보 */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-gray-900 truncate">{user.nickname}</span>
-                    {user.representativeBadge && (
-                      <span title={user.representativeBadge.name}>{user.representativeBadge.icon}</span>
-                    )}
-                    {user.representativeBadge2 && (
-                      <span title={user.representativeBadge2.name}>{user.representativeBadge2.icon}</span>
-                    )}
+                    <span className="text-xs text-gray-400">Lv.{user.level}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-500">
                     <span>📍 {user.region}</span>

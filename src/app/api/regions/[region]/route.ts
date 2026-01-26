@@ -68,6 +68,13 @@ export async function GET(
         hostCount: true,
         likeReceived: true,
         createdAt: true,
+        representativeBadge: {
+          select: {
+            id: true,
+            name: true,
+            icon: true,
+          },
+        },
       },
       orderBy: [
         { meetingCount: 'desc' },
@@ -78,7 +85,7 @@ export async function GET(
     })
 
     // 주민별 이번 주 활동 점수 계산
-    const memberIds = members.map(m => m.id)
+    const memberIds = members.map((m: typeof members[number]) => m.id)
 
     // 이번 주 모임 개최
     const weeklyHostings = await prisma.meeting.groupBy({
@@ -114,16 +121,16 @@ export async function GET(
     })
 
     // 점수 계산
-    const hostingMap = new Map(weeklyHostings.map(h => [h.hostId, h._count.id]))
-    const participationMap = new Map(weeklyParticipations.map(p => [p.userId, p._count.id]))
-    const reviewMap = new Map(weeklyGoodReviews.map(r => [r.revieweeId, r._count.id]))
+    const hostingMap = new Map<string, number>(weeklyHostings.map((h: typeof weeklyHostings[number]) => [h.hostId, h._count.id]))
+    const participationMap = new Map<string, number>(weeklyParticipations.map((p: typeof weeklyParticipations[number]) => [p.userId, p._count.id]))
+    const reviewMap = new Map<string, number>(weeklyGoodReviews.map((r: typeof weeklyGoodReviews[number]) => [r.revieweeId, r._count.id]))
 
-    const rankedMembers = members.map(member => {
-      const hostCount = hostingMap.get(member.id) || 0
-      const participationCount = participationMap.get(member.id) || 0
-      const goodReviewCount = reviewMap.get(member.id) || 0
+    const rankedMembers = members.map((member: typeof members[number]) => {
+      const hostCount: number = hostingMap.get(member.id) || 0
+      const participationCount: number = participationMap.get(member.id) || 0
+      const goodReviewCount: number = reviewMap.get(member.id) || 0
 
-      const weeklyPoints =
+      const weeklyPoints: number =
         hostCount * POINTS.MEETING_HOST +
         participationCount * POINTS.MEETING_JOIN +
         goodReviewCount * POINTS.GOOD_REVIEW
@@ -134,10 +141,10 @@ export async function GET(
         weeklyHostCount: hostCount,
         weeklyParticipationCount: participationCount,
       }
-    }).sort((a, b) => b.weeklyPoints - a.weeklyPoints)
+    }).sort((a: { weeklyPoints: number }, b: { weeklyPoints: number }) => b.weeklyPoints - a.weeklyPoints)
 
     // 동네 총 주간 점수 계산
-    const regionWeeklyPoints = rankedMembers.reduce((sum, m) => sum + m.weeklyPoints, 0)
+    const regionWeeklyPoints = rankedMembers.reduce((sum: number, m: { weeklyPoints: number }) => sum + m.weeklyPoints, 0)
     const regionGrade = getGrade(regionWeeklyPoints)
     const regionGradeName = GRADE_NAMES[regionGrade]
 
@@ -183,13 +190,13 @@ export async function GET(
       stats: {
         memberCount: totalMembers,
         weeklyMeetings,
-        activeMembersThisWeek: rankedMembers.filter(m => m.weeklyPoints > 0).length,
+        activeMembersThisWeek: rankedMembers.filter((m: { weeklyPoints: number }) => m.weeklyPoints > 0).length,
         weeklyPoints: regionWeeklyPoints,
         grade: regionGrade,
         gradeName: regionGradeName,
       },
-      members: rankedMembers.map((m, i) => ({ ...m, rank: i + 1 })),
-      recentMeetings: recentMeetings.map(m => ({
+      members: rankedMembers.map((m: typeof rankedMembers[number], i: number) => ({ ...m, rank: i + 1 })),
+      recentMeetings: recentMeetings.map((m: typeof recentMeetings[number]) => ({
         ...m,
         participantCount: m._count.participants,
       })),

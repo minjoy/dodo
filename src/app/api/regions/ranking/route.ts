@@ -133,7 +133,7 @@ async function calculateRegionStats(weekStart: Date, monthStart: Date) {
   })
 
   // 참석자 3명 이상인 모임만 카운트 (호스트 포함)
-  const validHostings = completedMeetings.filter(m => m._count.participants >= 2) // 호스트 + 2명 = 3명
+  const validHostings = completedMeetings.filter((m: typeof completedMeetings[number]) => m._count.participants >= 2) // 호스트 + 2명 = 3명
 
   // ============================================
   // 2. 모임 참여 점수 (실제 참석 + 평가 완료)
@@ -163,8 +163,8 @@ async function calculateRegionStats(weekStart: Date, monthStart: Date) {
   })
 
   // 참석 + 평가 완료한 케이스만 카운트
-  const reviewerSet = new Set(reviewers.map(r => `${r.reviewerId}-${r.meetingId}`))
-  const validParticipations = attendedParticipants.filter(p =>
+  const reviewerSet = new Set(reviewers.map((r: typeof reviewers[number]) => `${r.reviewerId}-${r.meetingId}`))
+  const validParticipations = attendedParticipants.filter((p: typeof attendedParticipants[number]) =>
     reviewerSet.has(`${p.userId}-${p.meetingId}`)
   )
 
@@ -179,7 +179,7 @@ async function calculateRegionStats(weekStart: Date, monthStart: Date) {
     },
     select: { id: true },
   })
-  const experiencedUserIds = new Set(experiencedUsers.map(u => u.id))
+  const experiencedUserIds = new Set(experiencedUsers.map((u: typeof experiencedUsers[number]) => u.id))
 
   // 좋은 평가 중 경험있는 유저가 준 것만
   const validReviews = await prisma.review.findMany({
@@ -218,7 +218,7 @@ async function calculateRegionStats(weekStart: Date, monthStart: Date) {
   })
 
   // 모임 참여 이력 있는 유저만 필터
-  const shoutUserIds = [...new Set(weeklyShouts.map(s => s.userId))]
+  const shoutUserIds = [...new Set(weeklyShouts.map((s: typeof weeklyShouts[number]) => s.userId))]
   const validShoutUsers = await prisma.user.findMany({
     where: {
       id: { in: shoutUserIds },
@@ -246,7 +246,7 @@ async function calculateRegionStats(weekStart: Date, monthStart: Date) {
       }
     }
   })
-  const monthlyValidHostings = monthlyCompletedMeetings.filter(m => m._count.participants >= 2)
+  const monthlyValidHostings = monthlyCompletedMeetings.filter((m: typeof monthlyCompletedMeetings[number]) => m._count.participants >= 2)
 
   // ============================================
   // 통계 집계
@@ -262,7 +262,7 @@ async function calculateRegionStats(weekStart: Date, monthStart: Date) {
   }>()
 
   // 주민 수 초기화
-  memberCounts.forEach(m => {
+  memberCounts.forEach((m: typeof memberCounts[number]) => {
     statsMap.set(m.region, {
       region: m.region,
       weeklyPoints: 0,
@@ -276,7 +276,7 @@ async function calculateRegionStats(weekStart: Date, monthStart: Date) {
 
   // 1. 모임 개최 점수
   const hostingByRegion = new Map<string, number>()
-  validHostings.forEach(m => {
+  validHostings.forEach((m: typeof validHostings[number]) => {
     hostingByRegion.set(m.region, (hostingByRegion.get(m.region) || 0) + 1)
   })
   hostingByRegion.forEach((count, region) => {
@@ -289,7 +289,7 @@ async function calculateRegionStats(weekStart: Date, monthStart: Date) {
 
   // 2. 모임 참여 점수
   const participationByRegion = new Map<string, number>()
-  validParticipations.forEach(p => {
+  validParticipations.forEach((p: typeof validParticipations[number]) => {
     const region = p.user.region
     if (region && region !== '전체') {
       participationByRegion.set(region, (participationByRegion.get(region) || 0) + 1)
@@ -304,7 +304,7 @@ async function calculateRegionStats(weekStart: Date, monthStart: Date) {
 
   // 3. 좋은 평가 점수
   const reviewByRegion = new Map<string, number>()
-  validReviews.forEach(r => {
+  validReviews.forEach((r: typeof validReviews[number]) => {
     const region = r.reviewee.region
     if (region && region !== '전체') {
       reviewByRegion.set(region, (reviewByRegion.get(region) || 0) + 1)
@@ -319,7 +319,7 @@ async function calculateRegionStats(weekStart: Date, monthStart: Date) {
 
   // 4. 신규 가입 점수
   const newMemberByRegion = new Map<string, number>()
-  newActiveMembers.forEach(u => {
+  newActiveMembers.forEach((u: typeof newActiveMembers[number]) => {
     newMemberByRegion.set(u.region, (newMemberByRegion.get(u.region) || 0) + 1)
   })
   newMemberByRegion.forEach((count, region) => {
@@ -331,7 +331,7 @@ async function calculateRegionStats(weekStart: Date, monthStart: Date) {
 
   // 5. 떠들기 점수
   const shoutByRegion = new Map<string, number>()
-  validShoutUsers.forEach(u => {
+  validShoutUsers.forEach((u: typeof validShoutUsers[number]) => {
     if (u.region && u.region !== '전체') {
       shoutByRegion.set(u.region, (shoutByRegion.get(u.region) || 0) + 1)
     }
@@ -345,7 +345,7 @@ async function calculateRegionStats(weekStart: Date, monthStart: Date) {
 
   // 월간 점수
   const monthlyHostingByRegion = new Map<string, number>()
-  monthlyValidHostings.forEach(m => {
+  monthlyValidHostings.forEach((m: typeof monthlyValidHostings[number]) => {
     monthlyHostingByRegion.set(m.region, (monthlyHostingByRegion.get(m.region) || 0) + 1)
   })
   monthlyHostingByRegion.forEach((count, region) => {

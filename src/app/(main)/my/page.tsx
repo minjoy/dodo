@@ -95,14 +95,12 @@ export default function MyPage() {
       if (userRes.ok) {
         const userData = await userRes.json()
         setUser(userData)
-        const badges: BadgeType[] = []
+        // 대표 뱃지 1개만 선택 가능
         if (userData.representativeBadge) {
-          badges.push(userData.representativeBadge)
+          setSelectedBadges([userData.representativeBadge])
+        } else {
+          setSelectedBadges([])
         }
-        if (userData.representativeBadge2) {
-          badges.push(userData.representativeBadge2)
-        }
-        setSelectedBadges(badges)
       }
 
       if (meetingsRes.ok) {
@@ -144,13 +142,10 @@ export default function MyPage() {
       const isSelected = prev.some((b) => b.id === badge.id)
       if (isSelected) {
         // 이미 선택된 경우 제거
-        return prev.filter((b) => b.id !== badge.id)
-      } else if (prev.length < 2) {
-        // 2개 미만이면 추가
-        return [...prev, badge]
+        return []
       }
-      // 2개 이상이면 첫 번째를 제거하고 새로 추가
-      return [prev[1], badge]
+      // 선택 (1개만 가능)
+      return [badge]
     })
   }
 
@@ -564,10 +559,10 @@ export default function MyPage() {
             <div className="p-5 overflow-y-auto flex-1 overscroll-contain">
               <div className="flex items-center justify-between mb-4">
                 <p className="text-sm text-gray-500">
-                  최대 2개까지 선택할 수 있어요
+                  대표 뱃지 1개를 선택해주세요
                 </p>
                 <span className="text-sm font-medium text-primary">
-                  {selectedBadges.length}/2
+                  {selectedBadges.length}/1
                 </span>
               </div>
 
@@ -618,7 +613,6 @@ export default function MyPage() {
                   {/* 획득한 뱃지 목록 */}
                   {userBadges.map((userBadge) => {
                     const isSelected = selectedBadges.some((b) => b.id === userBadge.badge.id)
-                    const selectionIndex = selectedBadges.findIndex((b) => b.id === userBadge.badge.id)
                     return (
                       <button
                         key={userBadge.id}
@@ -635,8 +629,10 @@ export default function MyPage() {
                             <span className="text-2xl">{userBadge.badge.icon}</span>
                           </div>
                           {isSelected && (
-                            <div className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white rounded-full flex items-center justify-center text-xs font-bold">
-                              {selectionIndex + 1}
+                            <div className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white rounded-full flex items-center justify-center">
+                              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                              </svg>
                             </div>
                           )}
                         </div>

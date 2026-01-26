@@ -658,29 +658,21 @@ function MeetingDetailContent() {
                     fallback={meeting.host.nickname}
                   />
                 </div>
-                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center border border-gray-200 shadow-sm">
-                  <span className="text-sm">{LEVEL_EMOJIS[hostLevel - 1]}</span>
-                </div>
+                {/* 대표 뱃지 (프로필 이미지 우하단) */}
+                {meeting.host.representativeBadge && (
+                  <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center border border-gray-200 shadow-sm">
+                    <span className="text-sm" title={meeting.host.representativeBadge.name}>
+                      {meeting.host.representativeBadge.icon}
+                    </span>
+                  </div>
+                )}
               </div>
               <div>
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-gray-900 text-lg">
                     {meeting.host.nickname}
                   </span>
-                  {(meeting.host.representativeBadge || meeting.host.representativeBadge2) && (
-                    <div className="flex items-center gap-0.5 bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-full px-1.5 py-0.5">
-                      {meeting.host.representativeBadge && (
-                        <span className="text-sm" title={meeting.host.representativeBadge.name}>
-                          {meeting.host.representativeBadge.icon}
-                        </span>
-                      )}
-                      {meeting.host.representativeBadge2 && (
-                        <span className="text-sm" title={meeting.host.representativeBadge2.name}>
-                          {meeting.host.representativeBadge2.icon}
-                        </span>
-                      )}
-                    </div>
-                  )}
+                  <span className="text-sm text-gray-400">Lv.{hostLevel}</span>
                 </div>
                 <div className="flex items-center gap-3 text-sm text-gray-500 mt-1">
                   <span>모임 {meeting.host.meetingCount}회</span>
@@ -859,15 +851,21 @@ function MeetingDetailContent() {
                               fallback={participant.user.nickname}
                             />
                           </div>
-                          <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-white rounded-full flex items-center justify-center border border-gray-200 shadow-sm">
-                            <span className="text-xs">{LEVEL_EMOJIS[pLevel - 1]}</span>
-                          </div>
+                          {/* 대표 뱃지 (프로필 이미지 우하단) */}
+                          {participant.user.representativeBadge && (
+                            <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-white rounded-full flex items-center justify-center border border-gray-200 shadow-sm">
+                              <span className="text-xs" title={participant.user.representativeBadge.name}>
+                                {participant.user.representativeBadge.icon}
+                              </span>
+                            </div>
+                          )}
                         </div>
                         <div className="flex flex-col items-start">
                           <div className="flex items-center gap-1.5">
                             <span className="font-semibold text-gray-900">
                               {participant.user.nickname}
                             </span>
+                            <span className="text-xs text-gray-400">Lv.{pLevel}</span>
                             {isThisHost && (
                               <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded font-medium">호스트</span>
                             )}
@@ -875,17 +873,6 @@ function MeetingDetailContent() {
                               <span className="text-xs text-primary font-medium">(나)</span>
                             )}
                           </div>
-                          {/* 대표 뱃지 표시 */}
-                          {(participant.user.representativeBadge || participant.user.representativeBadge2) && (
-                            <div className="flex items-center gap-0.5 bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-full px-1.5 py-0.5 mt-0.5">
-                              {participant.user.representativeBadge && (
-                                <span className="text-xs">{participant.user.representativeBadge.icon}</span>
-                              )}
-                              {participant.user.representativeBadge2 && (
-                                <span className="text-xs">{participant.user.representativeBadge2.icon}</span>
-                              )}
-                            </div>
-                          )}
                           {/* 레디한 사람의 약속장소와의 거리 표시 */}
                           {!isCompleted && readyDistance !== null && (
                             <span className="text-xs text-green-600 mt-0.5">

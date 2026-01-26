@@ -29,6 +29,7 @@ interface MemberRanking {
   weeklyPoints: number
   meetingCount: number
   hostCount: number
+  representativeBadge?: { id: string; name: string; icon: string } | null
 }
 
 interface NearbyRanking {
@@ -386,18 +387,28 @@ export default function RankingPage() {
                         </div>
 
                         {/* 프로필 */}
-                        <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden">
-                          {member.profileImage ? (
-                            <img
-                              src={member.profileImage}
-                              alt={member.nickname}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-gray-400">
-                              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                              </svg>
+                        <div className="relative">
+                          <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden">
+                            {member.profileImage ? (
+                              <img
+                                src={member.profileImage}
+                                alt={member.nickname}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                                </svg>
+                              </div>
+                            )}
+                          </div>
+                          {/* 대표 뱃지 (프로필 이미지 우하단) */}
+                          {member.representativeBadge && (
+                            <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-white rounded-full flex items-center justify-center border border-gray-200 shadow-sm">
+                              <span className="text-xs" title={member.representativeBadge.name}>
+                                {member.representativeBadge.icon}
+                              </span>
                             </div>
                           )}
                         </div>

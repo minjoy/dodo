@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
 
     // 각 신고 대상자의 서로 다른 모임에서 받은 신고 수 계산
     const reportsWithStats = await Promise.all(
-      reports.map(async (report) => {
+      reports.map(async (report: typeof reports[number]) => {
         const uniqueMeetingReports = await prisma.report.groupBy({
           by: ['meetingId'],
           where: {

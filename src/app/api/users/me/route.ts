@@ -51,14 +51,14 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { representativeBadgeIds } = body // 배열로 받음 (최대 2개)
+    const { representativeBadgeIds } = body // 배열로 받음 (최대 1개)
 
-    // 대표 뱃지 설정 (최대 2개)
+    // 대표 뱃지 설정 (최대 1개)
     if (representativeBadgeIds !== undefined) {
       const badgeIds = Array.isArray(representativeBadgeIds) ? representativeBadgeIds : []
 
-      if (badgeIds.length > 2) {
-        return NextResponse.json({ message: '대표 뱃지는 최대 2개까지 선택 가능합니다' }, { status: 400 })
+      if (badgeIds.length > 1) {
+        return NextResponse.json({ message: '대표 뱃지는 1개만 선택 가능합니다' }, { status: 400 })
       }
 
       // 소유 여부 확인
@@ -78,7 +78,7 @@ export async function PATCH(request: NextRequest) {
         where: { id: session.user.id },
         data: {
           representativeBadgeId: badgeIds[0] || null,
-          representativeBadge2Id: badgeIds[1] || null,
+          representativeBadge2Id: null, // 두 번째 뱃지는 항상 null (1개만 가능)
         },
         include: {
           representativeBadge: true,

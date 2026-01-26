@@ -203,18 +203,11 @@ export default function ProfilePage() {
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
 
           {/* 대표 뱃지 - 우상단 */}
-          {(profile.representativeBadge || profile.representativeBadge2) && (
+          {profile.representativeBadge && (
             <div className="absolute top-4 right-4 z-10 bg-white/20 backdrop-blur-sm rounded-xl p-2 flex items-center gap-1">
-              {profile.representativeBadge && (
-                <span className="text-2xl" title={profile.representativeBadge.name}>
-                  {profile.representativeBadge.icon}
-                </span>
-              )}
-              {profile.representativeBadge2 && (
-                <span className="text-2xl" title={profile.representativeBadge2.name}>
-                  {profile.representativeBadge2.icon}
-                </span>
-              )}
+              <span className="text-2xl" title={profile.representativeBadge.name}>
+                {profile.representativeBadge.icon}
+              </span>
             </div>
           )}
 
