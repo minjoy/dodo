@@ -57,12 +57,24 @@ export async function GET(request: NextRequest) {
       take: limit,
     })
 
-    // 랭킹 정보 추가
-    const rankedUsers = users.map((user, index) => ({
+    // 점수 계산 후 정렬
+    const usersWithScore = users.map(user => ({
       ...user,
-      rank: index + 1,
       score: user.exp + user.meetingCount * 10 + user.likeReceived * 5,
-    }))
+    })).sort((a, b) => b.score - a.score)
+
+    // 랭킹 정보 추가 (동점자 처리)
+    let currentRank = 1
+    const rankedUsers = usersWithScore.map((user, index) => {
+      // 첫 번째가 아니고, 이전 항목과 점수가 다르면 순위 증가
+      if (index > 0 && usersWithScore[index - 1].score !== user.score) {
+        currentRank = index + 1
+      }
+      return {
+        ...user,
+        rank: currentRank,
+      }
+    })
 
     return NextResponse.json(rankedUsers)
   } catch (error) {

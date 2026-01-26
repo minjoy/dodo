@@ -64,16 +64,24 @@ export async function GET(request: NextRequest) {
     const sortField = period === 'monthly' ? 'monthlyPoints' : period === 'total' ? 'totalPoints' : 'weeklyPoints'
     const sortedStats = regionStats.sort((a, b) => b[sortField] - a[sortField])
 
-    // 순위 부여
-    const rankedStats = sortedStats.map((stat, index) => ({
-      ...stat,
-      rank: index + 1,
-      gradeName: GRADE_NAMES[stat.grade] || '동네마을',
-    }))
+    // 순위 부여 (동점자 처리)
+    let currentRank = 1
+    const rankedStats = sortedStats.map((stat, index) => {
+      // 첫 번째가 아니고, 이전 항목과 점수가 다르면 순위 증가
+      if (index > 0 && sortedStats[index - 1][sortField] !== stat[sortField]) {
+        currentRank = index + 1
+      }
+      return {
+        ...stat,
+        rank: currentRank,
+        gradeName: GRADE_NAMES[stat.grade] || '동네마을',
+      }
+    })
 
     // 내 동네 찾기
     const myRegion = session.user.region
-    const myRank = rankedStats.findIndex(s => s.region === myRegion) + 1
+    const myRegionStats = rankedStats.find(s => s.region === myRegion)
+    const myRank = myRegionStats?.rank || null
 
     return NextResponse.json({
       rankings: rankedStats.slice(0, limit),
