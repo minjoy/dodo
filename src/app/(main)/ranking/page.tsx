@@ -44,7 +44,10 @@ const GRADE_EMOJI: Record<string, string> = {
   village: '🏠',
   town: '🏘️',
   city: '🏙️',
-  paradise: '🌆',
+  paradise: '🎡',
+  hotplace: '🔥',
+  honor: '🎖️',
+  champion: '🏆',
   legend: '👑',
 }
 
