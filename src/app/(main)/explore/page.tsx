@@ -349,7 +349,7 @@ export default function ExplorePage() {
           }
         }
         .animate-marquee {
-          animation: marquee 15s linear infinite;
+          animation: marquee 7s linear infinite;
         }
       `}</style>
     </div>
