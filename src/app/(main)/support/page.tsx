@@ -1,30 +1,39 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 interface Announcement {
   id: string
   title: string
   content: string
-  date: string
-  isNew?: boolean
+  isPinned: boolean
+  createdAt: string
 }
-
-// 임시 공지사항 데이터 (추후 API로 대체 가능)
-const ANNOUNCEMENTS: Announcement[] = [
-  {
-    id: '1',
-    title: '경도 서비스 오픈!',
-    content: '경도 서비스가 정식 오픈되었습니다. 동네에서 함께 보드게임을 즐길 친구들을 만나보세요!',
-    date: '2025-01-26',
-    isNew: true,
-  },
-]
 
 export default function SupportPage() {
   const router = useRouter()
+  const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [expandedAnnouncement, setExpandedAnnouncement] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    fetchAnnouncements()
+  }, [])
+
+  const fetchAnnouncements = async () => {
+    try {
+      const res = await fetch('/api/announcements')
+      if (res.ok) {
+        const data = await res.json()
+        setAnnouncements(data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch announcements:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handleSupportDeveloper = () => {
     window.open('https://litt.ly/miniface', '_blank')
@@ -32,6 +41,23 @@ export default function SupportPage() {
 
   const toggleAnnouncement = (id: string) => {
     setExpandedAnnouncement(prev => prev === id ? null : id)
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('ko-KR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    })
+  }
+
+  // 최근 7일 이내 작성된 공지인지 확인
+  const isNew = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffTime = now.getTime() - date.getTime()
+    const diffDays = diffTime / (1000 * 60 * 60 * 24)
+    return diffDays <= 7
   }
 
   return (
@@ -96,22 +122,29 @@ export default function SupportPage() {
             </div>
           </div>
 
-          {ANNOUNCEMENTS.length > 0 ? (
+          {isLoading ? (
+            <div className="px-5 py-8 flex justify-center">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+            </div>
+          ) : announcements.length > 0 ? (
             <div className="divide-y divide-gray-100">
-              {ANNOUNCEMENTS.map((announcement) => (
+              {announcements.map((announcement) => (
                 <div key={announcement.id}>
                   <button
                     onClick={() => toggleAnnouncement(announcement.id)}
                     className="w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
                   >
-                    <div className="flex items-center gap-3 text-left">
-                      {announcement.isNew && (
-                        <span className="px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded">NEW</span>
+                    <div className="flex items-center gap-2 text-left flex-1 min-w-0">
+                      {announcement.isPinned && (
+                        <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-bold rounded flex-shrink-0">고정</span>
                       )}
-                      <span className="font-medium text-gray-900">{announcement.title}</span>
+                      {isNew(announcement.createdAt) && (
+                        <span className="px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded flex-shrink-0">NEW</span>
+                      )}
+                      <span className="font-medium text-gray-900 truncate">{announcement.title}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-400">{announcement.date}</span>
+                    <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                      <span className="text-sm text-gray-400">{formatDate(announcement.createdAt)}</span>
                       <svg
                         className={`w-5 h-5 text-gray-400 transition-transform ${expandedAnnouncement === announcement.id ? 'rotate-180' : ''}`}
                         fill="none"
@@ -124,7 +157,7 @@ export default function SupportPage() {
                   </button>
                   {expandedAnnouncement === announcement.id && (
                     <div className="px-5 pb-4">
-                      <div className="p-4 bg-gray-50 rounded-xl text-sm text-gray-700 leading-relaxed">
+                      <div className="p-4 bg-gray-50 rounded-xl text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
                         {announcement.content}
                       </div>
                     </div>

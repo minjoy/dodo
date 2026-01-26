@@ -400,3 +400,20 @@ model RegionHistory {
   @@index([weekStart])
   @@index([rank])
 }
+
+// 공지사항
+model Announcement {
+  id          String    @id @default(cuid())
+
+  title       String    @db.VarChar(100)
+  content     String    @db.Text
+
+  isPublished Boolean   @default(true)   // 공개 여부
+  isPinned    Boolean   @default(false)  // 상단 고정
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([isPublished])
+  @@index([createdAt])
+}
