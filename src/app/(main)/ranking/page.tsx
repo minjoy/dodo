@@ -513,24 +513,46 @@ export default function RankingPage() {
           </summary>
           <div className="px-4 pb-4 text-sm text-gray-600 space-y-2">
             <div className="flex justify-between py-2 border-b border-gray-100">
-              <span>모임 개최</span>
+              <div>
+                <span>모임 개최</span>
+                <p className="text-xs text-gray-400">완료 + 3명 이상 참석</p>
+              </div>
               <span className="font-medium text-primary">+50pt</span>
             </div>
             <div className="flex justify-between py-2 border-b border-gray-100">
-              <span>모임 참여</span>
+              <div>
+                <span>모임 참여</span>
+                <p className="text-xs text-gray-400">실제 참석 + 평가 완료</p>
+              </div>
               <span className="font-medium text-primary">+20pt</span>
             </div>
             <div className="flex justify-between py-2 border-b border-gray-100">
-              <span>좋은 평가 받기 (4점 이상)</span>
+              <div>
+                <span>좋은 평가 받기</span>
+                <p className="text-xs text-gray-400">2회 이상 참여한 유저에게</p>
+              </div>
               <span className="font-medium text-primary">+10pt</span>
             </div>
             <div className="flex justify-between py-2 border-b border-gray-100">
-              <span>떠들기 작성</span>
+              <div>
+                <span>신규 주민</span>
+                <p className="text-xs text-gray-400">첫 모임 참석 완료 후</p>
+              </div>
+              <span className="font-medium text-primary">+10pt</span>
+            </div>
+            <div className="flex justify-between py-2 border-b border-gray-100">
+              <div>
+                <span>떠들기 작성</span>
+                <p className="text-xs text-gray-400">모임 1회 이상 참여자</p>
+              </div>
               <span className="font-medium text-primary">+5pt</span>
             </div>
-            <div className="flex justify-between py-2">
-              <span>신규 주민 가입</span>
-              <span className="font-medium text-primary">+10pt</span>
+            <div className="flex justify-between py-2 bg-red-50 -mx-4 px-4 rounded-lg">
+              <div>
+                <span className="text-red-700">노쇼</span>
+                <p className="text-xs text-red-400">모임 불참 시 감점</p>
+              </div>
+              <span className="font-medium text-red-600">-30pt</span>
             </div>
           </div>
         </details>

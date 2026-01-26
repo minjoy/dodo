@@ -3,14 +3,14 @@ import prisma from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 
-// 점수 산정 기준
+// 점수 산정 기준 (개선된 버전)
 const POINTS = {
-  MEETING_HOST: 50,      // 모임 개최
-  MEETING_JOIN: 20,      // 모임 참여
-  MEETING_COMPLETE: 30,  // 모임 완료 (평가까지)
-  SHOUT: 5,              // 떠들기 작성
-  NEW_MEMBER: 10,        // 신규 주민 가입
-  GOOD_REVIEW: 10,       // 좋은 평가 받음 (4점 이상)
+  MEETING_HOST: 50,      // 모임 개최 (완료 + 3명 이상 참석)
+  MEETING_JOIN: 20,      // 모임 참여 (실제 참석 + 평가 완료)
+  GOOD_REVIEW: 10,       // 좋은 평가 받음 (평가자가 2회 이상 참여 유저)
+  NEW_MEMBER: 10,        // 신규 주민 (첫 모임 참석 완료 후)
+  SHOUT: 5,              // 떠들기 (모임 1회 이상 참여 이력)
+  NOSHOW: -30,           // 노쇼 감점
 }
 
 // 등급 기준
@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// 동네별 통계 계산
+// 동네별 통계 계산 (개선된 악용 방지 버전)
 async function calculateRegionStats(weekStart: Date, monthStart: Date) {
   // 지역별 주민 수
   const memberCounts = await prisma.user.groupBy({
@@ -98,73 +98,161 @@ async function calculateRegionStats(weekStart: Date, monthStart: Date) {
     _count: { id: true },
   })
 
-  // 이번 주 모임 개최 (호스트)
-  const weeklyHostings = await prisma.meeting.groupBy({
-    by: ['region'],
+  // ============================================
+  // 1. 모임 개최 점수 (완료 + 참석자 3명 이상)
+  // ============================================
+  const completedMeetings = await prisma.meeting.findMany({
     where: {
       createdAt: { gte: weekStart },
-      status: { not: 'CANCELLED' },
+      status: 'COMPLETED',  // 완료된 모임만
     },
-    _count: { id: true },
+    select: {
+      id: true,
+      region: true,
+      _count: {
+        select: {
+          participants: {
+            where: { status: 'ATTENDED' }  // 실제 참석자만
+          }
+        }
+      }
+    }
   })
 
-  // 이번 주 모임 참여
-  const weeklyParticipations = await prisma.participant.findMany({
+  // 참석자 3명 이상인 모임만 카운트 (호스트 포함)
+  const validHostings = completedMeetings.filter(m => m._count.participants >= 2) // 호스트 + 2명 = 3명
+
+  // ============================================
+  // 2. 모임 참여 점수 (실제 참석 + 평가 완료)
+  // ============================================
+  // 실제 참석한 참여자 목록
+  const attendedParticipants = await prisma.participant.findMany({
     where: {
       joinedAt: { gte: weekStart },
-      status: { in: ['CONFIRMED', 'ATTENDED'] },
+      status: 'ATTENDED',  // 실제 참석만
     },
-    include: {
+    select: {
+      userId: true,
+      meetingId: true,
       user: { select: { region: true } },
     },
   })
 
-  // 이번 주 완료된 모임 평가
-  const weeklyReviews = await prisma.review.findMany({
+  // 평가를 완료한 참여자 목록
+  const reviewers = await prisma.review.findMany({
+    where: {
+      createdAt: { gte: weekStart },
+    },
+    select: {
+      reviewerId: true,
+      meetingId: true,
+    },
+  })
+
+  // 참석 + 평가 완료한 케이스만 카운트
+  const reviewerSet = new Set(reviewers.map(r => `${r.reviewerId}-${r.meetingId}`))
+  const validParticipations = attendedParticipants.filter(p =>
+    reviewerSet.has(`${p.userId}-${p.meetingId}`)
+  )
+
+  // ============================================
+  // 3. 좋은 평가 점수 (평가자가 2회 이상 참여한 유저)
+  // ============================================
+  // 2회 이상 참여한 유저 목록
+  const experiencedUsers = await prisma.user.findMany({
+    where: {
+      meetingCount: { gte: 2 },
+      isBanned: false,
+    },
+    select: { id: true },
+  })
+  const experiencedUserIds = new Set(experiencedUsers.map(u => u.id))
+
+  // 좋은 평가 중 경험있는 유저가 준 것만
+  const validReviews = await prisma.review.findMany({
     where: {
       createdAt: { gte: weekStart },
       rating: { gte: 4 },
+      reviewerId: { in: Array.from(experiencedUserIds) },
     },
     include: {
       reviewee: { select: { region: true } },
     },
   })
 
-  // 이번 주 떠들기
-  const weeklyShouts = await prisma.shout.groupBy({
-    by: ['userId'],
-    where: {
-      createdAt: { gte: weekStart },
-    },
-    _count: { id: true },
-  })
-  const shoutUserIds = weeklyShouts.map(s => s.userId)
-  const shoutUsers = await prisma.user.findMany({
-    where: { id: { in: shoutUserIds } },
-    select: { id: true, region: true },
-  })
-
-  // 이번 주 신규 가입
-  const newMembers = await prisma.user.groupBy({
-    by: ['region'],
+  // ============================================
+  // 4. 신규 가입 점수 (첫 모임 참석 완료 후)
+  // ============================================
+  // 이번 주 가입 + 모임 참석 완료한 유저
+  const newActiveMembers = await prisma.user.findMany({
     where: {
       createdAt: { gte: weekStart },
       region: { not: '전체' },
+      meetingCount: { gte: 1 },  // 최소 1회 참여
+      isBanned: false,
     },
-    _count: { id: true },
+    select: { region: true },
   })
 
-  // 이번 달 통계도 비슷하게 계산
-  const monthlyHostings = await prisma.meeting.groupBy({
-    by: ['region'],
+  // ============================================
+  // 5. 떠들기 점수 (모임 1회 이상 참여 이력)
+  // ============================================
+  const weeklyShouts = await prisma.shout.findMany({
+    where: {
+      createdAt: { gte: weekStart },
+    },
+    select: { userId: true },
+  })
+
+  // 모임 참여 이력 있는 유저만 필터
+  const shoutUserIds = [...new Set(weeklyShouts.map(s => s.userId))]
+  const validShoutUsers = await prisma.user.findMany({
+    where: {
+      id: { in: shoutUserIds },
+      meetingCount: { gte: 1 },  // 1회 이상 참여
+    },
+    select: { id: true, region: true },
+  })
+
+  // ============================================
+  // 6. 노쇼 감점
+  // ============================================
+  const noShows = await prisma.participant.findMany({
+    where: {
+      meeting: {
+        meetingDate: { gte: weekStart },
+      },
+      status: 'NOSHOW',
+    },
+    include: {
+      user: { select: { region: true } },
+    },
+  })
+
+  // ============================================
+  // 월간 통계
+  // ============================================
+  const monthlyCompletedMeetings = await prisma.meeting.findMany({
     where: {
       createdAt: { gte: monthStart },
-      status: { not: 'CANCELLED' },
+      status: 'COMPLETED',
     },
-    _count: { id: true },
+    select: {
+      region: true,
+      _count: {
+        select: {
+          participants: {
+            where: { status: 'ATTENDED' }
+          }
+        }
+      }
+    }
   })
+  const monthlyValidHostings = monthlyCompletedMeetings.filter(m => m._count.participants >= 2)
 
+  // ============================================
   // 통계 집계
+  // ============================================
   const statsMap = new Map<string, {
     region: string
     weeklyPoints: number
@@ -188,18 +276,22 @@ async function calculateRegionStats(weekStart: Date, monthStart: Date) {
     })
   })
 
-  // 모임 개최 점수
-  weeklyHostings.forEach(h => {
-    const stat = statsMap.get(h.region)
+  // 1. 모임 개최 점수
+  const hostingByRegion = new Map<string, number>()
+  validHostings.forEach(m => {
+    hostingByRegion.set(m.region, (hostingByRegion.get(m.region) || 0) + 1)
+  })
+  hostingByRegion.forEach((count, region) => {
+    const stat = statsMap.get(region)
     if (stat) {
-      stat.weeklyPoints += h._count.id * POINTS.MEETING_HOST
-      stat.meetingCount = h._count.id
+      stat.weeklyPoints += count * POINTS.MEETING_HOST
+      stat.meetingCount = count
     }
   })
 
-  // 모임 참여 점수
+  // 2. 모임 참여 점수
   const participationByRegion = new Map<string, number>()
-  weeklyParticipations.forEach(p => {
+  validParticipations.forEach(p => {
     const region = p.user.region
     if (region && region !== '전체') {
       participationByRegion.set(region, (participationByRegion.get(region) || 0) + 1)
@@ -212,9 +304,9 @@ async function calculateRegionStats(weekStart: Date, monthStart: Date) {
     }
   })
 
-  // 좋은 평가 점수
+  // 3. 좋은 평가 점수
   const reviewByRegion = new Map<string, number>()
-  weeklyReviews.forEach(r => {
+  validReviews.forEach(r => {
     const region = r.reviewee.region
     if (region && region !== '전체') {
       reviewByRegion.set(region, (reviewByRegion.get(region) || 0) + 1)
@@ -227,9 +319,21 @@ async function calculateRegionStats(weekStart: Date, monthStart: Date) {
     }
   })
 
-  // 떠들기 점수
+  // 4. 신규 가입 점수
+  const newMemberByRegion = new Map<string, number>()
+  newActiveMembers.forEach(u => {
+    newMemberByRegion.set(u.region, (newMemberByRegion.get(u.region) || 0) + 1)
+  })
+  newMemberByRegion.forEach((count, region) => {
+    const stat = statsMap.get(region)
+    if (stat) {
+      stat.weeklyPoints += count * POINTS.NEW_MEMBER
+    }
+  })
+
+  // 5. 떠들기 점수
   const shoutByRegion = new Map<string, number>()
-  shoutUsers.forEach(u => {
+  validShoutUsers.forEach(u => {
     if (u.region && u.region !== '전체') {
       shoutByRegion.set(u.region, (shoutByRegion.get(u.region) || 0) + 1)
     }
@@ -241,24 +345,37 @@ async function calculateRegionStats(weekStart: Date, monthStart: Date) {
     }
   })
 
-  // 신규 가입 점수
-  newMembers.forEach(n => {
-    const stat = statsMap.get(n.region)
+  // 6. 노쇼 감점
+  const noShowByRegion = new Map<string, number>()
+  noShows.forEach(n => {
+    const region = n.user.region
+    if (region && region !== '전체') {
+      noShowByRegion.set(region, (noShowByRegion.get(region) || 0) + 1)
+    }
+  })
+  noShowByRegion.forEach((count, region) => {
+    const stat = statsMap.get(region)
     if (stat) {
-      stat.weeklyPoints += n._count.id * POINTS.NEW_MEMBER
+      stat.weeklyPoints += count * POINTS.NOSHOW  // 감점 (음수)
     }
   })
 
-  // 월간 점수 (간단히 모임 개최 기준)
-  monthlyHostings.forEach(h => {
-    const stat = statsMap.get(h.region)
+  // 월간 점수
+  const monthlyHostingByRegion = new Map<string, number>()
+  monthlyValidHostings.forEach(m => {
+    monthlyHostingByRegion.set(m.region, (monthlyHostingByRegion.get(m.region) || 0) + 1)
+  })
+  monthlyHostingByRegion.forEach((count, region) => {
+    const stat = statsMap.get(region)
     if (stat) {
-      stat.monthlyPoints += h._count.id * POINTS.MEETING_HOST
+      stat.monthlyPoints += count * POINTS.MEETING_HOST
     }
   })
 
-  // 총점 = 주간 + 월간 (추후 히스토리 기반으로 개선 가능)
+  // 총점 계산 (음수 방지)
   statsMap.forEach(stat => {
+    stat.weeklyPoints = Math.max(0, stat.weeklyPoints)
+    stat.monthlyPoints = Math.max(0, stat.monthlyPoints)
     stat.totalPoints = stat.weeklyPoints + stat.monthlyPoints
     stat.grade = getGrade(stat.totalPoints)
   })
