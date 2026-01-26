@@ -56,9 +56,8 @@ export default function ExplorePage() {
   // 떠들기 랜덤 순서 (shouts가 변경될 때만 재계산)
   const shuffledShouts = useMemo(() => {
     if (shouts.length === 0) return []
-    // 랜덤으로 섞은 후, 마퀴 효과를 위해 두 번 반복
-    const shuffled = shuffleArray(shouts)
-    return [...shuffled, ...shuffled]
+    // 랜덤으로 섞음 (중복 없이 한 번만 표시)
+    return shuffleArray(shouts)
   }, [shouts])
 
   // 유저 랭킹 가져오기
@@ -346,11 +345,11 @@ export default function ExplorePage() {
             transform: translateX(0);
           }
           100% {
-            transform: translateX(-50%);
+            transform: translateX(-100%);
           }
         }
         .animate-marquee {
-          animation: marquee 10s linear infinite;
+          animation: marquee 15s linear infinite;
         }
       `}</style>
     </div>
