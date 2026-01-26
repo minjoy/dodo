@@ -328,9 +328,9 @@ export default function RankingPage() {
                       {session?.user?.region}
                     </h2>
                     <div className="flex items-center gap-2">
-                      <span className="text-2xl">{GRADE_EMOJI[myRegionData.stats.grade] || '🏠'}</span>
+                      <span className="text-2xl">{GRADE_EMOJI[myRegionData.stats.grade || 'village'] || '🏠'}</span>
                       <div className="text-right">
-                        <p className="text-xs text-gray-500">{myRegionData.stats.gradeName}</p>
+                        <p className="text-xs text-gray-500">{myRegionData.stats.gradeName || '동네마을'}</p>
                         <p className="font-bold text-primary">{myRegionData.stats.weeklyPoints?.toLocaleString() || 0}pt</p>
                       </div>
                     </div>
