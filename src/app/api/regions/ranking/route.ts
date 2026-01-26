@@ -12,12 +12,12 @@ const POINTS = {
   SHOUT: 1,              // 떠들기 (모임 1회 이상 참여 이력)
 }
 
-// 등급 기준
+// 등급 기준 (상향 조정)
 function getGrade(points: number): string {
-  if (points >= 1000) return 'legend'
-  if (points >= 600) return 'paradise'
-  if (points >= 300) return 'city'
-  if (points >= 100) return 'town'
+  if (points >= 5000) return 'legend'
+  if (points >= 2500) return 'paradise'
+  if (points >= 1000) return 'city'
+  if (points >= 300) return 'town'
   return 'village'
 }
 
