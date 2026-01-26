@@ -355,3 +355,48 @@ model BannedKakao {
   originalUserId    String?
   originalNickname  String?
 }
+
+// 동네 통계 (랭킹용)
+model RegionStats {
+  id            String    @id @default(cuid())
+  region        String    @unique  // 예: "성수동", "홍대"
+
+  // 점수
+  weeklyPoints  Int       @default(0)  // 이번 주 점수
+  monthlyPoints Int       @default(0)  // 이번 달 점수
+  totalPoints   Int       @default(0)  // 누적 점수
+
+  // 통계
+  memberCount   Int       @default(0)  // 활동 주민 수
+  meetingCount  Int       @default(0)  // 이번 주 모임 수
+
+  // 등급 (village, town, city, paradise, legend)
+  grade         String    @default("village")
+
+  // 순위 (주간 기준)
+  weeklyRank    Int?
+  prevWeeklyRank Int?     // 이전 주 순위 (변동 표시용)
+
+  updatedAt     DateTime  @updatedAt
+
+  @@index([weeklyPoints])
+  @@index([weeklyRank])
+}
+
+// 동네 랭킹 히스토리 (주간 기록)
+model RegionHistory {
+  id          String    @id @default(cuid())
+  region      String
+
+  weekStart   DateTime  // 해당 주 시작일 (월요일)
+  rank        Int       // 그 주의 순위
+  points      Int       // 그 주의 점수
+  memberCount Int       // 그 주의 활동 주민 수
+  meetingCount Int      // 그 주의 모임 수
+
+  createdAt   DateTime  @default(now())
+
+  @@unique([region, weekStart])
+  @@index([weekStart])
+  @@index([rank])
+}

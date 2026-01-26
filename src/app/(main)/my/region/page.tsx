@@ -129,33 +129,6 @@ export default function RegionChangePage() {
           </div>
         </div>
 
-        {/* 그 외 지역 */}
-        <h2 className="text-sm font-semibold text-gray-500 mb-3 mt-6">그 외 지역</h2>
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-          <button
-            onClick={() => setSelectedRegion('그 외 지역')}
-            disabled={isLoading}
-            className={`w-full flex items-center gap-3 p-4 rounded-xl text-left transition-all ${
-              selectedRegion === '그 외 지역'
-                ? 'bg-primary text-white shadow-md shadow-primary/30'
-                : currentRegion === '그 외 지역'
-                  ? 'bg-green-50 text-green-700 border-2 border-green-200'
-                  : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-            }`}
-          >
-            <span className="text-2xl">🌏</span>
-            <div>
-              <span className="font-medium">그 외 지역</span>
-              <p className={`text-sm mt-0.5 ${selectedRegion === '그 외 지역' ? 'text-white/80' : 'text-gray-500'}`}>
-                서울 외 지역 (경기, 인천, 지방 등)
-              </p>
-            </div>
-            {currentRegion === '그 외 지역' && selectedRegion !== '그 외 지역' && (
-              <span className="ml-auto text-xs text-green-600">현재</span>
-            )}
-          </button>
-        </div>
-
         {/* 안내 문구 */}
         <div className="mt-6 p-4 bg-amber-50 rounded-xl border border-amber-200">
           <div className="flex gap-3">
