@@ -64,7 +64,14 @@ export default function RankingPage() {
 
   // 내 동네 데이터
   const [myRegionData, setMyRegionData] = useState<{
-    stats: { memberCount: number; weeklyMeetings: number; activeMembersThisWeek: number }
+    stats: {
+      memberCount: number
+      weeklyMeetings: number
+      activeMembersThisWeek: number
+      weeklyPoints?: number
+      grade?: string
+      gradeName?: string
+    }
     members: MemberRanking[]
   } | null>(null)
 
@@ -315,10 +322,19 @@ export default function RankingPage() {
               <>
                 {/* 동네 통계 */}
                 <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-4">
-                  <h2 className="font-bold text-lg flex items-center gap-2 mb-4">
-                    <span className="text-xl">📍</span>
-                    {session?.user?.region}
-                  </h2>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="font-bold text-lg flex items-center gap-2">
+                      <span className="text-xl">📍</span>
+                      {session?.user?.region}
+                    </h2>
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">{GRADE_EMOJI[myRegionData.stats.grade] || '🏠'}</span>
+                      <div className="text-right">
+                        <p className="text-xs text-gray-500">{myRegionData.stats.gradeName}</p>
+                        <p className="font-bold text-primary">{myRegionData.stats.weeklyPoints?.toLocaleString() || 0}pt</p>
+                      </div>
+                    </div>
+                  </div>
                   <div className="grid grid-cols-3 gap-4">
                     <div className="text-center">
                       <p className="text-2xl font-bold text-primary">
@@ -341,9 +357,9 @@ export default function RankingPage() {
                   </div>
                 </div>
 
-                {/* 주민 랭킹 */}
+                {/* 우리동네 점수를 올린 주민 */}
                 <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                  <span>🏅</span> 주민 랭킹
+                  <span>🏅</span> 우리동네 점수를 올린 주민
                 </h3>
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                   {myRegionData.members.length === 0 ? (

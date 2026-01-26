@@ -3,6 +3,36 @@ import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 
+// 점수 기준
+const POINTS = {
+  MEETING_HOST: 10,
+  MEETING_JOIN: 4,
+  GOOD_REVIEW: 2,
+}
+
+// 등급 기준 (8단계)
+function getGrade(points: number): string {
+  if (points >= 100000) return 'legend'
+  if (points >= 50000) return 'champion'
+  if (points >= 20000) return 'honor'
+  if (points >= 7500) return 'hotplace'
+  if (points >= 2500) return 'paradise'
+  if (points >= 1000) return 'city'
+  if (points >= 300) return 'town'
+  return 'village'
+}
+
+const GRADE_NAMES: Record<string, string> = {
+  village: '동네마을',
+  town: '활기찬 마을',
+  city: '번화한 도시',
+  paradise: '놀이 천국',
+  hotplace: '핫플레이스',
+  honor: '명예의 동네',
+  champion: '챔피언 동네',
+  legend: '전설의 동네',
+}
+
 // 특정 동네 상세 정보 조회
 export async function GET(
   request: NextRequest,
@@ -94,9 +124,9 @@ export async function GET(
       const goodReviewCount = reviewMap.get(member.id) || 0
 
       const weeklyPoints =
-        hostCount * 50 +
-        participationCount * 20 +
-        goodReviewCount * 10
+        hostCount * POINTS.MEETING_HOST +
+        participationCount * POINTS.MEETING_JOIN +
+        goodReviewCount * POINTS.GOOD_REVIEW
 
       return {
         ...member,
@@ -105,6 +135,11 @@ export async function GET(
         weeklyParticipationCount: participationCount,
       }
     }).sort((a, b) => b.weeklyPoints - a.weeklyPoints)
+
+    // 동네 총 주간 점수 계산
+    const regionWeeklyPoints = rankedMembers.reduce((sum, m) => sum + m.weeklyPoints, 0)
+    const regionGrade = getGrade(regionWeeklyPoints)
+    const regionGradeName = GRADE_NAMES[regionGrade]
 
     // 동네 통계
     const totalMembers = await prisma.user.count({
@@ -149,6 +184,9 @@ export async function GET(
         memberCount: totalMembers,
         weeklyMeetings,
         activeMembersThisWeek: rankedMembers.filter(m => m.weeklyPoints > 0).length,
+        weeklyPoints: regionWeeklyPoints,
+        grade: regionGrade,
+        gradeName: regionGradeName,
       },
       members: rankedMembers.map((m, i) => ({ ...m, rank: i + 1 })),
       recentMeetings: recentMeetings.map(m => ({
