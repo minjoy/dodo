@@ -213,18 +213,13 @@ export default function ProfilePage() {
 
           <div className="relative">
             <div className="flex items-center gap-4 mb-4">
-              <div className="relative">
-                <div className="w-[76px] h-[76px] rounded-full border border-white/30 overflow-hidden bg-white/20 flex items-center justify-center shadow-lg">
-                  <Avatar
-                    src={profile.profileImage}
-                    alt={profile.nickname}
-                    size="2xl"
-                    fallback={profile.nickname}
-                  />
-                </div>
-                <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg">
-                  <span className="text-xl">{LEVEL_EMOJIS[userLevel - 1]}</span>
-                </div>
+              <div className="w-[76px] h-[76px] rounded-full border border-white/30 overflow-hidden bg-white/20 flex items-center justify-center shadow-lg">
+                <Avatar
+                  src={profile.profileImage}
+                  alt={profile.nickname}
+                  size="2xl"
+                  fallback={profile.nickname}
+                />
               </div>
               <div className="flex-1">
                 <h2 className="text-2xl font-bold">{profile.nickname}</h2>
