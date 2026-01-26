@@ -182,8 +182,8 @@ export default function ImageCropper({ imageFile, onCrop, onCancel }: ImageCropp
       const sourceY = (cropCircle.y - imageOffset.y) * scaleY
       const sourceSize = cropCircle.size * Math.max(scaleX, scaleY)
 
-      // 출력 캔버스 (100x100)
-      const outputSize = 100
+      // 출력 캔버스 (200x200 - 레티나 대응)
+      const outputSize = 200
       const canvas = document.createElement('canvas')
       canvas.width = outputSize
       canvas.height = outputSize
