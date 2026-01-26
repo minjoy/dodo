@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 
@@ -32,6 +32,16 @@ interface Shout {
   }
 }
 
+// Fisher-Yates 셔플 알고리즘
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array]
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  }
+  return shuffled
+}
+
 export default function ExplorePage() {
   const [users, setUsers] = useState<User[]>([])
   const [shouts, setShouts] = useState<Shout[]>([])
@@ -42,6 +52,14 @@ export default function ExplorePage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [canShout, setCanShout] = useState(true)
   const marqueeRef = useRef<HTMLDivElement>(null)
+
+  // 떠들기 랜덤 순서 (shouts가 변경될 때만 재계산)
+  const shuffledShouts = useMemo(() => {
+    if (shouts.length === 0) return []
+    // 랜덤으로 섞은 후, 마퀴 효과를 위해 두 번 반복
+    const shuffled = shuffleArray(shouts)
+    return [...shuffled, ...shuffled]
+  }, [shouts])
 
   // 유저 랭킹 가져오기
   const fetchUsers = async (searchQuery = '') => {
@@ -149,8 +167,11 @@ export default function ExplorePage() {
               ref={marqueeRef}
               className="animate-marquee whitespace-nowrap flex items-center gap-8"
             >
-              {[...shouts, ...shouts].map((shout, idx) => (
-                <span key={`${shout.id}-${idx}`} className="text-white text-sm flex items-center gap-2">
+              {shuffledShouts.map((shout, idx) => (
+                <span
+                  key={`${shout.id}-${idx}`}
+                  className={`text-white text-sm flex items-center gap-2 ${idx === 0 ? 'pl-4' : ''}`}
+                >
                   <span className="font-semibold">{shout.user.nickname}</span>
                   <span className="opacity-90">{shout.message}</span>
                 </span>

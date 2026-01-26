@@ -243,31 +243,32 @@ export default function MyPage() {
           {/* 대표 뱃지 버튼 - 우상단 */}
           <button
             onClick={() => setShowBadgeModal(true)}
-            className="absolute top-4 right-4 z-10 bg-white/20 backdrop-blur-sm rounded-xl p-2 hover:bg-white/30 transition-colors flex items-center gap-1"
+            className="absolute top-4 right-4 z-10 bg-white/20 backdrop-blur-sm rounded-xl px-3 py-2 hover:bg-white/30 transition-colors flex items-center gap-1.5"
           >
             {selectedBadges.length > 0 ? (
-              selectedBadges.map((badge) => (
-                <span key={badge.id} className="text-2xl">{badge.icon}</span>
-              ))
+              <>
+                {selectedBadges.map((badge) => (
+                  <span key={badge.id} className="text-xl">{badge.icon}</span>
+                ))}
+                <span className="text-sm font-medium">뱃지</span>
+              </>
             ) : (
-              <span className="text-xl opacity-70">🏅</span>
+              <>
+                <span className="text-lg opacity-70">🏅</span>
+                <span className="text-sm font-medium opacity-70">뱃지</span>
+              </>
             )}
           </button>
 
           <div className="relative">
             <div className="flex items-center gap-4 mb-6">
-              <div className="relative">
-                <div className="w-[76px] h-[76px] rounded-full border border-white/30 overflow-hidden bg-white/20 flex items-center justify-center shadow-lg">
-                  <Avatar
-                    src={user?.profileImage || session?.user?.profileImage}
-                    alt={user?.nickname || session?.user?.nickname || ''}
-                    size="2xl"
-                    fallback={user?.nickname || session?.user?.nickname || ''}
-                  />
-                </div>
-                <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg">
-                  <span className="text-xl">{LEVEL_EMOJIS[userLevel - 1]}</span>
-                </div>
+              <div className="w-[76px] h-[76px] rounded-full border border-white/30 overflow-hidden bg-white/20 flex items-center justify-center shadow-lg">
+                <Avatar
+                  src={user?.profileImage || session?.user?.profileImage}
+                  alt={user?.nickname || session?.user?.nickname || ''}
+                  size="2xl"
+                  fallback={user?.nickname || session?.user?.nickname || ''}
+                />
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
