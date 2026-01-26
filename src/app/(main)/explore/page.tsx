@@ -350,7 +350,7 @@ export default function ExplorePage() {
           }
         }
         .animate-marquee {
-          animation: marquee 20s linear infinite;
+          animation: marquee 10s linear infinite;
         }
       `}</style>
     </div>
