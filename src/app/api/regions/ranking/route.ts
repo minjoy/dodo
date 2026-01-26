@@ -5,20 +5,19 @@ import { authOptions } from '@/lib/auth'
 
 // 점수 산정 기준 (개선된 버전)
 const POINTS = {
-  MEETING_HOST: 50,      // 모임 개최 (완료 + 3명 이상 참석)
-  MEETING_JOIN: 20,      // 모임 참여 (실제 참석 + 평가 완료)
-  GOOD_REVIEW: 10,       // 좋은 평가 받음 (평가자가 2회 이상 참여 유저)
-  NEW_MEMBER: 10,        // 신규 주민 (첫 모임 참석 완료 후)
-  SHOUT: 5,              // 떠들기 (모임 1회 이상 참여 이력)
-  NOSHOW: -30,           // 노쇼 감점
+  MEETING_HOST: 10,      // 모임 개최 (완료 + 3명 이상 참석)
+  MEETING_JOIN: 4,       // 모임 참여 (실제 참석 + 평가 완료)
+  GOOD_REVIEW: 2,        // 좋은 평가 받음 (평가자가 2회 이상 참여 유저)
+  NEW_MEMBER: 2,         // 신규 주민 (첫 모임 참석 완료 후)
+  SHOUT: 1,              // 떠들기 (모임 1회 이상 참여 이력)
 }
 
 // 등급 기준
 function getGrade(points: number): string {
-  if (points >= 5000) return 'legend'
-  if (points >= 3000) return 'paradise'
-  if (points >= 1500) return 'city'
-  if (points >= 500) return 'town'
+  if (points >= 1000) return 'legend'
+  if (points >= 600) return 'paradise'
+  if (points >= 300) return 'city'
+  if (points >= 100) return 'town'
   return 'village'
 }
 
@@ -215,21 +214,6 @@ async function calculateRegionStats(weekStart: Date, monthStart: Date) {
   })
 
   // ============================================
-  // 6. 노쇼 감점
-  // ============================================
-  const noShows = await prisma.participant.findMany({
-    where: {
-      meeting: {
-        meetingDate: { gte: weekStart },
-      },
-      status: 'NOSHOW',
-    },
-    include: {
-      user: { select: { region: true } },
-    },
-  })
-
-  // ============================================
   // 월간 통계
   // ============================================
   const monthlyCompletedMeetings = await prisma.meeting.findMany({
@@ -345,21 +329,6 @@ async function calculateRegionStats(weekStart: Date, monthStart: Date) {
     }
   })
 
-  // 6. 노쇼 감점
-  const noShowByRegion = new Map<string, number>()
-  noShows.forEach(n => {
-    const region = n.user.region
-    if (region && region !== '전체') {
-      noShowByRegion.set(region, (noShowByRegion.get(region) || 0) + 1)
-    }
-  })
-  noShowByRegion.forEach((count, region) => {
-    const stat = statsMap.get(region)
-    if (stat) {
-      stat.weeklyPoints += count * POINTS.NOSHOW  // 감점 (음수)
-    }
-  })
-
   // 월간 점수
   const monthlyHostingByRegion = new Map<string, number>()
   monthlyValidHostings.forEach(m => {
@@ -372,10 +341,8 @@ async function calculateRegionStats(weekStart: Date, monthStart: Date) {
     }
   })
 
-  // 총점 계산 (음수 방지)
+  // 총점 및 등급 계산
   statsMap.forEach(stat => {
-    stat.weeklyPoints = Math.max(0, stat.weeklyPoints)
-    stat.monthlyPoints = Math.max(0, stat.monthlyPoints)
     stat.totalPoints = stat.weeklyPoints + stat.monthlyPoints
     stat.grade = getGrade(stat.totalPoints)
   })
