@@ -7,7 +7,10 @@ export default function SettingsPage() {
   const router = useRouter()
   const { data: session } = useSession()
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
+    // 쿠키와 세션 삭제를 위한 API 호출
+    await fetch('/api/auth/logout', { method: 'POST' })
+    // next-auth 로그아웃
     signOut({ callbackUrl: '/' })
   }
 
