@@ -10,6 +10,7 @@ interface Stats {
     thisWeek: number
     byLevel: { level: number; _count: { id: number } }[]
     byAgeRange: { ageRange: string | null; _count: { id: number } }[]
+    byGender: { gender: string | null; _count: { id: number } }[]
     recent: {
       id: string
       nickname: string
@@ -17,6 +18,9 @@ interface Stats {
       level: number
       exp: number
       ageRange: string | null
+      gender: string | null
+      birthYear: string | null
+      email: string | null
       createdAt: string
     }[]
     dailySignups: { date: string; count: number }[]
@@ -72,6 +76,11 @@ const GAME_TYPE_LABELS: Record<string, string> = {
   MUGUNGHWA: '무궁화',
   PIGU: '피구',
   OTHER: '기타',
+}
+
+const GENDER_LABELS: Record<string, string> = {
+  male: '남성',
+  female: '여성',
 }
 
 export default function AdminPage() {
@@ -337,7 +346,7 @@ export default function AdminPage() {
             </div>
 
             {/* 분포 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
               {/* 레벨별 사용자 */}
               <div className="bg-gray-800 rounded-2xl p-5">
                 <h3 className="text-lg font-bold mb-4">레벨별 사용자</h3>
@@ -345,6 +354,21 @@ export default function AdminPage() {
                   {stats.users.byLevel.map((item) => (
                     <div key={item.level} className="flex items-center justify-between">
                       <span className="text-gray-400">Lv.{item.level}</span>
+                      <span className="font-medium">{item._count.id}명</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 성별별 사용자 */}
+              <div className="bg-gray-800 rounded-2xl p-5">
+                <h3 className="text-lg font-bold mb-4">성별별 사용자</h3>
+                <div className="space-y-2">
+                  {stats.users.byGender.map((item) => (
+                    <div key={item.gender || 'unknown'} className="flex items-center justify-between">
+                      <span className="text-gray-400">
+                        {item.gender ? GENDER_LABELS[item.gender] || item.gender : '미제공'}
+                      </span>
                       <span className="font-medium">{item._count.id}명</span>
                     </div>
                   ))}
@@ -420,10 +444,11 @@ export default function AdminPage() {
                   <thead>
                     <tr className="text-left text-gray-400 text-sm border-b border-gray-700">
                       <th className="pb-3">닉네임</th>
+                      <th className="pb-3">이메일</th>
+                      <th className="pb-3">성별</th>
+                      <th className="pb-3">출생연도</th>
                       <th className="pb-3">지역</th>
-                      <th className="pb-3">연령대</th>
                       <th className="pb-3">레벨</th>
-                      <th className="pb-3">경험치</th>
                       <th className="pb-3">가입일</th>
                     </tr>
                   </thead>
@@ -431,10 +456,13 @@ export default function AdminPage() {
                     {stats.users.recent.map((user) => (
                       <tr key={user.id} className="border-b border-gray-700/50">
                         <td className="py-3 font-medium">{user.nickname}</td>
-                        <td className="py-3 text-gray-400">{user.region}</td>
-                        <td className="py-3 text-gray-400">{user.ageRange || '-'}</td>
+                        <td className="py-3 text-gray-400 max-w-[150px] truncate">{user.email || '-'}</td>
+                        <td className="py-3 text-gray-400">
+                          {user.gender ? GENDER_LABELS[user.gender] || user.gender : '-'}
+                        </td>
+                        <td className="py-3 text-gray-400">{user.birthYear || '-'}</td>
+                        <td className="py-3 text-gray-400">{user.region || '-'}</td>
                         <td className="py-3">Lv.{user.level}</td>
-                        <td className="py-3 text-gray-400">{user.exp} EXP</td>
                         <td className="py-3 text-gray-400">
                           {new Date(user.createdAt).toLocaleDateString('ko-KR')}
                         </td>
@@ -445,26 +473,56 @@ export default function AdminPage() {
               </div>
             </div>
 
-            {/* 레벨별 분포 */}
-            <div className="bg-gray-800 rounded-2xl p-5">
-              <h3 className="text-lg font-bold mb-4">레벨별 분포</h3>
-              <div className="flex items-end gap-2 h-40">
-                {Array.from({ length: 10 }, (_, i) => i + 1).map((level) => {
-                  const item = stats.users.byLevel.find(l => l.level === level)
-                  const count = item?._count.id || 0
-                  const maxCount = Math.max(...stats.users.byLevel.map(l => l._count.id), 1)
-                  const height = (count / maxCount) * 100
-                  return (
-                    <div key={level} className="flex-1 flex flex-col items-center gap-1">
-                      <span className="text-xs text-gray-400">{count}</span>
-                      <div
-                        className="w-full bg-purple-500 rounded-t"
-                        style={{ height: `${Math.max(height, 4)}%` }}
-                      />
-                      <span className="text-xs text-gray-500">Lv.{level}</span>
-                    </div>
-                  )
-                })}
+            {/* 레벨별/성별별 분포 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-gray-800 rounded-2xl p-5">
+                <h3 className="text-lg font-bold mb-4">레벨별 분포</h3>
+                <div className="flex items-end gap-2 h-40">
+                  {Array.from({ length: 10 }, (_, i) => i + 1).map((level) => {
+                    const item = stats.users.byLevel.find(l => l.level === level)
+                    const count = item?._count.id || 0
+                    const maxCount = Math.max(...stats.users.byLevel.map(l => l._count.id), 1)
+                    const height = (count / maxCount) * 100
+                    return (
+                      <div key={level} className="flex-1 flex flex-col items-center gap-1">
+                        <span className="text-xs text-gray-400">{count}</span>
+                        <div
+                          className="w-full bg-purple-500 rounded-t"
+                          style={{ height: `${Math.max(height, 4)}%` }}
+                        />
+                        <span className="text-xs text-gray-500">Lv.{level}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div className="bg-gray-800 rounded-2xl p-5">
+                <h3 className="text-lg font-bold mb-4">성별 분포</h3>
+                <div className="space-y-3">
+                  {stats.users.byGender.map((item) => {
+                    const percentage = stats.users.total > 0
+                      ? Math.round((item._count.id / stats.users.total) * 100)
+                      : 0
+                    const label = item.gender ? GENDER_LABELS[item.gender] || item.gender : '미제공'
+                    const colorClass = item.gender === 'male' ? 'bg-blue-500' :
+                                       item.gender === 'female' ? 'bg-pink-500' : 'bg-gray-500'
+                    return (
+                      <div key={item.gender || 'unknown'}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-gray-400 text-sm">{label}</span>
+                          <span className="text-sm">{item._count.id}명 ({percentage}%)</span>
+                        </div>
+                        <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full ${colorClass} rounded-full`}
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             </div>
           </div>

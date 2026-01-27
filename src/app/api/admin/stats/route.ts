@@ -81,6 +81,12 @@ export async function GET() {
       _count: { id: true },
     })
 
+    // 성별별 사용자 분포
+    const usersByGender = await prisma.user.groupBy({
+      by: ['gender'],
+      _count: { id: true },
+    })
+
     // 최근 가입 사용자 10명
     const recentUsers = await prisma.user.findMany({
       take: 10,
@@ -92,6 +98,9 @@ export async function GET() {
         level: true,
         exp: true,
         ageRange: true,
+        gender: true,
+        birthYear: true,
+        email: true,
         createdAt: true,
       },
     })
@@ -179,6 +188,7 @@ export async function GET() {
         thisWeek: weekUsers,
         byLevel: usersByLevel,
         byAgeRange: usersByAgeRange,
+        byGender: usersByGender,
         recent: recentUsers,
         dailySignups,
       },
