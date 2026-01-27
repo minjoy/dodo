@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { MeetingCard } from '@/components/meeting'
 import BadgeAcquisition from '@/components/BadgeAcquisition'
+import { LoginRequiredModal } from '@/components/common'
 import type { Meeting, User } from '@/types'
 
 type MeetingWithDetails = Meeting & {
@@ -31,7 +32,7 @@ const GAME_TYPES = [
 ]
 
 export default function HomePage() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const router = useRouter()
   const [meetings, setMeetings] = useState<MeetingWithDetails[]>([])
   const [otherRegionMeetings, setOtherRegionMeetings] = useState<MeetingWithDetails[]>([])
@@ -42,6 +43,21 @@ export default function HomePage() {
   const [meetingCode, setMeetingCode] = useState('')
   const [codeError, setCodeError] = useState('')
   const [earnedBadge, setEarnedBadge] = useState<Badge | null>(null)
+  const [showLoginModal, setShowLoginModal] = useState(false)
+  const [loginModalMessage, setLoginModalMessage] = useState('')
+
+  const isAuthenticated = status === 'authenticated'
+
+  // 로그인 필요 액션 처리
+  const requireLogin = (message: string, callback?: () => void) => {
+    if (!isAuthenticated) {
+      setLoginModalMessage(message)
+      setShowLoginModal(true)
+      return false
+    }
+    if (callback) callback()
+    return true
+  }
 
   // 얼리버드 뱃지 체크
   const checkEarlyBirdBadge = useCallback(async () => {
@@ -66,13 +82,20 @@ export default function HomePage() {
 
   useEffect(() => {
     fetchMeetings()
-  }, [session?.user?.region, selectedGameType])
+  }, [session?.user?.region, selectedGameType, status])
 
   useEffect(() => {
     checkEarlyBirdBadge()
   }, [checkEarlyBirdBadge])
 
   const handleCodeSearch = async () => {
+    // 로그인 체크
+    if (!requireLogin('모임 코드를 입력하려면 로그인이 필요합니다')) {
+      setShowCodeInput(false)
+      setMeetingCode('')
+      return
+    }
+
     if (meetingCode.length !== 6) {
       setCodeError('6자리 코드를 입력해주세요')
       return
@@ -92,41 +115,59 @@ export default function HomePage() {
   }
 
   const fetchMeetings = async () => {
-    if (!session?.user?.region) return
+    // 로딩 중이면 대기
+    if (status === 'loading') return
 
     setIsLoading(true)
     setHasNoLocalMeetings(false)
     setOtherRegionMeetings([])
 
     try {
-      const params = new URLSearchParams({
-        region: session.user.region,
-        status: 'RECRUITING',
-      })
-      if (selectedGameType) {
-        params.append('gameType', selectedGameType)
-      }
+      // 비로그인 또는 지역 미설정 시 전체 모임 조회
+      if (!isAuthenticated || !session?.user?.region) {
+        const params = new URLSearchParams({
+          status: 'RECRUITING',
+        })
+        if (selectedGameType) {
+          params.append('gameType', selectedGameType)
+        }
 
-      const res = await fetch(`/api/meetings?${params}`)
-      if (res.ok) {
-        const data = await res.json()
-        setMeetings(data)
+        const res = await fetch(`/api/meetings?${params}`)
+        if (res.ok) {
+          const data = await res.json()
+          setMeetings(data)
+        }
+      } else {
+        // 로그인 상태: 내 동네 모임 우선 조회
+        const params = new URLSearchParams({
+          region: session.user.region,
+          status: 'RECRUITING',
+        })
+        if (selectedGameType) {
+          params.append('gameType', selectedGameType)
+        }
 
-        // 내 동네에 모임이 없으면 다른 동네 모임 조회
-        if (data.length === 0) {
-          setHasNoLocalMeetings(true)
-          const otherParams = new URLSearchParams({
-            excludeRegion: session.user.region,
-            status: 'RECRUITING',
-          })
-          if (selectedGameType) {
-            otherParams.append('gameType', selectedGameType)
-          }
+        const res = await fetch(`/api/meetings?${params}`)
+        if (res.ok) {
+          const data = await res.json()
+          setMeetings(data)
 
-          const otherRes = await fetch(`/api/meetings?${otherParams}`)
-          if (otherRes.ok) {
-            const otherData = await otherRes.json()
-            setOtherRegionMeetings(otherData)
+          // 내 동네에 모임이 없으면 다른 동네 모임 조회
+          if (data.length === 0) {
+            setHasNoLocalMeetings(true)
+            const otherParams = new URLSearchParams({
+              excludeRegion: session.user.region,
+              status: 'RECRUITING',
+            })
+            if (selectedGameType) {
+              otherParams.append('gameType', selectedGameType)
+            }
+
+            const otherRes = await fetch(`/api/meetings?${otherParams}`)
+            if (otherRes.ok) {
+              const otherData = await otherRes.json()
+              setOtherRegionMeetings(otherData)
+            }
           }
         }
       }
@@ -144,26 +185,34 @@ export default function HomePage() {
         <div className="px-4 py-3">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-gray-400">내 동네</p>
+              <p className="text-xs text-gray-400">{isAuthenticated ? '내 동네' : '전체 모임'}</p>
               <h1 className="text-lg font-bold text-gray-900">
-                {session?.user?.region || '동네 설정'}
+                {isAuthenticated ? (session?.user?.region || '동네 설정') : '경도'}
               </h1>
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setShowCodeInput(true)}
+                onClick={() => {
+                  if (requireLogin('모임 코드를 입력하려면 로그인이 필요합니다')) {
+                    setShowCodeInput(true)
+                  }
+                }}
                 className="px-3 py-2 bg-gray-100 rounded-lg text-sm font-medium text-gray-600 active:bg-gray-200"
               >
                 코드 입력
               </button>
-              <Link
-                href="/my"
+              <button
+                onClick={() => {
+                  if (requireLogin('마이페이지를 이용하려면 로그인이 필요합니다')) {
+                    router.push('/my')
+                  }
+                }}
                 className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center"
               >
                 <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
-              </Link>
+              </button>
             </div>
           </div>
         </div>
@@ -203,15 +252,19 @@ export default function HomePage() {
             <p className="text-gray-500 mb-6">
               첫 번째 모임을 만들어보세요!
             </p>
-            <Link
-              href="/create"
+            <button
+              onClick={() => {
+                if (requireLogin('모임을 만들려면 로그인이 필요합니다')) {
+                  router.push('/create')
+                }
+              }}
               className="inline-flex items-center gap-2 bg-primary text-white font-semibold py-3 px-6 rounded-xl active:bg-primary-dark transition-colors"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
               모임 만들기
-            </Link>
+            </button>
           </div>
         ) : (
           <div className="space-y-4">
@@ -258,14 +311,18 @@ export default function HomePage() {
 
       {/* 플로팅 버튼 - 더 크고 명확하게 */}
       {(meetings.length > 0 || otherRegionMeetings.length > 0) && (
-        <Link
-          href="/create"
+        <button
+          onClick={() => {
+            if (requireLogin('모임을 만들려면 로그인이 필요합니다')) {
+              router.push('/create')
+            }
+          }}
           className="fixed bottom-24 right-4 w-14 h-14 bg-primary text-white rounded-full shadow-lg flex items-center justify-center active:scale-95 transition-transform z-50"
         >
           <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
           </svg>
-        </Link>
+        </button>
       )}
 
       {/* 코드 입력 모달 */}
@@ -312,6 +369,13 @@ export default function HomePage() {
           onClose={() => setEarnedBadge(null)}
         />
       )}
+
+      {/* 로그인 필요 모달 */}
+      <LoginRequiredModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        message={loginModalMessage}
+      />
     </div>
   )
 }
