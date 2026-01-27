@@ -477,7 +477,11 @@ function MeetingDetailContent() {
     (p) => p.userId === session?.user?.id && p.status !== 'CANCELLED'
   )
   // 참여자 수에 호스트 포함 (+1)
-  const totalParticipants = meeting._count.participants + 1
+  // 호스트가 레디하면 participants 테이블에 추가되므로 중복 계산 방지
+  const hostInParticipants = meeting.participants.some(p => p.userId === meeting.hostId)
+  const totalParticipants = hostInParticipants
+    ? meeting._count.participants  // 호스트가 이미 participants에 포함됨
+    : meeting._count.participants + 1  // 호스트 별도 추가
   const isFull = totalParticipants >= meeting.maxParticipants
   const canJoin =
     meeting.status === 'RECRUITING' &&
@@ -725,7 +729,7 @@ function MeetingDetailContent() {
                     <>
                       <p className="font-semibold text-green-800">레디 가능!</p>
                       <p className="text-sm text-green-600">
-                        모임 장소에 도착하면 레디해주세요 ({readyCount}/{meeting.participants.filter(p => p.status !== 'CANCELLED').length}명 레디)
+                        모임 장소에 도착하면 레디해주세요 ({readyCount}/{totalParticipants}명 레디)
                       </p>
                     </>
                   ) : (
