@@ -488,6 +488,13 @@ export default function MyPage() {
             <span className="flex-1 text-left font-medium text-red-600">로그아웃</span>
           </button>
         </div>
+
+        {/* 푸터 */}
+        <footer className="py-6 pb-24 text-center text-xs text-gray-300 leading-relaxed">
+          <p>상호명: 와하공방 | 대표자: 김수연</p>
+          <p>사업장 소재지: 서울특별시 성북구 오패산로4길 42 2층 와하공방</p>
+          <p>통신판매업번호: 2024-서울성북-1373</p>
+        </footer>
       </div>
 
       {/* 레벨 설명 모달 */}

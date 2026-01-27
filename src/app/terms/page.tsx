@@ -152,6 +152,13 @@ export default function TermsPage() {
           </section>
         </div>
       </main>
+
+      {/* 푸터 */}
+      <footer className="max-w-3xl mx-auto px-4 py-8 text-center text-xs text-gray-300 leading-relaxed">
+        <p>상호명: 와하공방 | 대표자: 김수연</p>
+        <p>사업장 소재지: 서울특별시 성북구 오패산로4길 42 2층 와하공방</p>
+        <p>통신판매업번호: 2024-서울성북-1373</p>
+      </footer>
     </div>
   )
 }
