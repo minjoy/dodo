@@ -12,7 +12,7 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.KAKAO_CLIENT_SECRET!,
       authorization: {
         params: {
-          scope: 'profile_nickname profile_image account_email gender birthyear',
+          scope: 'account_email gender birthyear',
         },
       },
     }),
@@ -26,19 +26,15 @@ export const authOptions: NextAuthOptions = {
             email?: string
             gender?: string // "male" 또는 "female"
             birthyear?: string // 예: "1990"
-            profile?: {
-              nickname?: string
-              profile_image_url?: string
-            }
           }
         }
 
         const kakaoId = String(kakaoProfile.id)
         const email = kakaoProfile.kakao_account?.email
-        const nickname = kakaoProfile.kakao_account?.profile?.nickname || '익명'
-        const profileImage = kakaoProfile.kakao_account?.profile?.profile_image_url
         const gender = kakaoProfile.kakao_account?.gender // "male" 또는 "female"
         const birthYear = kakaoProfile.kakao_account?.birthyear // 예: "1990"
+        // 닉네임은 온보딩에서 설정, 임시로 고유한 값 사용
+        const nickname = `user_${kakaoId.slice(-8)}`
 
         // 1. 영구 정지된 카카오 계정인지 확인
         const bannedKakao = await prisma.bannedKakao.findUnique({
@@ -74,7 +70,6 @@ export const authOptions: NextAuthOptions = {
               kakaoId,
               email,
               nickname,
-              profileImage,
               gender,
               birthYear,
               region: '', // 온보딩에서 설정
