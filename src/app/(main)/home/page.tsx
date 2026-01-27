@@ -289,7 +289,12 @@ export default function HomePage() {
             {meetings.length > 0 && (
               <div className="space-y-3">
                 {meetings.map((meeting) => (
-                  <MeetingCard key={meeting.id} meeting={meeting} />
+                  <MeetingCard
+                    key={meeting.id}
+                    meeting={meeting}
+                    isAuthenticated={isAuthenticated}
+                    onLoginRequired={() => requireLogin('모임 상세를 보려면 로그인이 필요합니다')}
+                  />
                 ))}
               </div>
             )}
@@ -301,7 +306,12 @@ export default function HomePage() {
                   다른 동네 모임
                 </h3>
                 {otherRegionMeetings.map((meeting) => (
-                  <MeetingCard key={meeting.id} meeting={meeting} />
+                  <MeetingCard
+                    key={meeting.id}
+                    meeting={meeting}
+                    isAuthenticated={isAuthenticated}
+                    onLoginRequired={() => requireLogin('모임 상세를 보려면 로그인이 필요합니다')}
+                  />
                 ))}
               </div>
             )}

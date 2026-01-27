@@ -14,16 +14,25 @@ interface MeetingCardProps {
     host: User
     _count: { participants: number }
   }
+  isAuthenticated?: boolean
+  onLoginRequired?: () => void
 }
 
-export default function MeetingCard({ meeting }: MeetingCardProps) {
+export default function MeetingCard({ meeting, isAuthenticated = true, onLoginRequired }: MeetingCardProps) {
   // 참여자 수에 호스트 포함 (+1)
   const totalParticipants = meeting._count.participants + 1
   const isFull = totalParticipants >= meeting.maxParticipants
   const spotsLeft = meeting.maxParticipants - totalParticipants
 
+  const handleClick = (e: React.MouseEvent) => {
+    if (!isAuthenticated && onLoginRequired) {
+      e.preventDefault()
+      onLoginRequired()
+    }
+  }
+
   return (
-    <Link href={`/meeting/${meeting.id}`} className="block">
+    <Link href={`/meeting/${meeting.id}`} className="block" onClick={handleClick}>
       <div className="bg-white rounded-2xl p-4 shadow-sm active:bg-gray-50 transition-colors">
         {/* 상단: 게임 타입 + 인원 */}
         <div className="flex items-center justify-between mb-3">
