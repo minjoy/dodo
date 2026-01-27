@@ -40,9 +40,9 @@ function LoginContent() {
   const errorInfo = getErrorMessage()
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="h-screen bg-white flex flex-col overflow-hidden">
       {/* 상단 */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6">
+      <div className="flex-1 flex flex-col items-center justify-center px-6 pb-4">
         {/* 에러 메시지 */}
         {errorInfo && (
           <div className="w-full max-w-sm mb-8 bg-red-50 border border-red-200 rounded-xl p-4">
@@ -65,7 +65,7 @@ function LoginContent() {
         </div>
 
         {/* 설명 */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-8">
           <p className="text-gray-600 mb-2">동네 친구들과 함께하는</p>
           <p className="text-gray-600">추억의 게임 모임</p>
         </div>
