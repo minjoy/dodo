@@ -18,6 +18,8 @@ model User {
   profileImage  String?   @db.Text
   bio           String?   @db.Text
   ageRange      String?   // 카카오 연령대 (예: "20~29")
+  gender        String?   // 성별 (male/female)
+  birthYear     String?   // 출생 연도 (예: "1990")
 
   // 동네 정보
   region        String    // 예: "성수동"
