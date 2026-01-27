@@ -13,6 +13,7 @@ export const authOptions: NextAuthOptions = {
       authorization: {
         params: {
           scope: 'account_email gender birthyear',
+          prompt: 'login',
         },
       },
     }),
