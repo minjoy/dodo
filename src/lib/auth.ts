@@ -2,8 +2,8 @@ import { NextAuthOptions } from 'next-auth'
 import KakaoProvider from 'next-auth/providers/kakao'
 import { prisma } from './prisma'
 
-// 성인(20세 이상) 연령대 목록
-const ADULT_AGE_RANGES = ['20~29', '30~39', '40~49', '50~59', '60~69', '70~79', '80~89', '90~']
+// 성인 최소 나이
+const ADULT_MIN_AGE = 20
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -24,7 +24,6 @@ export const authOptions: NextAuthOptions = {
           id: number
           kakao_account?: {
             email?: string
-            age_range?: string // 예: "20~29"
             gender?: string // "male" 또는 "female"
             birthyear?: string // 예: "1990"
             profile?: {
@@ -38,7 +37,6 @@ export const authOptions: NextAuthOptions = {
         const email = kakaoProfile.kakao_account?.email
         const nickname = kakaoProfile.kakao_account?.profile?.nickname || '익명'
         const profileImage = kakaoProfile.kakao_account?.profile?.profile_image_url
-        const ageRange = kakaoProfile.kakao_account?.age_range
         const gender = kakaoProfile.kakao_account?.gender // "male" 또는 "female"
         const birthYear = kakaoProfile.kakao_account?.birthyear // 예: "1990"
 
@@ -62,8 +60,10 @@ export const authOptions: NextAuthOptions = {
             return '/login?error=suspended'
           }
         } else {
-          // 3. 신규 가입 시 성인 인증 확인
-          if (!ageRange || !ADULT_AGE_RANGES.includes(ageRange)) {
+          // 3. 신규 가입 시 성인 인증 확인 (출생년도 기준)
+          const currentYear = new Date().getFullYear()
+          const age = birthYear ? currentYear - parseInt(birthYear) : 0
+          if (!birthYear || age < ADULT_MIN_AGE) {
             // 20세 미만 - 가입 거부
             return '/login?error=underage'
           }
@@ -75,7 +75,6 @@ export const authOptions: NextAuthOptions = {
               email,
               nickname,
               profileImage,
-              ageRange,
               gender,
               birthYear,
               region: '', // 온보딩에서 설정
