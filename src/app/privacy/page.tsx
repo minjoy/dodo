@@ -30,8 +30,8 @@ export default function PrivacyPage() {
             <h2 className="text-lg font-semibold text-gray-900 mt-6 mb-3">1. 수집하는 개인정보 항목</h2>
             <p>회사는 회원가입 및 서비스 이용을 위해 다음과 같은 개인정보를 수집합니다:</p>
             <ul className="list-disc list-inside space-y-1 mt-2">
-              <li>필수항목: 카카오 계정 정보(고유ID), 닉네임, 프로필 사진</li>
-              <li>선택항목: 이메일 주소, 성별, 출생 연도</li>
+              <li>필수항목: 카카오 계정 정보(고유ID), 닉네임, 프로필 사진, 성별, 출생 연도</li>
+              <li>선택항목: 이메일 주소</li>
               <li>위치정보: 동네(지역) 설정 정보</li>
               <li>푸시 알림 관련: 푸시 알림 수신 동의 여부, 브라우저 푸시 구독 정보</li>
               <li>서비스 이용 과정에서 수집되는 정보: 서비스 이용기록, 접속 로그, 접속 IP 정보, 기기정보</li>
