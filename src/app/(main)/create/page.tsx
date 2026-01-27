@@ -156,8 +156,8 @@ export default function CreateMeetingPage() {
         </div>
 
         {/* 날짜 & 시간 */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
+        <div className="grid grid-cols-2 gap-3 overflow-hidden">
+          <div className="min-w-0">
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               날짜 <span className="text-red-500">*</span>
             </label>
@@ -167,10 +167,10 @@ export default function CreateMeetingPage() {
               value={formData.meetingDate}
               onChange={handleInputChange}
               min={today}
-              className="w-full min-w-0 px-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+              className="w-full min-w-0 max-w-full px-3 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-sm"
             />
           </div>
-          <div>
+          <div className="min-w-0">
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               시간 <span className="text-red-500">*</span>
             </label>
@@ -179,7 +179,7 @@ export default function CreateMeetingPage() {
               name="meetingTime"
               value={formData.meetingTime}
               onChange={handleInputChange}
-              className="w-full min-w-0 px-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+              className="w-full min-w-0 max-w-full px-3 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-sm"
             />
           </div>
         </div>
