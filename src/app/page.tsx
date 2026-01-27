@@ -34,7 +34,7 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col relative pb-28">
       {/* 메인 콘텐츠 */}
       <main className="flex-1 flex flex-col items-center justify-center px-6 text-center">
         {/* 로고 */}
@@ -91,6 +91,13 @@ export default function LandingPage() {
           에 동의하게 됩니다
         </p>
       </div>
+
+      {/* 푸터 - 절대 위치로 하단 고정 */}
+      <footer className="absolute bottom-0 left-0 right-0 px-6 py-6 text-center text-xs text-gray-400 leading-relaxed bg-white">
+        <p>상호명: 와하공방 | 대표자: 김수연</p>
+        <p>사업장 소재지: 서울특별시 성북구 오패산로4길 42 2층 와하공방</p>
+        <p>통신판매업번호: 2024-서울성북-1373</p>
+      </footer>
     </div>
   )
 }
