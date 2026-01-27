@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   const cookieStore = await cookies()
 
   // next-auth 관련 쿠키 삭제
@@ -18,5 +18,9 @@ export async function POST() {
     cookieStore.delete(cookieName)
   })
 
-  return NextResponse.json({ success: true })
+  // 카카오 로그아웃 URL 생성
+  const origin = request.headers.get('origin') || process.env.NEXTAUTH_URL || ''
+  const kakaoLogoutUrl = `https://kauth.kakao.com/oauth/logout?client_id=${process.env.KAKAO_CLIENT_ID}&logout_redirect_uri=${encodeURIComponent(origin + '/')}`
+
+  return NextResponse.json({ success: true, kakaoLogoutUrl })
 }

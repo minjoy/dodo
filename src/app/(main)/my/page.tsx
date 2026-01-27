@@ -175,10 +175,19 @@ export default function MyPage() {
   }
 
   const handleSignOut = async () => {
-    // 쿠키와 세션 삭제를 위한 API 호출
-    await fetch('/api/auth/logout', { method: 'POST' })
-    // next-auth 로그아웃
-    signOut({ callbackUrl: '/' })
+    // 쿠키와 세션 삭제를 위한 API 호출 + 카카오 로그아웃 URL 받기
+    const res = await fetch('/api/auth/logout', { method: 'POST' })
+    const data = await res.json()
+
+    // next-auth 로그아웃 (리다이렉트 없이)
+    await signOut({ redirect: false })
+
+    // 카카오 로그아웃 URL로 리다이렉트 (다음 로그인 시 다른 계정 선택 가능)
+    if (data.kakaoLogoutUrl) {
+      window.location.href = data.kakaoLogoutUrl
+    } else {
+      window.location.href = '/'
+    }
   }
 
   // 레벨별 경험치 요구량
