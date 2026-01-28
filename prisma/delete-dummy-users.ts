@@ -18,7 +18,7 @@ async function main() {
 
   console.log(`더미 사용자 ${dummyUsers.length}명을 삭제합니다...\n`)
 
-  const dummyUserIds = dummyUsers.map(u => u.id)
+  const dummyUserIds = dummyUsers.map((u: { id: string }) => u.id)
 
   // 2. 관련 데이터 삭제 (FK 순서 중요: 자식 → 부모)
 
@@ -81,7 +81,7 @@ async function main() {
     where: { hostId: { in: dummyUserIds } },
     select: { id: true },
   })
-  const dummyMeetingIds = dummyMeetings.map(m => m.id)
+  const dummyMeetingIds = dummyMeetings.map((m: { id: string }) => m.id)
 
   if (dummyMeetingIds.length > 0) {
     // 모임에 달린 댓글, 참가자, 리뷰, 역할, 신고 삭제

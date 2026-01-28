@@ -68,7 +68,7 @@ export async function DELETE() {
       return NextResponse.json({ message: '삭제할 더미 사용자가 없습니다', deletedCount: 0 })
     }
 
-    const dummyUserIds = dummyUsers.map(u => u.id)
+    const dummyUserIds = dummyUsers.map((u: { id: string }) => u.id)
 
     // 관련 데이터 삭제 (FK 순서: 자식 → 부모)
     await prisma.pushSubscription.deleteMany({ where: { userId: { in: dummyUserIds } } })
@@ -87,7 +87,7 @@ export async function DELETE() {
       where: { hostId: { in: dummyUserIds } },
       select: { id: true },
     })
-    const dummyMeetingIds = dummyMeetings.map(m => m.id)
+    const dummyMeetingIds = dummyMeetings.map((m: { id: string }) => m.id)
 
     if (dummyMeetingIds.length > 0) {
       await prisma.meetingComment.deleteMany({ where: { meetingId: { in: dummyMeetingIds } } })

@@ -215,7 +215,7 @@ async function main() {
 
   // 뱃지 코드 → ID 매핑
   const allBadges = await prisma.badge.findMany()
-  const badgeMap = new Map(allBadges.map(b => [b.code, b.id]))
+  const badgeMap = new Map(allBadges.map((b: { code: string; id: string }) => [b.code, b.id]))
 
   // 2. 기존 더미 유저 확인
   const existingDummyCount = await prisma.user.count({ where: { isDummy: true } })
@@ -297,7 +297,7 @@ async function main() {
     }
 
     const badgeNames = user.badgeCodes.map(c => {
-      const badge = allBadges.find(b => b.code === c)
+      const badge = allBadges.find((b: { code: string; icon: string }) => b.code === c)
       return badge ? badge.icon : c
     }).join(' ')
 
