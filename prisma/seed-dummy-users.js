@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+const { PrismaClient } = require('@prisma/client')
 
 const prisma = new PrismaClient()
 
@@ -51,7 +51,7 @@ const GENDERS = ['male', 'female']
 const AGE_RANGES = ['20~29', '20~29', '20~29', '30~39', '30~39', '30~39', '30~39', '40~49']
 const BIRTH_YEARS = ['1986', '1988', '1990', '1991', '1992', '1993', '1994', '1995', '1996', '1997', '1998', '1999', '2000', '2001', '2002', '2003']
 
-// ── 뱃지 코드 (시드에서 참조) ──
+// ── 뱃지 코드 ──
 const BADGE_CODES = [
   'FIRST_MEETING', 'MEETING_5', 'MEETING_10', 'MEETING_30', 'MEETING_50',
   'FIRST_HOST', 'HOST_5', 'HOST_10', 'HOST_20',
@@ -61,23 +61,23 @@ const BADGE_CODES = [
 ]
 
 // ── 유틸리티 ──
-function rand(min: number, max: number): number {
+function rand(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min
 }
 
-function pick<T>(arr: T[]): T {
+function pick(arr) {
   return arr[Math.floor(Math.random() * arr.length)]
 }
 
-function pickN<T>(arr: T[], n: number): T[] {
+function pickN(arr, n) {
   const shuffled = [...arr].sort(() => Math.random() - 0.5)
   return shuffled.slice(0, n)
 }
 
-// 경험치 → 레벨 계산 (프로젝트의 LEVEL_EXP_TABLE 기준)
+// 경험치 → 레벨 계산
 const LEVEL_EXP_TABLE = [0, 30, 80, 180, 350, 600, 1000, 1600, 2500, 4000]
 
-function calculateLevel(exp: number): number {
+function calculateLevel(exp) {
   for (let level = LEVEL_EXP_TABLE.length; level >= 1; level--) {
     if (exp >= LEVEL_EXP_TABLE[level - 1]) {
       return level
@@ -86,25 +86,8 @@ function calculateLevel(exp: number): number {
   return 1
 }
 
-// ── 사용자 프로필 생성 (현실적 분포) ──
-interface DummyUser {
-  nickname: string
-  region: string
-  meetingCount: number
-  hostCount: number
-  likeReceived: number
-  noShowCount: number
-  exp: number
-  level: number
-  bio: string | null
-  gender: string
-  ageRange: string
-  birthYear: string
-  badgeCodes: string[]         // 획득할 뱃지 코드 목록
-  representativeBadgeCodes: string[] // 대표 뱃지 코드 (최대 2개)
-}
-
-function generateUser(index: number): DummyUser {
+// ── 초기 사용자 프로필 생성 (서비스 초창기 낮은 활동량) ──
+function generateUser(index) {
   const nickname = NICKNAMES[index]
   const region = pick(REGIONS)
   const bio = pick(BIOS)
@@ -112,77 +95,59 @@ function generateUser(index: number): DummyUser {
   const ageRange = pick(AGE_RANGES)
   const birthYear = pick(BIRTH_YEARS)
 
-  // 사용자 유형별 현실적 분포 (3가지 tier)
-  let meetingCount: number
-  let hostCount: number
-  let likeReceived: number
-  let noShowCount: number
+  // 초기 유저: 서비스가 막 시작되어 전체적으로 활동량이 낮음
+  let meetingCount
+  let hostCount
+  let likeReceived
+  let noShowCount
 
   const tier = Math.random()
 
-  if (tier < 0.15) {
-    // ── 헤비 유저 (15%): 활동량 많음 ──
-    meetingCount = rand(20, 55)
-    hostCount = rand(5, 22)
-    likeReceived = rand(15, 55)
-    noShowCount = Math.random() < 0.3 ? rand(0, 1) : 0
-  } else if (tier < 0.50) {
-    // ── 중간 유저 (35%): 꾸준히 활동 ──
-    meetingCount = rand(5, 19)
-    hostCount = rand(1, 7)
-    likeReceived = rand(3, 18)
-    noShowCount = Math.random() < 0.2 ? rand(0, 2) : 0
-  } else if (tier < 0.85) {
-    // ── 라이트 유저 (35%): 가끔 참여 ──
-    meetingCount = rand(1, 6)
-    hostCount = rand(0, 2)
-    likeReceived = rand(0, 5)
-    noShowCount = Math.random() < 0.15 ? 1 : 0
-  } else {
-    // ── 신규 유저 (15%): 아직 활동 미미 ──
+  if (tier < 0.10) {
+    // ── 초기 활발 유저 (10%): 서비스 초기 적극 참여자 ──
+    meetingCount = rand(3, 5)
+    hostCount = rand(1, 2)
+    likeReceived = rand(1, 4)
+    noShowCount = 0
+  } else if (tier < 0.35) {
+    // ── 참여 시작 유저 (25%): 몇 번 참여해본 유저 ──
+    meetingCount = rand(1, 3)
+    hostCount = Math.random() < 0.3 ? 1 : 0
+    likeReceived = rand(0, 2)
+    noShowCount = 0
+  } else if (tier < 0.65) {
+    // ── 첫 경험 유저 (30%): 한 번 참여하거나 가입만 한 유저 ──
     meetingCount = rand(0, 1)
+    hostCount = 0
+    likeReceived = rand(0, 1)
+    noShowCount = 0
+  } else {
+    // ── 가입만 한 유저 (35%): 아직 활동 없음 ──
+    meetingCount = 0
     hostCount = 0
     likeReceived = 0
     noShowCount = 0
   }
 
-  // 경험치 계산 (프로젝트 공식: 참여*15 + 호스팅*25 + 좋아요*5)
+  // 경험치 계산 (참여*15 + 호스팅*25 + 좋아요*5)
   const exp = meetingCount * 15 + hostCount * 25 + likeReceived * 5
   const level = calculateLevel(exp)
 
   // ── 자격에 맞는 뱃지 결정 ──
-  const earnedBadges: string[] = []
+  const earnedBadges = []
 
   // 참여 뱃지
   if (meetingCount >= 1) earnedBadges.push('FIRST_MEETING')
   if (meetingCount >= 5) earnedBadges.push('MEETING_5')
-  if (meetingCount >= 10) earnedBadges.push('MEETING_10')
-  if (meetingCount >= 30) earnedBadges.push('MEETING_30')
-  if (meetingCount >= 50) earnedBadges.push('MEETING_50')
 
   // 호스트 뱃지
   if (hostCount >= 1) earnedBadges.push('FIRST_HOST')
   if (hostCount >= 5) earnedBadges.push('HOST_5')
-  if (hostCount >= 10) earnedBadges.push('HOST_10')
-  if (hostCount >= 20) earnedBadges.push('HOST_20')
 
-  // 좋아요 뱃지
-  if (likeReceived >= 10) earnedBadges.push('LIKE_10')
-  if (likeReceived >= 30) earnedBadges.push('LIKE_30')
-  if (likeReceived >= 50) earnedBadges.push('LIKE_50')
+  // 얼리버드 (초기 가입자: 40% 확률)
+  if (Math.random() < 0.4) earnedBadges.push('EARLY_BIRD')
 
-  // 게임 마스터 뱃지 (활동량 많은 유저에게 확률적으로)
-  if (meetingCount >= 10 && Math.random() < 0.4) earnedBadges.push('GYEONGDO_MASTER')
-  if (meetingCount >= 10 && Math.random() < 0.25) earnedBadges.push('SULRAE_MASTER')
-  if (meetingCount >= 10 && Math.random() < 0.2) earnedBadges.push('MUGUNGHWA_MASTER')
-
-  // 얼리버드 (초기 가입자 느낌: 30% 확률)
-  if (Math.random() < 0.3) earnedBadges.push('EARLY_BIRD')
-
-  // 개근왕 (노쇼 0 + 참여 10 이상)
-  if (noShowCount === 0 && meetingCount >= 10) earnedBadges.push('PERFECT_ATTENDANCE')
-
-  // ── 대표 뱃지 선정 (가장 높은 등급 뱃지 최대 2개) ──
+  // ── 대표 뱃지 선정 (최대 2개) ──
   const repBadges = earnedBadges.length > 0 ? pickN(earnedBadges, Math.min(2, earnedBadges.length)) : []
 
   return {
@@ -215,13 +180,13 @@ async function main() {
 
   // 뱃지 코드 → ID 매핑
   const allBadges = await prisma.badge.findMany()
-  const badgeMap = new Map(allBadges.map((b: { code: string; id: string }) => [b.code, b.id]))
+  const badgeMap = new Map(allBadges.map((b) => [b.code, b.id]))
 
   // 2. 기존 더미 유저 확인
   const existingDummyCount = await prisma.user.count({ where: { isDummy: true } })
   if (existingDummyCount > 0) {
     console.log(`기존 더미 유저 ${existingDummyCount}명이 있습니다. 먼저 삭제하시겠습니까?`)
-    console.log('삭제하려면: npx ts-node prisma/delete-dummy-users.ts')
+    console.log('삭제하려면: node prisma/delete-dummy-users.js')
     console.log('계속 진행합니다 (중복 닉네임은 건너뜁니다)...\n')
   }
 
@@ -250,8 +215,8 @@ async function main() {
     const repBadge1Id = repBadge1Code ? badgeMap.get(repBadge1Code) : null
     const repBadge2Id = repBadge2Code ? badgeMap.get(repBadge2Code) : null
 
-    // 가입일 랜덤 (최근 1~90일 사이)
-    const daysAgo = rand(1, 90)
+    // 가입일 랜덤 (최근 1~14일 사이 - 초기 서비스라 최근 가입)
+    const daysAgo = rand(1, 14)
     const createdAt = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000)
 
     // 사용자 생성
@@ -296,8 +261,8 @@ async function main() {
       })
     }
 
-    const badgeNames = user.badgeCodes.map(c => {
-      const badge = allBadges.find((b: { code: string; icon: string }) => b.code === c)
+    const badgeNames = user.badgeCodes.map((c) => {
+      const badge = allBadges.find((b) => b.code === c)
       return badge ? badge.icon : c
     }).join(' ')
 
@@ -305,16 +270,16 @@ async function main() {
       `  [${String(i + 1).padStart(2, '0')}] ${user.nickname.padEnd(10)} ` +
       `| ${user.region.padEnd(5)} ` +
       `| Lv.${String(user.level).padEnd(3)} ` +
-      `| 참여:${String(user.meetingCount).padStart(3)} ` +
+      `| 참여:${String(user.meetingCount).padStart(2)} ` +
       `| 개설:${String(user.hostCount).padStart(2)} ` +
-      `| 좋아요:${String(user.likeReceived).padStart(3)} ` +
+      `| 좋아요:${String(user.likeReceived).padStart(2)} ` +
       `| 뱃지: ${badgeNames || '없음'}`
     )
     created++
   }
 
   console.log(`\n=== 완료: ${created}명 생성, ${skipped}명 스킵 ===`)
-  console.log('더미 데이터 삭제: npx ts-node prisma/delete-dummy-users.ts')
+  console.log('더미 데이터 삭제: node prisma/delete-dummy-users.js')
 }
 
 main()
