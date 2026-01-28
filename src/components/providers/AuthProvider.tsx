@@ -43,7 +43,7 @@ function AppContent({ children }: { children: ReactNode }) {
 
 export default function AuthProvider({ children }: AuthProviderProps) {
   return (
-    <SessionProvider>
+    <SessionProvider refetchInterval={5 * 60} refetchOnWindowFocus={true}>
       <AppContent>{children}</AppContent>
     </SessionProvider>
   )

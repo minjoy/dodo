@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
+import { fetchWithAuth } from '@/lib/fetchWithAuth'
 
 const SEOUL_REGIONS = [
   { name: '성수동', emoji: '🏭' },
@@ -35,7 +36,7 @@ export default function RegionChangePage() {
 
     setIsLoading(true)
     try {
-      const res = await fetch('/api/users/me', {
+      const res = await fetchWithAuth('/api/users/me', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ region: selectedRegion }),

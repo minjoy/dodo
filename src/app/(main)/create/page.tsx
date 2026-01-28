@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import AddressSearch from '@/components/AddressSearch'
 import KakaoMap from '@/components/KakaoMap'
+import { fetchWithAuth } from '@/lib/fetchWithAuth'
 import type { GameType, CreateMeetingInput } from '@/types'
 
 const GAME_TYPES: { value: GameType; label: string }[] = [
@@ -79,7 +80,7 @@ export default function CreateMeetingPage() {
         password: formData.password || undefined,
       }
 
-      const res = await fetch('/api/meetings', {
+      const res = await fetchWithAuth('/api/meetings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(input),

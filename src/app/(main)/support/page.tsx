@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { fetchWithAuth } from '@/lib/fetchWithAuth'
 
 interface Announcement {
   id: string
@@ -23,7 +24,7 @@ export default function SupportPage() {
 
   const fetchAnnouncements = async () => {
     try {
-      const res = await fetch('/api/announcements')
+      const res = await fetchWithAuth('/api/announcements')
       if (res.ok) {
         const data = await res.json()
         setAnnouncements(data)

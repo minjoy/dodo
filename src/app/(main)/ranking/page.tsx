@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { fetchWithAuth } from '@/lib/fetchWithAuth'
 
 type Tab = 'national' | 'myRegion' | 'nearby'
 type Period = 'weekly' | 'monthly' | 'total'
@@ -98,16 +99,16 @@ export default function RankingPage() {
     setIsLoading(true)
     try {
       if (activeTab === 'national') {
-        const res = await fetch(`/api/regions/ranking?period=${period}`)
+        const res = await fetchWithAuth(`/api/regions/ranking?period=${period}`)
         const data = await res.json()
         setNationalRankings(data.rankings || [])
         setMyRegionRank(data.myRegion)
       } else if (activeTab === 'myRegion' && session?.user?.region) {
-        const res = await fetch(`/api/regions/${encodeURIComponent(session.user.region)}`)
+        const res = await fetchWithAuth(`/api/regions/${encodeURIComponent(session.user.region)}`)
         const data = await res.json()
         setMyRegionData(data)
       } else if (activeTab === 'nearby') {
-        const res = await fetch('/api/regions/nearby')
+        const res = await fetchWithAuth('/api/regions/nearby')
         const data = await res.json()
         setNearbyData(data)
       }

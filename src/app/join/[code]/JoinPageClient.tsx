@@ -9,6 +9,7 @@ import {
   getGameTypeName,
   getGameTypeEmoji,
 } from '@/lib/utils'
+import { fetchWithAuth } from '@/lib/fetchWithAuth'
 
 interface Meeting {
   id: string
@@ -66,7 +67,7 @@ export default function JoinPageClient({ code }: JoinPageClientProps) {
 
   const fetchMeeting = async () => {
     try {
-      const res = await fetch(`/api/meetings/code/${code}`)
+      const res = await fetchWithAuth(`/api/meetings/code/${code}`)
       if (res.ok) {
         const data = await res.json()
         setMeeting(data)
@@ -105,7 +106,7 @@ export default function JoinPageClient({ code }: JoinPageClientProps) {
     setError('')
 
     try {
-      const res = await fetch(`/api/meetings/${meeting.id}/join`, {
+      const res = await fetchWithAuth(`/api/meetings/${meeting.id}/join`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password: meeting.hasPassword ? password : undefined }),

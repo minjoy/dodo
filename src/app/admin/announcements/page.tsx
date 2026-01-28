@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { fetchWithAuth } from '@/lib/fetchWithAuth'
 
 interface Announcement {
   id: string
@@ -39,7 +40,7 @@ export default function AdminAnnouncementsPage() {
 
   const fetchAnnouncements = async () => {
     try {
-      const res = await fetch('/api/admin/announcements')
+      const res = await fetchWithAuth('/api/admin/announcements')
       if (res.status === 403) {
         alert('관리자 권한이 필요합니다')
         router.push('/')
@@ -101,7 +102,7 @@ export default function AdminAnnouncementsPage() {
         : '/api/announcements'
       const method = editingAnnouncement ? 'PUT' : 'POST'
 
-      const res = await fetch(url, {
+      const res = await fetchWithAuth(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -126,7 +127,7 @@ export default function AdminAnnouncementsPage() {
     if (!confirm('정말 삭제하시겠습니까?')) return
 
     try {
-      const res = await fetch(`/api/announcements/${id}`, {
+      const res = await fetchWithAuth(`/api/announcements/${id}`, {
         method: 'DELETE',
       })
 
@@ -144,7 +145,7 @@ export default function AdminAnnouncementsPage() {
 
   const handleTogglePublish = async (announcement: Announcement) => {
     try {
-      const res = await fetch(`/api/announcements/${announcement.id}`, {
+      const res = await fetchWithAuth(`/api/announcements/${announcement.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isPublished: !announcement.isPublished }),
@@ -160,7 +161,7 @@ export default function AdminAnnouncementsPage() {
 
   const handleTogglePin = async (announcement: Announcement) => {
     try {
-      const res = await fetch(`/api/announcements/${announcement.id}`, {
+      const res = await fetchWithAuth(`/api/announcements/${announcement.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isPinned: !announcement.isPinned }),

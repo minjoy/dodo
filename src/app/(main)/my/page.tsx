@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { Button, Card, Badge, Avatar } from '@/components/common'
 import { MeetingCard } from '@/components/meeting'
 import { getLevelName } from '@/lib/utils'
+import { fetchWithAuth } from '@/lib/fetchWithAuth'
 import type { User, Meeting } from '@/types'
 
 type MeetingWithDetails = Meeting & {
@@ -86,10 +87,10 @@ export default function MyPage() {
   const fetchUserData = async () => {
     try {
       const [userRes, meetingsRes, pastMeetingsRes, badgesRes] = await Promise.all([
-        fetch('/api/users/me'),
-        fetch('/api/users/me/meetings'),
-        fetch('/api/users/me/meetings?type=past'),
-        fetch('/api/users/me/badges'),
+        fetchWithAuth('/api/users/me'),
+        fetchWithAuth('/api/users/me/meetings'),
+        fetchWithAuth('/api/users/me/meetings?type=past'),
+        fetchWithAuth('/api/users/me/badges'),
       ])
 
       if (userRes.ok) {
@@ -157,7 +158,7 @@ export default function MyPage() {
   const handleSaveBadges = async () => {
     setIsSavingBadge(true)
     try {
-      const res = await fetch('/api/users/me', {
+      const res = await fetchWithAuth('/api/users/me', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import Image from 'next/image'
+import { fetchWithAuth } from '@/lib/fetchWithAuth'
 
 interface Comment {
   id: string
@@ -33,7 +34,7 @@ export default function CommentBoard({ meetingId, isParticipant, isHost }: Comme
 
   const fetchComments = async () => {
     try {
-      const res = await fetch(`/api/meetings/${meetingId}/comments`)
+      const res = await fetchWithAuth(`/api/meetings/${meetingId}/comments`)
       if (res.ok) {
         const data = await res.json()
         setComments(data)
@@ -54,7 +55,7 @@ export default function CommentBoard({ meetingId, isParticipant, isHost }: Comme
 
     setIsSubmitting(true)
     try {
-      const res = await fetch(`/api/meetings/${meetingId}/comments`, {
+      const res = await fetchWithAuth(`/api/meetings/${meetingId}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: newComment.trim() }),
@@ -78,7 +79,7 @@ export default function CommentBoard({ meetingId, isParticipant, isHost }: Comme
     if (!confirm('정말 삭제하시겠습니까?')) return
 
     try {
-      const res = await fetch(`/api/meetings/${meetingId}/comments/${commentId}`, {
+      const res = await fetchWithAuth(`/api/meetings/${meetingId}/comments/${commentId}`, {
         method: 'DELETE',
       })
 
@@ -95,7 +96,7 @@ export default function CommentBoard({ meetingId, isParticipant, isHost }: Comme
 
   const handleTogglePin = async (commentId: string) => {
     try {
-      const res = await fetch(`/api/meetings/${meetingId}/comments/${commentId}`, {
+      const res = await fetchWithAuth(`/api/meetings/${meetingId}/comments/${commentId}`, {
         method: 'PATCH',
       })
 

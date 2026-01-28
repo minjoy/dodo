@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { validateNickname } from '@/lib/nickname'
+import { fetchWithAuth } from '@/lib/fetchWithAuth'
 import ImageCropper from '@/components/ImageCropper'
 
 const POPULAR_REGIONS = [
@@ -73,7 +74,8 @@ function OnboardingContent() {
     const timer = setTimeout(async () => {
       setIsCheckingNickname(true)
       try {
-        const res = await fetch(`/api/users/check-nickname?nickname=${encodeURIComponent(nickname)}`)
+        const res = await fetchWithAuth(`/api/users/check-nickname?nickname=${encodeURIComponent(nickname)}`)
+        if (res.status === 401) return
         const data = await res.json()
         if (!data.available) {
           setNicknameError('이미 사용 중인 닉네임입니다')
@@ -131,7 +133,7 @@ function OnboardingContent() {
 
     setIsLoading(true)
     try {
-      const res = await fetch('/api/users/me', {
+      const res = await fetchWithAuth('/api/users/me', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -141,12 +143,10 @@ function OnboardingContent() {
         }),
       })
 
+      if (res.status === 401) return
       if (res.ok) {
         await update({ region })
         router.push(callbackUrl || '/home')
-      } else if (res.status === 401) {
-        alert('로그인이 만료되었습니다. 다시 로그인해주세요.')
-        router.push('/')
       } else {
         const error = await res.json()
         alert(error.message || '오류가 발생했습니다')

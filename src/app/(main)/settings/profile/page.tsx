@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { Avatar } from '@/components/common'
 import ImageCropper from '@/components/ImageCropper'
+import { fetchWithAuth } from '@/lib/fetchWithAuth'
 
 interface Badge {
   id: string
@@ -66,7 +67,7 @@ export default function ProfileEditPage() {
 
   const fetchUser = async () => {
     try {
-      const res = await fetch('/api/users/me')
+      const res = await fetchWithAuth('/api/users/me')
       if (res.ok) {
         const data = await res.json()
         setUser(data)
@@ -104,7 +105,7 @@ export default function ProfileEditPage() {
 
     setIsSaving(true)
     try {
-      const res = await fetch('/api/users/me', {
+      const res = await fetchWithAuth('/api/users/me', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

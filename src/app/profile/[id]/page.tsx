@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { Avatar } from '@/components/common'
 import { getLevelName } from '@/lib/utils'
+import { fetchWithAuth } from '@/lib/fetchWithAuth'
 
 interface Badge {
   id: string
@@ -89,7 +90,7 @@ export default function ProfilePage() {
 
   const fetchProfile = async () => {
     try {
-      const res = await fetch(`/api/users/${userId}`)
+      const res = await fetchWithAuth(`/api/users/${userId}`)
       if (res.ok) {
         const data = await res.json()
         setProfile(data)
@@ -108,7 +109,7 @@ export default function ProfilePage() {
 
     setIsReporting(true)
     try {
-      const res = await fetch('/api/reports', {
+      const res = await fetchWithAuth('/api/reports', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

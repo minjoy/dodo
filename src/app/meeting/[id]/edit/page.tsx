@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import AddressSearch from '@/components/AddressSearch'
 import KakaoMap from '@/components/KakaoMap'
+import { fetchWithAuth } from '@/lib/fetchWithAuth'
 import type { GameType, MeetingWithDetails } from '@/types'
 
 const GAME_TYPES: { value: GameType; label: string }[] = [
@@ -57,7 +58,7 @@ export default function EditMeetingPage() {
 
   const fetchMeeting = async () => {
     try {
-      const res = await fetch(`/api/meetings/${meetingId}`)
+      const res = await fetchWithAuth(`/api/meetings/${meetingId}`)
       if (res.ok) {
         const data = await res.json()
         setMeeting(data)
@@ -122,7 +123,7 @@ export default function EditMeetingPage() {
         `${formData.meetingDate}T${formData.meetingTime}`
       ).toISOString()
 
-      const res = await fetch(`/api/meetings/${meetingId}`, {
+      const res = await fetchWithAuth(`/api/meetings/${meetingId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -157,7 +158,7 @@ export default function EditMeetingPage() {
     if (!confirm('정말 이 모임을 삭제하시겠습니까?')) return
 
     try {
-      const res = await fetch(`/api/meetings/${meetingId}`, {
+      const res = await fetchWithAuth(`/api/meetings/${meetingId}`, {
         method: 'DELETE',
       })
 

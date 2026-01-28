@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { MeetingCard } from '@/components/meeting'
+import { fetchWithAuth } from '@/lib/fetchWithAuth'
 import type { User, Meeting } from '@/types'
 
 type MeetingWithDetails = Meeting & {
@@ -24,7 +25,7 @@ export default function PastMeetingsPage() {
 
   const fetchPastMeetings = async () => {
     try {
-      const res = await fetch('/api/users/me/meetings?type=past')
+      const res = await fetchWithAuth('/api/users/me/meetings?type=past')
       if (res.ok) {
         const data = await res.json()
         setMeetings(data)

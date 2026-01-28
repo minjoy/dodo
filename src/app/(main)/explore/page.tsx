@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { fetchWithAuth } from '@/lib/fetchWithAuth'
 
 interface User {
   id: string
@@ -66,7 +67,7 @@ export default function ExplorePage() {
       const params = new URLSearchParams()
       if (searchQuery) params.set('search', searchQuery)
 
-      const res = await fetch(`/api/users/ranking?${params}`)
+      const res = await fetchWithAuth(`/api/users/ranking?${params}`)
       if (res.ok) {
         const data = await res.json()
         setUsers(data)
@@ -79,7 +80,7 @@ export default function ExplorePage() {
   // 떠들기 메시지 가져오기
   const fetchShouts = async () => {
     try {
-      const res = await fetch('/api/shouts')
+      const res = await fetchWithAuth('/api/shouts')
       if (res.ok) {
         const data = await res.json()
         setShouts(data)
@@ -112,7 +113,7 @@ export default function ExplorePage() {
 
     setIsSubmitting(true)
     try {
-      const res = await fetch('/api/shouts', {
+      const res = await fetchWithAuth('/api/shouts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: shoutMessage.trim() }),

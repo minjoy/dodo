@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { fetchWithAuth } from '@/lib/fetchWithAuth'
 
 interface Badge {
   id: string
@@ -61,8 +62,8 @@ export default function BadgesPage() {
   const fetchData = async () => {
     try {
       const [badgesRes, userRes] = await Promise.all([
-        fetch('/api/badges'),
-        fetch('/api/users/me'),
+        fetchWithAuth('/api/badges'),
+        fetchWithAuth('/api/users/me'),
       ])
 
       if (badgesRes.ok) {

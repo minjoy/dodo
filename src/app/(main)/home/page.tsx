@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { MeetingCard, CompletedMeetingCard } from '@/components/meeting'
 import BadgeAcquisition from '@/components/BadgeAcquisition'
 import { LoginRequiredModal } from '@/components/common'
+import { fetchWithAuth } from '@/lib/fetchWithAuth'
 import type { Meeting, User } from '@/types'
 
 type MeetingWithDetails = Meeting & {
@@ -65,7 +66,7 @@ export default function HomePage() {
     if (!session?.user?.id) return
 
     try {
-      const res = await fetch('/api/badges/early-bird', {
+      const res = await fetchWithAuth('/api/badges/early-bird', {
         method: 'POST',
       })
       const data = await res.json()
@@ -104,7 +105,7 @@ export default function HomePage() {
 
     setCodeError('')
     try {
-      const res = await fetch(`/api/meetings/code/${meetingCode.toUpperCase()}`)
+      const res = await fetchWithAuth(`/api/meetings/code/${meetingCode.toUpperCase()}`)
       if (res.ok) {
         router.push(`/join/${meetingCode.toUpperCase()}`)
       } else {
@@ -134,7 +135,7 @@ export default function HomePage() {
           params.append('gameType', selectedGameType)
         }
 
-        const res = await fetch(`/api/meetings?${params}`)
+        const res = await fetchWithAuth(`/api/meetings?${params}`)
         if (res.ok) {
           const data = await res.json()
           setMeetings(data)
@@ -150,7 +151,7 @@ export default function HomePage() {
               completedParams.append('gameType', selectedGameType)
             }
 
-            const completedRes = await fetch(`/api/meetings?${completedParams}`)
+            const completedRes = await fetchWithAuth(`/api/meetings?${completedParams}`)
             if (completedRes.ok) {
               const completedData = await completedRes.json()
               setCompletedMeetings(completedData)
@@ -167,7 +168,7 @@ export default function HomePage() {
           params.append('gameType', selectedGameType)
         }
 
-        const res = await fetch(`/api/meetings?${params}`)
+        const res = await fetchWithAuth(`/api/meetings?${params}`)
         if (res.ok) {
           const data = await res.json()
           setMeetings(data)
@@ -183,7 +184,7 @@ export default function HomePage() {
               otherParams.append('gameType', selectedGameType)
             }
 
-            const otherRes = await fetch(`/api/meetings?${otherParams}`)
+            const otherRes = await fetchWithAuth(`/api/meetings?${otherParams}`)
             if (otherRes.ok) {
               const otherData = await otherRes.json()
               setOtherRegionMeetings(otherData)
@@ -199,7 +200,7 @@ export default function HomePage() {
                   completedParams.append('gameType', selectedGameType)
                 }
 
-                const completedRes = await fetch(`/api/meetings?${completedParams}`)
+                const completedRes = await fetchWithAuth(`/api/meetings?${completedParams}`)
                 if (completedRes.ok) {
                   const completedData = await completedRes.json()
                   setCompletedMeetings(completedData)

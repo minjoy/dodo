@@ -11,6 +11,7 @@ import {
   READY_RADIUS_METERS,
   calculateDistance,
 } from '@/lib/location'
+import { fetchWithAuth } from '@/lib/fetchWithAuth'
 
 interface Participant {
   id: string
@@ -82,7 +83,7 @@ export default function GamePlayPage() {
 
   const fetchMeeting = useCallback(async () => {
     try {
-      const res = await fetch(`/api/meetings/${meetingId}`)
+      const res = await fetchWithAuth(`/api/meetings/${meetingId}`)
       if (res.ok) {
         const data = await res.json()
         setMeeting(data)
@@ -191,7 +192,7 @@ export default function GamePlayPage() {
     }
 
     try {
-      const res = await fetch(`/api/meetings/${meetingId}/ready`, {
+      const res = await fetchWithAuth(`/api/meetings/${meetingId}/ready`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -221,7 +222,7 @@ export default function GamePlayPage() {
 
     setIsStarting(true)
     try {
-      const res = await fetch(`/api/meetings/${meetingId}/start`, {
+      const res = await fetchWithAuth(`/api/meetings/${meetingId}/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -251,7 +252,7 @@ export default function GamePlayPage() {
 
     setIsEnding(true)
     try {
-      const res = await fetch(`/api/meetings/${meetingId}/end`, {
+      const res = await fetchWithAuth(`/api/meetings/${meetingId}/end`, {
         method: 'POST',
       })
 
@@ -270,7 +271,7 @@ export default function GamePlayPage() {
 
   const fetchRoleHistory = async () => {
     try {
-      const res = await fetch('/api/users/me/roles')
+      const res = await fetchWithAuth('/api/users/me/roles')
       if (res.ok) {
         const data = await res.json()
         setRoleHistory(data)

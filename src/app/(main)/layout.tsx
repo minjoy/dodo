@@ -22,7 +22,7 @@ export default function MainLayout({
   useEffect(() => {
     // 공개 경로가 아닌 경우에만 로그인 체크
     if (!isPublicPath && status === 'unauthenticated') {
-      router.push('/login')
+      router.push('/')
     } else if (status === 'authenticated' && !session?.user?.region) {
       router.push('/onboarding')
     }

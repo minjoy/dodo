@@ -17,6 +17,7 @@ import {
   calculateDistance,
   formatDistance,
 } from '@/lib/utils'
+import { fetchWithAuth } from '@/lib/fetchWithAuth'
 import type { MeetingWithDetails } from '@/types'
 
 const LEVEL_EMOJIS = ['🌱', '👋', '⭐', '👑', '🏆']
@@ -160,7 +161,7 @@ function MeetingDetailContent() {
 
   const fetchReviewInfo = async () => {
     try {
-      const res = await fetch(`/api/meetings/${meetingId}/review`)
+      const res = await fetchWithAuth(`/api/meetings/${meetingId}/review`)
       if (res.ok) {
         const data = await res.json()
         setReviewedUserIds(data.reviewedUserIds || [])
@@ -204,7 +205,7 @@ function MeetingDetailContent() {
 
   const fetchMeeting = async () => {
     try {
-      const res = await fetch(`/api/meetings/${meetingId}`)
+      const res = await fetchWithAuth(`/api/meetings/${meetingId}`)
       if (res.ok) {
         const data = await res.json()
         setMeeting(data)
@@ -223,7 +224,7 @@ function MeetingDetailContent() {
 
     setIsJoining(true)
     try {
-      const res = await fetch(`/api/meetings/${meetingId}/join`, {
+      const res = await fetchWithAuth(`/api/meetings/${meetingId}/join`, {
         method: 'POST',
       })
       if (res.ok) {
@@ -244,7 +245,7 @@ function MeetingDetailContent() {
 
     setIsJoining(true)
     try {
-      const res = await fetch(`/api/meetings/${meetingId}/join`, {
+      const res = await fetchWithAuth(`/api/meetings/${meetingId}/join`, {
         method: 'DELETE',
       })
       if (res.ok) {
@@ -299,7 +300,7 @@ function MeetingDetailContent() {
         return
       }
 
-      const res = await fetch(`/api/meetings/${meetingId}/ready`, {
+      const res = await fetchWithAuth(`/api/meetings/${meetingId}/ready`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ latitude, longitude }),
@@ -328,7 +329,7 @@ function MeetingDetailContent() {
 
     setIsReadying(true)
     try {
-      const res = await fetch(`/api/meetings/${meetingId}/ready`, {
+      const res = await fetchWithAuth(`/api/meetings/${meetingId}/ready`, {
         method: 'DELETE',
       })
       if (res.ok) {
@@ -347,7 +348,7 @@ function MeetingDetailContent() {
 
     setIsReadying(true)
     try {
-      const res = await fetch(`/api/meetings/${meetingId}/ready`, {
+      const res = await fetchWithAuth(`/api/meetings/${meetingId}/ready`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ testMode: true, latitude: 0, longitude: 0 }),
@@ -370,7 +371,7 @@ function MeetingDetailContent() {
 
     setIsStarting(true)
     try {
-      const res = await fetch(`/api/meetings/${meetingId}/start`, {
+      const res = await fetchWithAuth(`/api/meetings/${meetingId}/start`, {
         method: 'POST',
       })
       if (res.ok) {
@@ -393,7 +394,7 @@ function MeetingDetailContent() {
 
     setIsEnding(true)
     try {
-      const res = await fetch(`/api/meetings/${meetingId}/end`, {
+      const res = await fetchWithAuth(`/api/meetings/${meetingId}/end`, {
         method: 'POST',
       })
       if (res.ok) {
@@ -418,7 +419,7 @@ function MeetingDetailContent() {
 
     setIsKicking(userId)
     try {
-      const res = await fetch(`/api/meetings/${meetingId}/kick`, {
+      const res = await fetchWithAuth(`/api/meetings/${meetingId}/kick`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId }),
@@ -444,7 +445,7 @@ function MeetingDetailContent() {
 
     setIsSubmittingReview(true)
     try {
-      const res = await fetch(`/api/meetings/${meetingId}/review`, {
+      const res = await fetchWithAuth(`/api/meetings/${meetingId}/review`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -496,7 +497,7 @@ function MeetingDetailContent() {
 
     setIsSubmittingReport(true)
     try {
-      const res = await fetch('/api/reports', {
+      const res = await fetchWithAuth('/api/reports', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -528,7 +529,7 @@ function MeetingDetailContent() {
   // 호스트 노쇼 투표 현황 조회
   const fetchNoShowVoteStatus = async () => {
     try {
-      const res = await fetch(`/api/meetings/${meetingId}/host-noshow-vote`)
+      const res = await fetchWithAuth(`/api/meetings/${meetingId}/host-noshow-vote`)
       if (res.ok) {
         const data = await res.json()
         setHasVotedNoShow(data.hasVoted)
@@ -549,7 +550,7 @@ function MeetingDetailContent() {
 
     setIsVotingNoShow(true)
     try {
-      const res = await fetch(`/api/meetings/${meetingId}/host-noshow-vote`, {
+      const res = await fetchWithAuth(`/api/meetings/${meetingId}/host-noshow-vote`, {
         method: 'POST',
       })
 

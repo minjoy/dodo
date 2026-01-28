@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { Avatar } from '@/components/common'
+import { fetchWithAuth } from '@/lib/fetchWithAuth'
 
 interface Participant {
   id: string
@@ -51,7 +52,7 @@ export default function ReviewPage() {
 
   const fetchMeeting = async () => {
     try {
-      const res = await fetch(`/api/meetings/${meetingId}`)
+      const res = await fetchWithAuth(`/api/meetings/${meetingId}`)
       if (res.ok) {
         const data = await res.json()
         setMeeting(data)
@@ -99,7 +100,7 @@ export default function ReviewPage() {
     setIsSubmitting(true)
     try {
       const reviewPromises = Object.values(reviews).map((review) =>
-        fetch('/api/reviews', {
+        fetchWithAuth('/api/reviews', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
