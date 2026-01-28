@@ -50,6 +50,13 @@ export async function POST(
       return NextResponse.json({ message: '모임을 찾을 수 없습니다' }, { status: 404 })
     }
 
+    // 시작시간이 지났는지 확인
+    const now = new Date()
+    const meetingDate = new Date(meeting.meetingDate)
+    if (now < meetingDate) {
+      return NextResponse.json({ message: '모임 시작시간이 지난 후에 투표할 수 있습니다' }, { status: 400 })
+    }
+
     // 호스트는 투표 불가
     if (meeting.hostId === session.user.id) {
       return NextResponse.json({ message: '호스트는 노쇼 투표를 할 수 없습니다' }, { status: 403 })
@@ -95,6 +102,24 @@ export async function POST(
       const newHost = nonHostReadyParticipants[0]
 
       if (newHost) {
+        const oldHostId = meeting.hostId
+
+        // 기존 호스트가 participants 테이블에 있는지 확인
+        const oldHostParticipation = meeting.participants.find((p: ParticipantWithUser) => p.userId === oldHostId)
+
+        // 기존 호스트가 participants 테이블에 없으면 추가 (일반 참여자로)
+        if (!oldHostParticipation) {
+          await prisma.participant.create({
+            data: {
+              meetingId: id,
+              userId: oldHostId,
+              status: 'JOINED',
+              isReady: false,
+              votedHostNoShow: false,
+            },
+          })
+        }
+
         // 호스트 변경
         await prisma.meeting.update({
           where: { id },

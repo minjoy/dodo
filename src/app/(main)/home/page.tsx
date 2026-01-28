@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { MeetingCard } from '@/components/meeting'
+import { MeetingCard, CompletedMeetingCard } from '@/components/meeting'
 import BadgeAcquisition from '@/components/BadgeAcquisition'
 import { LoginRequiredModal } from '@/components/common'
 import type { Meeting, User } from '@/types'
@@ -36,6 +36,7 @@ export default function HomePage() {
   const router = useRouter()
   const [meetings, setMeetings] = useState<MeetingWithDetails[]>([])
   const [otherRegionMeetings, setOtherRegionMeetings] = useState<MeetingWithDetails[]>([])
+  const [completedMeetings, setCompletedMeetings] = useState<MeetingWithDetails[]>([])
   const [hasNoLocalMeetings, setHasNoLocalMeetings] = useState(false)
   const [selectedGameType, setSelectedGameType] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -121,6 +122,7 @@ export default function HomePage() {
     setIsLoading(true)
     setHasNoLocalMeetings(false)
     setOtherRegionMeetings([])
+    setCompletedMeetings([])
 
     try {
       // 비로그인 또는 지역 미설정 시 전체 모임 조회
@@ -136,6 +138,24 @@ export default function HomePage() {
         if (res.ok) {
           const data = await res.json()
           setMeetings(data)
+
+          // 모집 중인 모임이 없으면 종료된 모임 조회
+          if (data.length === 0) {
+            const completedParams = new URLSearchParams({
+              status: 'COMPLETED',
+              includeCompleted: 'true',
+              limit: '5',
+            })
+            if (selectedGameType) {
+              completedParams.append('gameType', selectedGameType)
+            }
+
+            const completedRes = await fetch(`/api/meetings?${completedParams}`)
+            if (completedRes.ok) {
+              const completedData = await completedRes.json()
+              setCompletedMeetings(completedData)
+            }
+          }
         }
       } else {
         // 로그인 상태: 내 동네 모임 우선 조회
@@ -167,6 +187,24 @@ export default function HomePage() {
             if (otherRes.ok) {
               const otherData = await otherRes.json()
               setOtherRegionMeetings(otherData)
+
+              // 다른 동네에도 모임이 없으면 종료된 모임 조회
+              if (otherData.length === 0) {
+                const completedParams = new URLSearchParams({
+                  status: 'COMPLETED',
+                  includeCompleted: 'true',
+                  limit: '5',
+                })
+                if (selectedGameType) {
+                  completedParams.append('gameType', selectedGameType)
+                }
+
+                const completedRes = await fetch(`/api/meetings?${completedParams}`)
+                if (completedRes.ok) {
+                  const completedData = await completedRes.json()
+                  setCompletedMeetings(completedData)
+                }
+              }
             }
           }
         }
@@ -244,27 +282,48 @@ export default function HomePage() {
             <div className="w-8 h-8 border-3 border-gray-200 border-t-primary rounded-full animate-spin" />
           </div>
         ) : meetings.length === 0 && otherRegionMeetings.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="text-6xl mb-4">🎮</div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">
-              모임이 없어요
-            </h2>
-            <p className="text-gray-500 mb-6">
-              첫 번째 모임을 만들어보세요!
-            </p>
-            <button
-              onClick={() => {
-                if (requireLogin('모임을 만들려면 로그인이 필요합니다')) {
-                  router.push('/create')
-                }
-              }}
-              className="inline-flex items-center gap-2 bg-primary text-white font-semibold py-3 px-6 rounded-xl active:bg-primary-dark transition-colors"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              모임 만들기
-            </button>
+          <div className="space-y-6">
+            {/* 모임 없음 안내 */}
+            <div className="text-center py-12">
+              <div className="text-5xl mb-3">🎮</div>
+              <h2 className="text-lg font-bold text-gray-900 mb-2">
+                현재 모집 중인 모임이 없어요
+              </h2>
+              <p className="text-gray-500 text-sm mb-4">
+                첫 번째 모임을 만들어보세요!
+              </p>
+              <button
+                onClick={() => {
+                  if (requireLogin('모임을 만들려면 로그인이 필요합니다')) {
+                    router.push('/create')
+                  }
+                }}
+                className="inline-flex items-center gap-2 bg-primary text-white font-semibold py-2.5 px-5 rounded-xl active:bg-primary-dark transition-colors text-sm"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                모임 만들기
+              </button>
+            </div>
+
+            {/* 종료된 모임이 있으면 표시 */}
+            {completedMeetings.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 px-1">
+                  <span className="text-sm font-semibold text-gray-400">최근 종료된 모임</span>
+                  <span className="text-xs text-gray-300">- 이런 모임들이 있었어요!</span>
+                </div>
+                <div className="space-y-2">
+                  {completedMeetings.map((meeting) => (
+                    <CompletedMeetingCard
+                      key={meeting.id}
+                      meeting={meeting}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="space-y-4">

@@ -831,8 +831,8 @@ function MeetingDetailContent() {
             </div>
           </div>
 
-          {/* 호스트 노쇼 투표 버튼 (참가자이고, 호스트가 아니고, 출쳌 유저가 1명 이상일 때) */}
-          {!isHost && isParticipant && canReady && hasAnyNonHostReady && !isPlaying && meeting.status !== 'COMPLETED' && meeting.status !== 'CANCELLED' && (
+          {/* 호스트 노쇼 투표 버튼 (참가자이고, 호스트가 아닐 때 - 시작시간 전에도 표시) */}
+          {!isHost && isParticipant && !isPlaying && meeting.status !== 'COMPLETED' && meeting.status !== 'CANCELLED' && (
             <div className="mt-4 pt-4 border-t border-gray-100">
               {hasVotedNoShow ? (
                 <div className="text-center text-sm text-gray-500">
@@ -1579,37 +1579,64 @@ function MeetingDetailContent() {
             <h3 className="text-lg font-bold text-gray-900 mb-2">
               🚫 호스트 노쇼 투표
             </h3>
-            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4">
-              <p className="text-sm text-yellow-800 mb-2 font-medium">투표 전 꼭 읽어주세요!</p>
-              <ul className="text-sm text-yellow-700 space-y-1">
-                <li>• 호스트가 모임 장소에 나타나지 않았을 때 투표해주세요</li>
-                <li>• 전체 참여자의 <strong>50% 이상</strong>이 투표하면 호스트가 자동으로 변경됩니다</li>
-                <li>• 새 호스트는 <strong>출쳌한 참여자 중 가장 먼저 참여한 분</strong>에게 넘겨집니다</li>
-                <li>• 투표는 취소할 수 없으니 신중하게 결정해주세요</li>
-              </ul>
-            </div>
 
-            {noShowVoteInfo && (
-              <div className="text-center text-sm text-gray-600 mb-4">
-                현재 투표: {noShowVoteInfo.currentVotes}/{noShowVoteInfo.totalVoters}명 ({noShowVoteInfo.votePercentage}%)
-              </div>
+            {/* 시작시간 전에는 투표 불가 안내 */}
+            {now < meetingDate ? (
+              <>
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">⏰</span>
+                    <div>
+                      <p className="font-semibold text-gray-800">아직 투표할 수 없어요</p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        모임 시작시간이 지난 후에 호스트 노쇼 투표가 가능합니다
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowHostNoShowModal(false)}
+                  className="w-full py-3 text-gray-600 font-semibold rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors"
+                >
+                  확인
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4">
+                  <p className="text-sm text-yellow-800 mb-2 font-medium">투표 전 꼭 읽어주세요!</p>
+                  <ul className="text-sm text-yellow-700 space-y-1">
+                    <li>• 호스트가 모임 장소에 나타나지 않았을 때 투표해주세요</li>
+                    <li>• 전체 참여자의 <strong>50% 이상</strong>이 투표하면 호스트가 자동으로 변경됩니다</li>
+                    <li>• 새 호스트는 <strong>출쳌한 참여자 중 가장 먼저 참여한 분</strong>에게 넘겨집니다</li>
+                    <li>• 기존 호스트는 일반 참여자로 변경됩니다</li>
+                    <li>• 투표는 취소할 수 없으니 신중하게 결정해주세요</li>
+                  </ul>
+                </div>
+
+                {noShowVoteInfo && (
+                  <div className="text-center text-sm text-gray-600 mb-4">
+                    현재 투표: {noShowVoteInfo.currentVotes}/{noShowVoteInfo.totalVoters}명 ({noShowVoteInfo.votePercentage}%)
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowHostNoShowModal(false)}
+                    className="flex-1 py-3 text-gray-500 font-semibold rounded-xl hover:bg-gray-100 transition-colors"
+                  >
+                    취소
+                  </button>
+                  <button
+                    onClick={handleHostNoShowVote}
+                    disabled={isVotingNoShow}
+                    className="flex-1 py-3 bg-red-500 text-white font-semibold rounded-xl hover:bg-red-600 transition-colors flex items-center justify-center gap-2"
+                  >
+                    {isVotingNoShow ? '투표 중...' : '노쇼 투표하기'}
+                  </button>
+                </div>
+              </>
             )}
-
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowHostNoShowModal(false)}
-                className="flex-1 py-3 text-gray-500 font-semibold rounded-xl hover:bg-gray-100 transition-colors"
-              >
-                취소
-              </button>
-              <button
-                onClick={handleHostNoShowVote}
-                disabled={isVotingNoShow}
-                className="flex-1 py-3 bg-red-500 text-white font-semibold rounded-xl hover:bg-red-600 transition-colors flex items-center justify-center gap-2"
-              >
-                {isVotingNoShow ? '투표 중...' : '노쇼 투표하기'}
-              </button>
-            </div>
           </div>
         </div>
       )}

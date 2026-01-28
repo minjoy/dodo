@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
     const gameType = searchParams.get('gameType')
     const limit = parseInt(searchParams.get('limit') || '20')
     const offset = parseInt(searchParams.get('offset') || '0')
+    const includeCompleted = searchParams.get('includeCompleted') === 'true'
 
     const where: Record<string, unknown> = {}
     const excludeRegion = searchParams.get('excludeRegion')
@@ -32,9 +33,11 @@ export async function GET(request: NextRequest) {
       where.gameType = gameType
     }
 
-    // 오늘 이후의 모임만 조회
-    where.meetingDate = {
-      gte: new Date(),
+    // includeCompleted가 true가 아닌 경우에만 오늘 이후의 모임으로 필터링
+    if (!includeCompleted) {
+      where.meetingDate = {
+        gte: new Date(),
+      }
     }
 
     const meetings = await prisma.meeting.findMany({
@@ -63,7 +66,7 @@ export async function GET(request: NextRequest) {
         },
       },
       orderBy: {
-        meetingDate: 'asc',
+        meetingDate: includeCompleted ? 'desc' : 'asc',
       },
       take: limit,
       skip: offset,
