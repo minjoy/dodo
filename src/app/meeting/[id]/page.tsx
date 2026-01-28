@@ -807,7 +807,7 @@ function MeetingDetailContent() {
           </div>
 
           {/* 호스트 노쇼 투표 버튼 (참가자이고, 호스트가 아니고, 출쳌 유저가 1명 이상일 때) */}
-          {!isHost && isParticipant && canReady && hasAnyNonHostReady && !isPlaying && meeting.status !== 'COMPLETED' && (
+          {!isHost && isParticipant && canReady && hasAnyNonHostReady && !isPlaying && meeting.status !== 'COMPLETED' && meeting.status !== 'CANCELLED' && (
             <div className="mt-4 pt-4 border-t border-gray-100">
               {hasVotedNoShow ? (
                 <div className="text-center text-sm text-gray-500">
@@ -857,7 +857,7 @@ function MeetingDetailContent() {
           <div className="h-px bg-gray-100" />
 
           {/* 출쳌 상태 안내 */}
-          {(isHost || isParticipant) && !isPlaying && meeting.status !== 'COMPLETED' && (
+          {(isHost || isParticipant) && !isPlaying && meeting.status !== 'COMPLETED' && meeting.status !== 'CANCELLED' && (
             <div className={`rounded-xl p-4 ${canReady ? 'bg-green-50 border border-green-200' : 'bg-gray-50 border border-gray-200'}`}>
               <div className="flex items-center gap-3">
                 <span className="text-2xl">{canReady ? '✅' : '⏰'}</span>
@@ -965,7 +965,7 @@ function MeetingDetailContent() {
                       )
                     : null
                   const alreadyReviewed = reviewedUserIds.includes(participant.user.id)
-                  const isCompleted = meeting.status === 'COMPLETED'
+                  const isCompleted = meeting.status === 'COMPLETED' || meeting.status === 'CANCELLED'
 
                   return (
                     <div
@@ -1027,8 +1027,8 @@ function MeetingDetailContent() {
                       </button>
 
                       <div className="flex items-center gap-2">
-                        {/* 완료된 모임: 평가 버튼 */}
-                        {isCompleted && !isMe && (isHost || isParticipant) && (
+                        {/* 완료된 모임: 평가 버튼 (취소된 모임은 제외) */}
+                        {meeting.status === 'COMPLETED' && !isMe && (isHost || isParticipant) && (
                           alreadyReviewed ? (
                             <div className="px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-100 text-gray-500">
                               평가완료
@@ -1116,7 +1116,7 @@ function MeetingDetailContent() {
           </div>
 
           {/* 호스트용 친구 초대하기 버튼 (참여자 리스트 밑) */}
-          {isHost && !isPlaying && meeting.status !== 'COMPLETED' && (
+          {isHost && !isPlaying && meeting.status !== 'COMPLETED' && meeting.status !== 'CANCELLED' && (
             <button
               onClick={() => setShowShareModal(true)}
               className="w-full mt-4 py-3 px-4 rounded-xl font-medium text-primary bg-primary/10 hover:bg-primary/20 transition-all flex items-center justify-center gap-2"
@@ -1129,7 +1129,7 @@ function MeetingDetailContent() {
           )}
 
           {/* 호스트용 모임 설정 버튼 (스크롤 영역 내) */}
-          {isHost && !isPlaying && meeting.status !== 'COMPLETED' && (
+          {isHost && !isPlaying && meeting.status !== 'COMPLETED' && meeting.status !== 'CANCELLED' && (
             <button
               onClick={() => router.push(`/meeting/${meetingId}/edit`)}
               className="w-full mt-2 py-3 px-4 rounded-xl font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all flex items-center justify-center gap-2"
@@ -1143,7 +1143,7 @@ function MeetingDetailContent() {
           )}
 
           {/* 참가자용 참여 취소 버튼 (스크롤 영역 내) */}
-          {!isHost && isParticipant && !isPlaying && meeting.status !== 'COMPLETED' && (
+          {!isHost && isParticipant && !isPlaying && meeting.status !== 'COMPLETED' && meeting.status !== 'CANCELLED' && (
             <button
               onClick={handleLeave}
               disabled={isJoining}
@@ -1170,11 +1170,13 @@ function MeetingDetailContent() {
       {/* 하단 고정 버튼 */}
       <div className="fixed bottom-0 left-0 right-0 z-40">
         <div className="max-w-[1000px] mx-auto bg-white/80 backdrop-blur-lg border-t border-gray-100 px-4 pt-4 pb-8 safe-bottom">
-        {/* 완료된 모임 */}
-        {meeting.status === 'COMPLETED' ? (
+        {/* 완료되거나 취소된 모임 */}
+        {meeting.status === 'COMPLETED' || meeting.status === 'CANCELLED' ? (
           <div className="space-y-3">
             <div className="text-center text-sm text-gray-500 mb-2">
-              ✅ 모임이 완료되었습니다. 참여자를 평가해주세요!
+              {meeting.status === 'COMPLETED'
+                ? '✅ 모임이 완료되었습니다. 참여자를 평가해주세요!'
+                : '❌ 취소된 모임입니다.'}
             </div>
             <button
               onClick={() => router.push('/home')}

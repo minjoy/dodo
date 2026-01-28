@@ -43,9 +43,9 @@ export async function POST(
       return NextResponse.json({ message: '모임 참가자만 출쳌할 수 있습니다' }, { status: 403 })
     }
 
-    // 이미 시작된 모임은 출쳌 불가
-    if (meeting.status === 'PLAYING' || meeting.status === 'COMPLETED') {
-      return NextResponse.json({ message: '이미 시작되었거나 완료된 모임입니다' }, { status: 400 })
+    // 이미 시작되었거나 종료된 모임은 출쳌 불가
+    if (meeting.status === 'PLAYING' || meeting.status === 'COMPLETED' || meeting.status === 'CANCELLED') {
+      return NextResponse.json({ message: '종료된 모임에서는 출쳌할 수 없습니다' }, { status: 400 })
     }
 
     // 모임 시작 1시간 전부터 출쳌 가능
@@ -174,9 +174,9 @@ export async function DELETE(
       return NextResponse.json({ message: '모임을 찾을 수 없습니다' }, { status: 404 })
     }
 
-    // 이미 시작된 모임은 출쳌 취소 불가
-    if (meeting.status === 'PLAYING') {
-      return NextResponse.json({ message: '이미 시작된 모임입니다' }, { status: 400 })
+    // 이미 시작되었거나 종료된 모임은 출쳌 취소 불가
+    if (meeting.status === 'PLAYING' || meeting.status === 'COMPLETED' || meeting.status === 'CANCELLED') {
+      return NextResponse.json({ message: '종료된 모임에서는 출쳌 취소를 할 수 없습니다' }, { status: 400 })
     }
 
     const participant = meeting.participants[0]
