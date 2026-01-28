@@ -113,7 +113,7 @@ export async function POST(
             data: {
               meetingId: id,
               userId: oldHostId,
-              status: 'JOINED',
+              status: 'NOSHOW',
               isReady: false,
               votedHostNoShow: false,
             },
