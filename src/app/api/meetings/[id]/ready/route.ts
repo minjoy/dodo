@@ -20,7 +20,7 @@ export async function POST(
 
     const { id } = await params
     const body = await request.json().catch(() => ({}))
-    const { latitude, longitude } = body
+    const { latitude, longitude, testMode } = body
 
     const meeting = await prisma.meeting.findUnique({
       where: { id },
@@ -60,28 +60,32 @@ export async function POST(
       }, { status: 400 })
     }
 
-    // 위치 정보 필수 확인
-    if (latitude === undefined || longitude === undefined) {
-      return NextResponse.json({
-        message: '위치 정보가 필요합니다. 위치 권한을 허용해주세요.',
-      }, { status: 400 })
-    }
+    // 테스트 모드가 아닌 경우에만 위치 검증
+    let distance = 0
+    if (!testMode) {
+      // 위치 정보 필수 확인
+      if (latitude === undefined || longitude === undefined) {
+        return NextResponse.json({
+          message: '위치 정보가 필요합니다. 위치 권한을 허용해주세요.',
+        }, { status: 400 })
+      }
 
-    // 약속 장소와의 거리 계산
-    const distance = calculateDistance(
-      latitude,
-      longitude,
-      meeting.latitude,
-      meeting.longitude
-    )
+      // 약속 장소와의 거리 계산
+      distance = calculateDistance(
+        latitude,
+        longitude,
+        meeting.latitude,
+        meeting.longitude
+      )
 
-    // 500m 이내에서만 출쳌 가능
-    if (distance > MAX_READY_DISTANCE) {
-      return NextResponse.json({
-        message: `약속 장소에서 ${MAX_READY_DISTANCE}m 이내에서만 출쳌할 수 있습니다`,
-        distance: Math.round(distance),
-        maxDistance: MAX_READY_DISTANCE,
-      }, { status: 400 })
+      // 500m 이내에서만 출쳌 가능
+      if (distance > MAX_READY_DISTANCE) {
+        return NextResponse.json({
+          message: `약속 장소에서 ${MAX_READY_DISTANCE}m 이내에서만 출쳌할 수 있습니다`,
+          distance: Math.round(distance),
+          maxDistance: MAX_READY_DISTANCE,
+        }, { status: 400 })
+      }
     }
 
     // 모임 상태가 RECRUITING이면 READY 상태로 변경

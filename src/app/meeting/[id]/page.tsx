@@ -72,6 +72,9 @@ function MeetingDetailContent() {
   // 모임 시작 안내 팝업 상태
   const [showStartedModal, setShowStartedModal] = useState(false)
 
+  // 시작 조건 안내 모달 상태
+  const [showStartConditionModal, setShowStartConditionModal] = useState(false)
+
   const meetingId = params.id as string
   const joinedFromInvite = searchParams.get('joined') === 'true'
   const fromInviteLink = searchParams.get('fromInvite') === 'true'
@@ -312,6 +315,30 @@ function MeetingDetailContent() {
       }
     } catch (error) {
       console.error('Failed to cancel ready:', error)
+    } finally {
+      setIsReadying(false)
+    }
+  }
+
+  // 테스트용 출쳌 (거리 체크 없음)
+  const handleReadyTest = async () => {
+    if (!session?.user?.id) return
+
+    setIsReadying(true)
+    try {
+      const res = await fetch(`/api/meetings/${meetingId}/ready`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ testMode: true, latitude: 0, longitude: 0 }),
+      })
+      if (res.ok) {
+        fetchMeeting()
+      } else {
+        const data = await res.json()
+        alert(data.message || '출쳌에 실패했습니다')
+      }
+    } catch (error) {
+      console.error('Failed to ready (test):', error)
     } finally {
       setIsReadying(false)
     }
@@ -849,7 +876,10 @@ function MeetingDetailContent() {
                         모임 시작 1시간 전부터 출쳌할 수 있습니다
                         {timeUntilReady > 0 && (
                           <span className="ml-1">
-                            ({Math.floor(timeUntilReady / (1000 * 60 * 60))}시간 {Math.floor((timeUntilReady % (1000 * 60 * 60)) / (1000 * 60))}분 후)
+                            ({Math.floor(timeUntilReady / (1000 * 60 * 60)) > 0
+                              ? `${Math.floor(timeUntilReady / (1000 * 60 * 60))}시간 ${Math.floor((timeUntilReady % (1000 * 60 * 60)) / (1000 * 60))}분 후`
+                              : `${Math.floor((timeUntilReady % (1000 * 60 * 60)) / (1000 * 60))}분 후`
+                            })
                           </span>
                         )}
                       </p>
@@ -1033,17 +1063,30 @@ function MeetingDetailContent() {
                         {/* 출쳌 상태 또는 출쳌 버튼 (완료되지 않은 경우만) */}
                         {!isCompleted && (
                           isMe && canReady ? (
-                            <button
-                              onClick={participant.isReady ? handleCancelReady : handleReady}
-                              disabled={isReadying}
-                              className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-                                participant.isReady
-                                  ? 'bg-green-500 text-white'
-                                  : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                              }`}
-                            >
-                              {isReadying ? '...' : participant.isReady ? '✓ 출쳌' : '출쳌'}
-                            </button>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={participant.isReady ? handleCancelReady : handleReady}
+                                disabled={isReadying}
+                                className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                                  participant.isReady
+                                    ? 'bg-green-500 text-white'
+                                    : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                                }`}
+                              >
+                                {isReadying ? '...' : participant.isReady ? '✓ 출쳌' : '출쳌'}
+                              </button>
+                              {/* 테스트용 출쳌 버튼 (거리 무관) */}
+                              {!participant.isReady && (
+                                <button
+                                  onClick={handleReadyTest}
+                                  disabled={isReadying}
+                                  className="px-2 py-2 rounded-lg font-semibold text-xs bg-orange-200 text-orange-700 hover:bg-orange-300 transition-all"
+                                  title="테스트용 출쳌 (거리 무관)"
+                                >
+                                  출t
+                                </button>
+                              )}
+                            </div>
                           ) : !isPlaying && (
                             <div className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
                               participant.isReady
@@ -1072,11 +1115,24 @@ function MeetingDetailContent() {
             </div>
           </div>
 
+          {/* 호스트용 친구 초대하기 버튼 (참여자 리스트 밑) */}
+          {isHost && !isPlaying && meeting.status !== 'COMPLETED' && (
+            <button
+              onClick={() => setShowShareModal(true)}
+              className="w-full mt-4 py-3 px-4 rounded-xl font-medium text-primary bg-primary/10 hover:bg-primary/20 transition-all flex items-center justify-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+              </svg>
+              친구 초대하기
+            </button>
+          )}
+
           {/* 호스트용 모임 설정 버튼 (스크롤 영역 내) */}
           {isHost && !isPlaying && meeting.status !== 'COMPLETED' && (
             <button
               onClick={() => router.push(`/meeting/${meetingId}/edit`)}
-              className="w-full mt-4 py-3 px-4 rounded-xl font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all flex items-center justify-center gap-2"
+              className="w-full mt-2 py-3 px-4 rounded-xl font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all flex items-center justify-center gap-2"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -1176,28 +1232,13 @@ function MeetingDetailContent() {
                 </>
               )}
             </button>
-          ) : canReady && !isMyReady ? (
-            <button
-              onClick={handleReady}
-              disabled={isReadying}
-              className="w-full py-4 px-6 rounded-2xl font-bold text-lg bg-gradient-to-r from-yellow-500 to-orange-500 text-white shadow-lg shadow-yellow-500/30 hover:shadow-xl transition-all flex items-center justify-center gap-2"
-            >
-              {isReadying ? '출쳌 중...' : (
-                <>
-                  <span className="text-xl">✋</span>
-                  출쳌하고 시작하기
-                </>
-              )}
-            </button>
           ) : (
             <button
-              onClick={() => setShowShareModal(true)}
-              className="w-full py-4 px-6 rounded-2xl font-bold text-lg bg-gradient-to-r from-primary to-primary-dark text-white shadow-lg shadow-primary/30 hover:shadow-xl transition-all flex items-center justify-center gap-2"
+              onClick={() => setShowStartConditionModal(true)}
+              className="w-full py-4 px-6 rounded-2xl font-bold text-lg bg-gradient-to-r from-gray-400 to-gray-500 text-white shadow-lg shadow-gray-400/30 hover:shadow-xl transition-all flex items-center justify-center gap-2"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-              </svg>
-              친구 초대하기
+              <span className="text-xl">🚀</span>
+              모임 시작하기
             </button>
           )
         ) : isParticipant ? (
@@ -1529,6 +1570,72 @@ function MeetingDetailContent() {
                 {isVotingNoShow ? '투표 중...' : '노쇼 투표하기'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 시작 조건 안내 모달 */}
+      {showStartConditionModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl p-6 mx-4 w-full max-w-sm">
+            <div className="text-center mb-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/30">
+                <span className="text-3xl">🚀</span>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                모임 시작 조건
+              </h3>
+              <p className="text-sm text-gray-500">
+                아래 조건이 충족되면 모임을 시작할 수 있어요
+              </p>
+            </div>
+
+            <div className="bg-gray-50 rounded-xl p-4 mb-4 space-y-3">
+              <div className="flex items-start gap-3">
+                <span className={`text-lg ${canReady ? '✅' : '⏰'}`}>{canReady ? '✅' : '⏰'}</span>
+                <div className="flex-1">
+                  <p className={`text-sm font-medium ${canReady ? 'text-green-700' : 'text-gray-700'}`}>
+                    모임 시작 1시간 전
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {canReady ? '조건 충족!' : `${Math.floor(timeUntilReady / (1000 * 60 * 60)) > 0 ? `${Math.floor(timeUntilReady / (1000 * 60 * 60))}시간 ` : ''}${Math.floor((timeUntilReady % (1000 * 60 * 60)) / (1000 * 60))}분 후 가능`}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="text-lg">{isMyReady ? '✅' : '📍'}</span>
+                <div className="flex-1">
+                  <p className={`text-sm font-medium ${isMyReady ? 'text-green-700' : 'text-gray-700'}`}>
+                    호스트 출쳌
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {isMyReady ? '출쳌 완료!' : '약속 장소에서 출쳌해주세요'}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="text-lg">{hasAnyNonHostReady ? '✅' : '👥'}</span>
+                <div className="flex-1">
+                  <p className={`text-sm font-medium ${hasAnyNonHostReady ? 'text-green-700' : 'text-gray-700'}`}>
+                    참여자 1명 이상 출쳌
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {hasAnyNonHostReady ? `${nonHostReadyCount}명 출쳌 완료!` : '아직 출쳌한 참여자가 없습니다'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <p className="text-xs text-center text-gray-500 mb-4">
+              조건이 충족되면 이 버튼이 활성화됩니다 ✨
+            </p>
+
+            <button
+              onClick={() => setShowStartConditionModal(false)}
+              className="w-full py-3 bg-gradient-to-r from-primary to-primary-dark text-white font-bold rounded-xl shadow-lg shadow-primary/30"
+            >
+              확인
+            </button>
           </div>
         </div>
       )}
