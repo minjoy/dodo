@@ -75,6 +75,10 @@ function MeetingDetailContent() {
   // 시작 조건 안내 모달 상태
   const [showStartConditionModal, setShowStartConditionModal] = useState(false)
 
+  // 거리 초과 에러 팝업 상태
+  const [showDistanceErrorModal, setShowDistanceErrorModal] = useState(false)
+  const [distanceErrorInfo, setDistanceErrorInfo] = useState<{ distance: number; maxDistance: number } | null>(null)
+
   const meetingId = params.id as string
   const joinedFromInvite = searchParams.get('joined') === 'true'
   const fromInviteLink = searchParams.get('fromInvite') === 'true'
@@ -293,7 +297,13 @@ function MeetingDetailContent() {
         fetchMeeting()
       } else {
         const data = await res.json()
-        alert(data.message || '출쳌에 실패했습니다')
+        // 거리 초과 에러인 경우 팝업으로 상세 정보 표시
+        if (data.distance !== undefined && data.maxDistance !== undefined) {
+          setDistanceErrorInfo({ distance: data.distance, maxDistance: data.maxDistance })
+          setShowDistanceErrorModal(true)
+        } else {
+          alert(data.message || '출쳌에 실패했습니다')
+        }
       }
     } catch (error) {
       console.error('Failed to ready:', error)
@@ -1676,6 +1686,65 @@ function MeetingDetailContent() {
 
             <button
               onClick={() => setShowStartedModal(false)}
+              className="w-full py-3 bg-gradient-to-r from-primary to-primary-dark text-white font-bold rounded-xl shadow-lg shadow-primary/30"
+            >
+              확인
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 거리 초과 에러 팝업 */}
+      {showDistanceErrorModal && distanceErrorInfo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl p-6 mx-4 w-full max-w-sm">
+            <div className="text-center mb-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-orange-500/30">
+                <span className="text-3xl">📍</span>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                출쳌할 수 없는 위치예요
+              </h3>
+              <p className="text-sm text-gray-500">
+                약속 장소에서 너무 멀리 있어요
+              </p>
+            </div>
+
+            <div className="bg-gray-50 rounded-xl p-4 mb-4">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm text-gray-600">현재 거리</span>
+                <span className="text-lg font-bold text-red-500">
+                  {formatDistance(distanceErrorInfo.distance)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm text-gray-600">출쳌 가능 거리</span>
+                <span className="text-lg font-bold text-green-500">
+                  {formatDistance(distanceErrorInfo.maxDistance)} 이내
+                </span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                <div
+                  className="bg-gradient-to-r from-red-500 to-orange-500 h-3 rounded-full transition-all"
+                  style={{
+                    width: `${Math.min((distanceErrorInfo.maxDistance / distanceErrorInfo.distance) * 100, 100)}%`
+                  }}
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-2 text-center">
+                약 {formatDistance(distanceErrorInfo.distance - distanceErrorInfo.maxDistance)} 더 가까이 이동해주세요
+              </p>
+            </div>
+
+            <p className="text-xs text-center text-gray-500 mb-4">
+              약속 장소 근처에서 다시 시도해주세요 🚶
+            </p>
+
+            <button
+              onClick={() => {
+                setShowDistanceErrorModal(false)
+                setDistanceErrorInfo(null)
+              }}
               className="w-full py-3 bg-gradient-to-r from-primary to-primary-dark text-white font-bold rounded-xl shadow-lg shadow-primary/30"
             >
               확인
