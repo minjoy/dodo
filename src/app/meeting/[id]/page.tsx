@@ -646,8 +646,11 @@ function MeetingDetailContent() {
   const nonHostReadyCount = meeting.participants.filter(p => p.status !== 'CANCELLED' && p.isReady && p.userId !== meeting.hostId).length
   const hasAnyNonHostReady = nonHostReadyCount >= 1
 
-  // 모임 시작 가능 여부 (호스트이고, 호스트가 출쳌했고, 호스트 외 1명 이상 출쳌, 모임 시작 1시간 전인 경우)
-  const canStart = isHost && canReady && isMyReady && hasAnyNonHostReady && (meeting.status === 'READY' || meeting.status === 'RECRUITING' || meeting.status === 'CLOSED')
+  // 시작시간 초과 여부 (시작시간이 지났는데 아직 시작 안 된 모임)
+  const isOverdue = meetingDate < now && meeting.status !== 'PLAYING' && meeting.status !== 'COMPLETED' && meeting.status !== 'CANCELLED'
+
+  // 모임 시작 가능 여부 (호스트이고, 호스트가 출쳌했고, 호스트 외 1명 이상 출쳌, 모임 시작 1시간 전인 경우, 시작시간 초과 아닐 때)
+  const canStart = isHost && canReady && isMyReady && hasAnyNonHostReady && !isOverdue && (meeting.status === 'READY' || meeting.status === 'RECRUITING' || meeting.status === 'CLOSED')
   const isPlaying = meeting.status === 'PLAYING'
 
   return (
@@ -1233,6 +1236,19 @@ function MeetingDetailContent() {
               🎮 모임 진행중
             </div>
           )
+        ) : isOverdue ? (
+          /* 시작시간 초과된 모임 - 호스트/참여자 모두에게 동일하게 표시 */
+          <div className="space-y-3">
+            <div className="text-center text-sm text-gray-500 mb-2">
+              ⏰ 시작시간이 초과되어 모임이 자동 취소되었습니다.
+            </div>
+            <button
+              onClick={() => router.push('/home')}
+              className="w-full py-4 px-6 rounded-2xl font-bold text-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all flex items-center justify-center gap-2"
+            >
+              🏠 홈으로 가기
+            </button>
+          </div>
         ) : isHost ? (
           canStart ? (
             <button

@@ -56,6 +56,14 @@ export async function POST(
       }, { status: 400 })
     }
 
+    // 시작시간 초과된 모임은 시작 불가
+    if (meetingDate < now) {
+      return NextResponse.json({
+        message: '시작시간이 초과되어 모임을 시작할 수 없습니다',
+        errorType: 'OVERDUE',
+      }, { status: 400 })
+    }
+
     // 최소 인원 체크 (호스트 포함)
     const MIN_PARTICIPANTS = 2
     const totalParticipants = meeting.participants.length + 1 // +1은 호스트
