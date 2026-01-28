@@ -68,13 +68,15 @@ export async function POST(
       }, { status: 400 })
     }
 
-    // 모든 참여자가 레디했는지 체크 (호스트 제외한 참여자 중)
-    const notReadyParticipants = meeting.participants.filter((p: { isReady: boolean }) => !p.isReady)
-    if (notReadyParticipants.length > 0) {
+    // 호스트 제외 참여자 중 1명 이상 출쳌했는지 체크
+    const hostParticipant = meeting.participants.find((p: { userId: string }) => p.userId === meeting.hostId)
+    const nonHostReadyParticipants = meeting.participants.filter((p: { isReady: boolean; userId: string }) => p.isReady && p.userId !== meeting.hostId)
+
+    if (nonHostReadyParticipants.length === 0) {
       return NextResponse.json({
-        message: `아직 레디하지 않은 참여자가 ${notReadyParticipants.length}명 있습니다`,
-        errorType: 'NOT_ALL_READY',
-        notReadyCount: notReadyParticipants.length,
+        message: '호스트 외 출쳌한 참여자가 1명 이상 있어야 시작할 수 있습니다',
+        errorType: 'NO_READY_PARTICIPANT',
+        readyCount: nonHostReadyParticipants.length,
         totalParticipants: meeting.participants.length,
       }, { status: 400 })
     }

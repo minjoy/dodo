@@ -135,7 +135,7 @@ enum GameType {
 enum MeetingStatus {
   RECRUITING    // 모집중
   CLOSED        // 모집마감
-  READY         // 레디 대기중
+  READY         // 출쳌 대기중
   PLAYING       // 게임 진행중
   COMPLETED     // 완료
   CANCELLED     // 취소됨
@@ -149,11 +149,14 @@ model Participant {
   joinedAt    DateTime  @default(now())
   attendedAt  DateTime? // 실제 참석 확인 시간
 
-  // 레디 상태
+  // 출쳌 상태
   isReady     Boolean   @default(false)
   readyAt     DateTime?
-  readyLat    Float?    // 레디 시 위치
+  readyLat    Float?    // 출쳌 시 위치
   readyLng    Float?
+
+  // 호스트 노쇼 투표
+  votedHostNoShow  Boolean @default(false)
 
   meetingId   String
   meeting     Meeting   @relation(fields: [meetingId], references: [id], onDelete: Cascade)

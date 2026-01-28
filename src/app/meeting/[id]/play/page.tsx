@@ -87,7 +87,7 @@ export default function GamePlayPage() {
         const data = await res.json()
         setMeeting(data)
 
-        // 내 레디 상태 확인
+        // 내 출쳌 상태 확인
         const myParticipation = data.participants.find(
           (p: Participant) => p.userId === session?.user?.id
         )
@@ -165,7 +165,7 @@ export default function GamePlayPage() {
     setTimeout(() => setIsRefreshing(false), 300)
   }
 
-  // 게임 플레이 페이지에서는 5초마다 자동 폴링 (레디 상태, 게임 상태 반영)
+  // 게임 플레이 페이지에서는 5초마다 자동 폴링 (출쳌 상태, 게임 상태 반영)
   useEffect(() => {
     if (!meeting) return
 
@@ -282,7 +282,9 @@ export default function GamePlayPage() {
   }
 
   const locationGuide = getLocationGuide()
-  const allReady = meeting?.participants.every((p) => p.isReady)
+  // 호스트 제외한 참가자 중 1명 이상 출쳌했는지 확인
+  const nonHostReadyCount = meeting?.participants.filter((p) => p.isReady && p.userId !== meeting?.hostId).length || 0
+  const hasAnyNonHostReady = nonHostReadyCount >= 1
   const readyCount = meeting?.participants.filter((p) => p.isReady).length || 0
   const isWithinRange = distance !== null && distance <= READY_RADIUS_METERS
 
@@ -434,7 +436,7 @@ export default function GamePlayPage() {
           )}
         </div>
       ) : (
-        /* 레디 대기 화면 */
+        /* 출쳌 대기 화면 */
         <div className="px-4 py-6">
           {/* 위치 상태 */}
           <div className={`rounded-2xl p-4 mb-6 ${
@@ -475,12 +477,12 @@ export default function GamePlayPage() {
             </div>
           </div>
 
-          {/* 참가자 레디 상태 */}
+          {/* 참가자 출쳌 상태 */}
           <div className="bg-white/5 rounded-2xl p-4 mb-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold flex items-center gap-2">
                 <span className="text-xl">👥</span>
-                참가자 ({readyCount}/{meeting.participants.length} 레디)
+                참가자 ({readyCount}/{meeting.participants.length} 출쳌)
               </h3>
             </div>
 
@@ -526,16 +528,16 @@ export default function GamePlayPage() {
             <div className="max-w-[1000px] mx-auto bg-gray-900/95 backdrop-blur-lg border-t border-white/10 p-4 pb-8">
               {isHost ? (
                 <div className="space-y-3">
-                  {!allReady && (
+                  {!hasAnyNonHostReady && (
                     <p className="text-center text-yellow-400 text-sm">
-                      모든 참가자가 레디해야 시작할 수 있습니다
+                      호스트 외 1명 이상 출쳌해야 시작할 수 있습니다
                     </p>
                   )}
                   <button
                     onClick={() => setShowRoleSetup(true)}
-                    disabled={!allReady || !isWithinRange}
+                    disabled={!hasAnyNonHostReady || !isWithinRange}
                     className={`w-full py-4 rounded-2xl font-bold text-lg transition-all ${
-                      allReady && isWithinRange
+                      hasAnyNonHostReady && isWithinRange
                         ? 'bg-gradient-to-r from-primary to-accent shadow-lg shadow-primary/30'
                         : 'bg-gray-700 text-gray-400'
                     }`}
@@ -555,7 +557,7 @@ export default function GamePlayPage() {
                         : 'bg-gray-700 text-gray-400'
                   }`}
                 >
-                  {isReady ? '✓ 레디 완료!' : '👋 레디'}
+                  {isReady ? '✓ 출쳌 완료!' : '👋 출쳌'}
                 </button>
               )}
             </div>

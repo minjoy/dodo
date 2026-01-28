@@ -63,6 +63,7 @@ export interface Participant {
   readyAt?: Date | null
   readyLat?: number | null
   readyLng?: number | null
+  votedHostNoShow: boolean
   meetingId: string
   userId: string
   user?: User

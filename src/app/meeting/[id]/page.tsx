@@ -63,6 +63,15 @@ function MeetingDetailContent() {
   const [reportDescription, setReportDescription] = useState('')
   const [isSubmittingReport, setIsSubmittingReport] = useState(false)
 
+  // 호스트 노쇼 투표 관련 상태
+  const [showHostNoShowModal, setShowHostNoShowModal] = useState(false)
+  const [isVotingNoShow, setIsVotingNoShow] = useState(false)
+  const [hasVotedNoShow, setHasVotedNoShow] = useState(false)
+  const [noShowVoteInfo, setNoShowVoteInfo] = useState<{ currentVotes: number; totalVoters: number; votePercentage: number } | null>(null)
+
+  // 모임 시작 안내 팝업 상태
+  const [showStartedModal, setShowStartedModal] = useState(false)
+
   const meetingId = params.id as string
   const joinedFromInvite = searchParams.get('joined') === 'true'
   const fromInviteLink = searchParams.get('fromInvite') === 'true'
@@ -150,6 +159,26 @@ function MeetingDetailContent() {
       console.error('Failed to fetch review info:', error)
     }
   }
+
+  // 호스트 노쇼 투표 현황 조회 (출쳌 가능 상태일 때)
+  useEffect(() => {
+    if (!meeting || !session?.user?.id) return
+
+    const isUserHost = session?.user?.id === meeting.hostId
+    const isUserParticipant = meeting.participants.some(
+      (p) => p.userId === session?.user?.id && p.status !== 'CANCELLED'
+    )
+    const meetingDateNow = new Date(meeting.meetingDate)
+    const oneHourBeforeNow = new Date(meetingDateNow.getTime() - 60 * 60 * 1000)
+    const nowTime = new Date()
+    const canReadyNow = nowTime >= oneHourBeforeNow && (meeting.status === 'RECRUITING' || meeting.status === 'CLOSED' || meeting.status === 'READY')
+    const nonHostReadyCountNow = meeting.participants.filter(p => p.status !== 'CANCELLED' && p.isReady && p.userId !== meeting.hostId).length
+    const hasAnyNonHostReadyNow = nonHostReadyCountNow >= 1
+
+    if (!isUserHost && isUserParticipant && canReadyNow && hasAnyNonHostReadyNow) {
+      fetchNoShowVoteStatus()
+    }
+  }, [meeting, session?.user?.id, meetingId])
 
   // 모달이 열릴 때 body 스크롤 방지
   useEffect(() => {
@@ -248,7 +277,7 @@ function MeetingDetailContent() {
           latitude = position.coords.latitude
           longitude = position.coords.longitude
         } catch {
-          // 위치 권한 없어도 레디 가능
+          // 위치 권한 없어도 출쳌 가능
         }
       }
 
@@ -261,7 +290,7 @@ function MeetingDetailContent() {
         fetchMeeting()
       } else {
         const data = await res.json()
-        alert(data.message || '레디에 실패했습니다')
+        alert(data.message || '출쳌에 실패했습니다')
       }
     } catch (error) {
       console.error('Failed to ready:', error)
@@ -298,6 +327,7 @@ function MeetingDetailContent() {
       })
       if (res.ok) {
         fetchMeeting()
+        setShowStartedModal(true)
       } else {
         const data = await res.json()
         alert(data.message || '모임 시작에 실패했습니다')
@@ -447,6 +477,64 @@ function MeetingDetailContent() {
     }
   }
 
+  // 호스트 노쇼 투표 현황 조회
+  const fetchNoShowVoteStatus = async () => {
+    try {
+      const res = await fetch(`/api/meetings/${meetingId}/host-noshow-vote`)
+      if (res.ok) {
+        const data = await res.json()
+        setHasVotedNoShow(data.hasVoted)
+        setNoShowVoteInfo({
+          currentVotes: data.currentVotes,
+          totalVoters: data.totalVoters,
+          votePercentage: data.votePercentage,
+        })
+      }
+    } catch (error) {
+      console.error('Failed to fetch noshow vote status:', error)
+    }
+  }
+
+  // 호스트 노쇼 투표
+  const handleHostNoShowVote = async () => {
+    if (!session?.user?.id) return
+
+    setIsVotingNoShow(true)
+    try {
+      const res = await fetch(`/api/meetings/${meetingId}/host-noshow-vote`, {
+        method: 'POST',
+      })
+
+      const data = await res.json()
+      if (res.ok) {
+        setHasVotedNoShow(true)
+        if (data.hostChanged) {
+          setToastMessage(data.message)
+          setShowToast(true)
+          setTimeout(() => setShowToast(false), 5000)
+          fetchMeeting()
+        } else {
+          setToastMessage(`투표 완료! (${data.currentVotes}/${data.totalVoters}명, ${data.votePercentage}%)`)
+          setShowToast(true)
+          setTimeout(() => setShowToast(false), 3000)
+          setNoShowVoteInfo({
+            currentVotes: data.currentVotes,
+            totalVoters: data.totalVoters,
+            votePercentage: data.votePercentage,
+          })
+        }
+        setShowHostNoShowModal(false)
+      } else {
+        alert(data.message || '투표에 실패했습니다')
+      }
+    } catch (error) {
+      console.error('Failed to vote host noshow:', error)
+      alert('투표에 실패했습니다')
+    } finally {
+      setIsVotingNoShow(false)
+    }
+  }
+
   const handleBack = () => {
     // 생성/수정/초대링크에서 온 경우 홈으로 이동
     if (shouldRedirectToHome || document.referrer.includes('/create') || document.referrer.includes('/edit')) {
@@ -477,7 +565,7 @@ function MeetingDetailContent() {
     (p) => p.userId === session?.user?.id && p.status !== 'CANCELLED'
   )
   // 참여자 수에 호스트 포함 (+1)
-  // 호스트가 레디하면 participants 테이블에 추가되므로 중복 계산 방지
+  // 호스트가 출쳌하면 participants 테이블에 추가되므로 중복 계산 방지
   const hostInParticipants = meeting.participants.some(p => p.userId === meeting.hostId)
   const totalParticipants = hostInParticipants
     ? meeting._count.participants  // 호스트가 이미 participants에 포함됨
@@ -493,23 +581,25 @@ function MeetingDetailContent() {
   const participationRate = (totalParticipants / meeting.maxParticipants) * 100
   const hostLevel = meeting.host.level as 1 | 2 | 3 | 4 | 5
 
-  // 레디 관련 상태
+  // 출쳌 관련 상태
   const now = new Date()
   const meetingDate = new Date(meeting.meetingDate)
   const oneHourBefore = new Date(meetingDate.getTime() - 60 * 60 * 1000)
   const canReady = now >= oneHourBefore && (meeting.status === 'RECRUITING' || meeting.status === 'CLOSED' || meeting.status === 'READY')
   const timeUntilReady = oneHourBefore.getTime() - now.getTime()
 
-  // 현재 사용자의 레디 상태
+  // 현재 사용자의 출쳌 상태
   const myParticipation = meeting.participants.find(p => p.userId === session?.user?.id && p.status !== 'CANCELLED')
   const isMyReady = myParticipation?.isReady || false
 
-  // 모든 참가자(호스트 제외)의 레디 상태
+  // 모든 참가자(호스트 제외)의 출쳌 상태
   const readyCount = meeting.participants.filter(p => p.status !== 'CANCELLED' && p.isReady).length
-  const allParticipantsReady = meeting.participants.filter(p => p.status !== 'CANCELLED').every(p => p.isReady)
+  // 호스트 제외한 참가자 중 출쳌한 사람 수
+  const nonHostReadyCount = meeting.participants.filter(p => p.status !== 'CANCELLED' && p.isReady && p.userId !== meeting.hostId).length
+  const hasAnyNonHostReady = nonHostReadyCount >= 1
 
-  // 모임 시작 가능 여부 (호스트이고, 호스트가 레디했고, 모임 시작 1시간 전인 경우)
-  const canStart = isHost && canReady && isMyReady && (meeting.status === 'READY' || meeting.status === 'RECRUITING' || meeting.status === 'CLOSED')
+  // 모임 시작 가능 여부 (호스트이고, 호스트가 출쳌했고, 호스트 외 1명 이상 출쳌, 모임 시작 1시간 전인 경우)
+  const canStart = isHost && canReady && isMyReady && hasAnyNonHostReady && (meeting.status === 'READY' || meeting.status === 'RECRUITING' || meeting.status === 'CLOSED')
   const isPlaying = meeting.status === 'PLAYING'
 
   return (
@@ -688,6 +778,26 @@ function MeetingDetailContent() {
               호스트
             </div>
           </div>
+
+          {/* 호스트 노쇼 투표 버튼 (참가자이고, 호스트가 아니고, 출쳌 유저가 1명 이상일 때) */}
+          {!isHost && isParticipant && canReady && hasAnyNonHostReady && !isPlaying && meeting.status !== 'COMPLETED' && (
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              {hasVotedNoShow ? (
+                <div className="text-center text-sm text-gray-500">
+                  호스트 노쇼 투표 완료
+                  {noShowVoteInfo && ` (${noShowVoteInfo.currentVotes}/${noShowVoteInfo.totalVoters}명, ${noShowVoteInfo.votePercentage}%)`}
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowHostNoShowModal(true)}
+                  className="w-full py-2.5 px-4 rounded-xl text-sm font-medium text-red-500 bg-red-50 hover:bg-red-100 transition-colors flex items-center justify-center gap-2"
+                >
+                  <span>🚫</span>
+                  호스트 노쇼 투표
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* 모임 설명 */}
@@ -719,7 +829,7 @@ function MeetingDetailContent() {
 
           <div className="h-px bg-gray-100" />
 
-          {/* 레디 상태 안내 */}
+          {/* 출쳌 상태 안내 */}
           {(isHost || isParticipant) && !isPlaying && meeting.status !== 'COMPLETED' && (
             <div className={`rounded-xl p-4 ${canReady ? 'bg-green-50 border border-green-200' : 'bg-gray-50 border border-gray-200'}`}>
               <div className="flex items-center gap-3">
@@ -727,16 +837,16 @@ function MeetingDetailContent() {
                 <div className="flex-1">
                   {canReady ? (
                     <>
-                      <p className="font-semibold text-green-800">레디 가능!</p>
+                      <p className="font-semibold text-green-800">출쳌 가능!</p>
                       <p className="text-sm text-green-600">
-                        모임 장소에 도착하면 레디해주세요 ({readyCount}/{totalParticipants}명 레디)
+                        모임 장소에 도착하면 출쳌해주세요 ({readyCount}/{totalParticipants}명 출쳌)
                       </p>
                     </>
                   ) : (
                     <>
-                      <p className="font-semibold text-gray-700">레디 대기중</p>
+                      <p className="font-semibold text-gray-700">출쳌 대기중</p>
                       <p className="text-sm text-gray-500">
-                        모임 시작 1시간 전부터 레디할 수 있습니다
+                        모임 시작 1시간 전부터 출쳌할 수 있습니다
                         {timeUntilReady > 0 && (
                           <span className="ml-1">
                             ({Math.floor(timeUntilReady / (1000 * 60 * 60))}시간 {Math.floor((timeUntilReady % (1000 * 60 * 60)) / (1000 * 60))}분 후)
@@ -815,7 +925,7 @@ function MeetingDetailContent() {
                   const pLevel = (participant.user.level || 1) as 1 | 2 | 3 | 4 | 5
                   const isMe = participant.user.id === session?.user?.id
                   const isThisHost = participant.isHost
-                  // 레디한 참가자의 약속장소와의 거리 계산
+                  // 출쳌한 참가자의 약속장소와의 거리 계산
                   const readyDistance = participant.isReady && participant.readyLat && participant.readyLng
                     ? calculateDistance(
                         participant.readyLat,
@@ -877,7 +987,7 @@ function MeetingDetailContent() {
                               <span className="text-xs text-primary font-medium">(나)</span>
                             )}
                           </div>
-                          {/* 레디한 사람의 약속장소와의 거리 표시 */}
+                          {/* 출쳌한 사람의 약속장소와의 거리 표시 */}
                           {!isCompleted && readyDistance !== null && (
                             <span className="text-xs text-green-600 mt-0.5">
                               📍 약속장소에서 {formatDistance(readyDistance)}
@@ -920,7 +1030,7 @@ function MeetingDetailContent() {
                           </button>
                         )}
 
-                        {/* 레디 상태 또는 레디 버튼 (완료되지 않은 경우만) */}
+                        {/* 출쳌 상태 또는 출쳌 버튼 (완료되지 않은 경우만) */}
                         {!isCompleted && (
                           isMe && canReady ? (
                             <button
@@ -932,7 +1042,7 @@ function MeetingDetailContent() {
                                   : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
                               }`}
                             >
-                              {isReadying ? '...' : participant.isReady ? '✓ 레디' : '레디'}
+                              {isReadying ? '...' : participant.isReady ? '✓ 출쳌' : '출쳌'}
                             </button>
                           ) : !isPlaying && (
                             <div className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
@@ -940,7 +1050,7 @@ function MeetingDetailContent() {
                                 ? 'bg-green-100 text-green-700'
                                 : 'bg-gray-100 text-gray-500'
                             }`}>
-                              {participant.isReady ? '✓ 레디' : '대기중'}
+                              {participant.isReady ? '✓ 출쳌' : '대기중'}
                             </div>
                           )
                         )}
@@ -1072,10 +1182,10 @@ function MeetingDetailContent() {
               disabled={isReadying}
               className="w-full py-4 px-6 rounded-2xl font-bold text-lg bg-gradient-to-r from-yellow-500 to-orange-500 text-white shadow-lg shadow-yellow-500/30 hover:shadow-xl transition-all flex items-center justify-center gap-2"
             >
-              {isReadying ? '레디 중...' : (
+              {isReadying ? '출쳌 중...' : (
                 <>
                   <span className="text-xl">✋</span>
-                  레디하고 시작하기
+                  출쳌하고 시작하기
                 </>
               )}
             </button>
@@ -1377,6 +1487,90 @@ function MeetingDetailContent() {
                 {isSubmittingReport ? '제출 중...' : '신고 제출'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 호스트 노쇼 투표 모달 */}
+      {showHostNoShowModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl p-6 mx-4 w-full max-w-sm">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              🚫 호스트 노쇼 투표
+            </h3>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4">
+              <p className="text-sm text-yellow-800 mb-2 font-medium">투표 전 꼭 읽어주세요!</p>
+              <ul className="text-sm text-yellow-700 space-y-1">
+                <li>• 호스트가 모임 장소에 나타나지 않았을 때 투표해주세요</li>
+                <li>• 전체 참여자의 <strong>50% 이상</strong>이 투표하면 호스트가 자동으로 변경됩니다</li>
+                <li>• 새 호스트는 <strong>출쳌한 참여자 중 가장 먼저 참여한 분</strong>에게 넘겨집니다</li>
+                <li>• 투표는 취소할 수 없으니 신중하게 결정해주세요</li>
+              </ul>
+            </div>
+
+            {noShowVoteInfo && (
+              <div className="text-center text-sm text-gray-600 mb-4">
+                현재 투표: {noShowVoteInfo.currentVotes}/{noShowVoteInfo.totalVoters}명 ({noShowVoteInfo.votePercentage}%)
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowHostNoShowModal(false)}
+                className="flex-1 py-3 text-gray-500 font-semibold rounded-xl hover:bg-gray-100 transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleHostNoShowVote}
+                disabled={isVotingNoShow}
+                className="flex-1 py-3 bg-red-500 text-white font-semibold rounded-xl hover:bg-red-600 transition-colors flex items-center justify-center gap-2"
+              >
+                {isVotingNoShow ? '투표 중...' : '노쇼 투표하기'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 모임 시작 안내 팝업 */}
+      {showStartedModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl p-6 mx-4 w-full max-w-sm">
+            <div className="text-center mb-4">
+              <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-green-500/30">
+                <span className="text-4xl">🎉</span>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                모임이 시작되었습니다!
+              </h3>
+            </div>
+
+            <div className="bg-gray-50 rounded-xl p-4 mb-4 space-y-3">
+              <div className="flex items-start gap-3">
+                <span className="text-lg">✨</span>
+                <p className="text-sm text-gray-700">즐거운 모임 진행해 주세요!</p>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="text-lg">🏁</span>
+                <p className="text-sm text-gray-700">모임이 끝나면 <strong>모임 종료</strong> 버튼을 눌러주세요</p>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="text-lg">⏰</span>
+                <p className="text-sm text-gray-700">종료하지 않으면 <strong>5시간 후 자동 종료</strong>됩니다</p>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="text-lg">⭐</span>
+                <p className="text-sm text-gray-700">종료 후 참여자들을 <strong>평가</strong>할 수 있습니다</p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowStartedModal(false)}
+              className="w-full py-3 bg-gradient-to-r from-primary to-primary-dark text-white font-bold rounded-xl shadow-lg shadow-primary/30"
+            >
+              확인
+            </button>
           </div>
         </div>
       )}

@@ -33,7 +33,7 @@ export function isWithinRadius(
   return distance <= radiusMeters
 }
 
-// 기본 레디 가능 반경 (미터)
+// 기본 출쳌 가능 반경 (미터)
 export const READY_RADIUS_METERS = 500
 
 // 위치 권한 상태 타입

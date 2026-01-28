@@ -141,7 +141,7 @@ export function getStatusName(status: string): string {
   const statuses: Record<string, string> = {
     RECRUITING: '모집중',
     CLOSED: '모집마감',
-    READY: '레디 대기',
+    READY: '출쳌 대기',
     PLAYING: '게임 중',
     COMPLETED: '완료',
     CANCELLED: '취소됨',
