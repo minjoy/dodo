@@ -79,6 +79,9 @@ function MeetingDetailContent() {
   const [showDistanceErrorModal, setShowDistanceErrorModal] = useState(false)
   const [distanceErrorInfo, setDistanceErrorInfo] = useState<{ distance: number; maxDistance: number } | null>(null)
 
+  // 위치 정보 오류 팝업 상태 (GPS 신호 약함)
+  const [showLocationErrorModal, setShowLocationErrorModal] = useState(false)
+
   const meetingId = params.id as string
   const joinedFromInvite = searchParams.get('joined') === 'true'
   const fromInviteLink = searchParams.get('fromInvite') === 'true'
@@ -274,7 +277,7 @@ function MeetingDetailContent() {
 
     setIsReadying(true)
     try {
-      // 현재 위치 가져오기 (선택적)
+      // 현재 위치 가져오기
       let latitude, longitude
       if (navigator.geolocation) {
         try {
@@ -284,8 +287,16 @@ function MeetingDetailContent() {
           latitude = position.coords.latitude
           longitude = position.coords.longitude
         } catch {
-          // 위치 권한 없어도 출쳌 가능
+          // 위치 정보를 가져오지 못한 경우 (GPS 신호 약함, 권한 거부 등)
+          setShowLocationErrorModal(true)
+          setIsReadying(false)
+          return
         }
+      } else {
+        // geolocation API를 지원하지 않는 경우
+        setShowLocationErrorModal(true)
+        setIsReadying(false)
+        return
       }
 
       const res = await fetch(`/api/meetings/${meetingId}/ready`, {
@@ -1745,6 +1756,62 @@ function MeetingDetailContent() {
                 setShowDistanceErrorModal(false)
                 setDistanceErrorInfo(null)
               }}
+              className="w-full py-3 bg-gradient-to-r from-primary to-primary-dark text-white font-bold rounded-xl shadow-lg shadow-primary/30"
+            >
+              확인
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 위치 정보 오류 팝업 (GPS 신호 약함) */}
+      {showLocationErrorModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl p-6 mx-4 w-full max-w-sm">
+            <div className="text-center mb-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/30">
+                <span className="text-3xl">📡</span>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                위치를 확인할 수 없어요
+              </h3>
+              <p className="text-sm text-gray-500">
+                GPS 신호가 약해서 현재 위치를 가져올 수 없어요
+              </p>
+            </div>
+
+            <div className="bg-gray-50 rounded-xl p-4 mb-4">
+              <p className="text-sm font-medium text-gray-700 mb-3">
+                이런 상황일 수 있어요
+              </p>
+              <ul className="space-y-2 text-sm text-gray-600">
+                <li className="flex items-center gap-2">
+                  <span className="text-base">🚇</span>
+                  <span>지하철, 지하 공간에 있을 때</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-base">🛗</span>
+                  <span>엘리베이터 안에 있을 때</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-base">🏢</span>
+                  <span>건물 깊숙한 곳에 있을 때</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="bg-blue-50 rounded-xl p-4 mb-4">
+              <p className="text-sm font-medium text-blue-700 mb-2">
+                💡 이렇게 해보세요
+              </p>
+              <p className="text-sm text-blue-600">
+                창가나 야외로 이동한 후 다시 시도해주세요.
+                Wi-Fi를 켜면 위치 정확도가 높아질 수 있어요.
+              </p>
+            </div>
+
+            <button
+              onClick={() => setShowLocationErrorModal(false)}
               className="w-full py-3 bg-gradient-to-r from-primary to-primary-dark text-white font-bold rounded-xl shadow-lg shadow-primary/30"
             >
               확인
