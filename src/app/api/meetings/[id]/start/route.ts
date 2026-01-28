@@ -56,10 +56,11 @@ export async function POST(
       }, { status: 400 })
     }
 
-    // 시작시간 초과된 모임은 시작 불가
-    if (meetingDate < now) {
+    // 시작시간으로부터 3시간 초과된 모임은 시작 불가 (지난 모임으로 이동)
+    const threeHoursAfterMeeting = new Date(meetingDate.getTime() + 3 * 60 * 60 * 1000)
+    if (threeHoursAfterMeeting < now) {
       return NextResponse.json({
-        message: '시작시간이 초과되어 모임을 시작할 수 없습니다',
+        message: '시작시간으로부터 3시간이 초과되어 모임을 시작할 수 없습니다',
         errorType: 'OVERDUE',
       }, { status: 400 })
     }

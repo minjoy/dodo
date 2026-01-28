@@ -646,10 +646,11 @@ function MeetingDetailContent() {
   const nonHostReadyCount = meeting.participants.filter(p => p.status !== 'CANCELLED' && p.isReady && p.userId !== meeting.hostId).length
   const hasAnyNonHostReady = nonHostReadyCount >= 1
 
-  // 시작시간 초과 여부 (시작시간이 지났는데 아직 시작 안 된 모임)
-  const isOverdue = meetingDate < now && meeting.status !== 'PLAYING' && meeting.status !== 'COMPLETED' && meeting.status !== 'CANCELLED'
+  // 시작시간으로부터 3시간 초과 여부 (3시간이 지나면 "지난 모임"으로 이동하여 시작 불가)
+  const threeHoursAfterMeeting = new Date(meetingDate.getTime() + 3 * 60 * 60 * 1000)
+  const isOverdue = threeHoursAfterMeeting < now && meeting.status !== 'PLAYING' && meeting.status !== 'COMPLETED' && meeting.status !== 'CANCELLED'
 
-  // 모임 시작 가능 여부 (호스트이고, 호스트가 출쳌했고, 호스트 외 1명 이상 출쳌, 모임 시작 1시간 전인 경우, 시작시간 초과 아닐 때)
+  // 모임 시작 가능 여부 (호스트이고, 호스트가 출쳌했고, 호스트 외 1명 이상 출쳌, 모임 시작 1시간 전인 경우, 3시간 초과 아닐 때)
   const canStart = isHost && canReady && isMyReady && hasAnyNonHostReady && !isOverdue && (meeting.status === 'READY' || meeting.status === 'RECRUITING' || meeting.status === 'CLOSED')
   const isPlaying = meeting.status === 'PLAYING'
 
@@ -1237,10 +1238,10 @@ function MeetingDetailContent() {
             </div>
           )
         ) : isOverdue ? (
-          /* 시작시간 초과된 모임 - 호스트/참여자 모두에게 동일하게 표시 */
+          /* 시작시간으로부터 3시간 초과된 모임 - 호스트/참여자 모두에게 동일하게 표시 */
           <div className="space-y-3">
             <div className="text-center text-sm text-gray-500 mb-2">
-              ⏰ 시작시간이 초과되어 모임이 자동 취소되었습니다.
+              ⏰ 시작시간으로부터 3시간이 초과되어 모임을 시작할 수 없습니다.
             </div>
             <button
               onClick={() => router.push('/home')}
