@@ -106,15 +106,20 @@ export default function MyPage() {
       if (meetingsRes.ok) {
         const meetingsData = await meetingsRes.json()
         const now = new Date()
+        // 시작시간으로부터 3시간이 지난 시점
+        const threeHoursAgo = new Date(now.getTime() - 3 * 60 * 60 * 1000)
         // 진행중인 모임 (PLAYING 상태)
         setPlayingMeetings(
           meetingsData.filter((m: MeetingWithDetails) => m.status === 'PLAYING')
         )
-        // 예정된 모임 (PLAYING이 아니고 미래 날짜)
+        // 예정된 모임 (PLAYING/COMPLETED가 아니고, 미래 날짜이거나 시작시간이 3시간 이내로 지난 모임)
         setUpcomingMeetings(
-          meetingsData.filter((m: MeetingWithDetails) =>
-            m.status !== 'PLAYING' && m.status !== 'COMPLETED' && new Date(m.meetingDate) >= now
-          )
+          meetingsData.filter((m: MeetingWithDetails) => {
+            if (m.status === 'PLAYING' || m.status === 'COMPLETED') return false
+            const meetingDate = new Date(m.meetingDate)
+            // 미래 날짜이거나, 시작시간이 지났더라도 3시간 이내면 포함
+            return meetingDate >= now || meetingDate >= threeHoursAgo
+          })
         )
       }
 

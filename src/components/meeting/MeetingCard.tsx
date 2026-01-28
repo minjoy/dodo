@@ -24,6 +24,11 @@ export default function MeetingCard({ meeting, isAuthenticated = true, onLoginRe
   const isFull = totalParticipants >= meeting.maxParticipants
   const spotsLeft = meeting.maxParticipants - totalParticipants
 
+  // 시작시간 초과 여부 확인 (시작되지 않은 상태에서 시작시간이 지난 경우)
+  const now = new Date()
+  const meetingDate = new Date(meeting.meetingDate)
+  const isOverdue = meeting.status !== 'PLAYING' && meeting.status !== 'COMPLETED' && meetingDate < now
+
   const handleClick = (e: React.MouseEvent) => {
     if (!isAuthenticated && onLoginRequired) {
       e.preventDefault()
@@ -54,11 +59,22 @@ export default function MeetingCard({ meeting, isAuthenticated = true, onLoginRe
 
         {/* 핵심 정보: 언제, 어디서 */}
         <div className="flex items-center gap-4 text-sm text-gray-600">
-          <div className="flex items-center gap-1.5">
-            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span>{formatDate(meeting.meetingDate)} {formatTime(meeting.meetingDate)}</span>
+          <div className={`flex items-center gap-1.5 ${isOverdue ? 'text-red-500' : ''}`}>
+            {isOverdue ? (
+              // 시작시간 초과 시 경고 시계 아이콘
+              <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <circle cx="18" cy="6" r="4" fill="currentColor" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} stroke="white" d="M18 4v2m0 2h.01" />
+              </svg>
+            ) : (
+              // 일반 시계 아이콘
+              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            )}
+            <span className={isOverdue ? 'font-medium' : ''}>{formatDate(meeting.meetingDate)} {formatTime(meeting.meetingDate)}</span>
+            {isOverdue && <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-medium">시작시간 초과</span>}
           </div>
         </div>
 

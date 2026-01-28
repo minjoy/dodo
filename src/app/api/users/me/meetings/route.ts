@@ -27,6 +27,8 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type') // 'past' | null
 
     const now = new Date()
+    // 시작시간으로부터 3시간이 지난 시점
+    const threeHoursAgo = new Date(now.getTime() - 3 * 60 * 60 * 1000)
 
     // 기본 조건: 내가 호스트이거나 참여한 모임
     const baseWhere = {
@@ -46,6 +48,9 @@ export async function GET(request: NextRequest) {
     }
 
     // type에 따른 필터링
+    // "지난 모임" 조건:
+    // 1. COMPLETED 상태인 모임 또는
+    // 2. 아직 시작되지 않았지만(PLAYING 아님) 시작시간이 3시간 이상 지난 모임
     const where = type === 'past'
       ? {
           ...baseWhere,
@@ -59,7 +64,7 @@ export async function GET(request: NextRequest) {
                 {
                   AND: [
                     { status: { not: 'PLAYING' as const } },
-                    { meetingDate: { lt: now } },
+                    { meetingDate: { lt: threeHoursAgo } },
                   ],
                 },
               ],
