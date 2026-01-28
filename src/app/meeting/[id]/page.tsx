@@ -1615,7 +1615,9 @@ function MeetingDetailContent() {
 
             <div className="bg-gray-50 rounded-xl p-4 mb-4 space-y-3">
               <div className="flex items-start gap-3">
-                <span className={`text-lg ${canReady ? '✅' : '⏰'}`}>{canReady ? '✅' : '⏰'}</span>
+                <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 mt-0.5 ${canReady ? 'bg-green-500' : 'border-2 border-gray-300'}`}>
+                  {canReady && <span className="text-white text-xs">✓</span>}
+                </div>
                 <div className="flex-1">
                   <p className={`text-sm font-medium ${canReady ? 'text-green-700' : 'text-gray-700'}`}>
                     모임 시작 1시간 전
@@ -1626,7 +1628,9 @@ function MeetingDetailContent() {
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <span className="text-lg">{isMyReady ? '✅' : '📍'}</span>
+                <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 mt-0.5 ${isMyReady ? 'bg-green-500' : 'border-2 border-gray-300'}`}>
+                  {isMyReady && <span className="text-white text-xs">✓</span>}
+                </div>
                 <div className="flex-1">
                   <p className={`text-sm font-medium ${isMyReady ? 'text-green-700' : 'text-gray-700'}`}>
                     호스트 출쳌
@@ -1637,7 +1641,9 @@ function MeetingDetailContent() {
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <span className="text-lg">{hasAnyNonHostReady ? '✅' : '👥'}</span>
+                <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 mt-0.5 ${hasAnyNonHostReady ? 'bg-green-500' : 'border-2 border-gray-300'}`}>
+                  {hasAnyNonHostReady && <span className="text-white text-xs">✓</span>}
+                </div>
                 <div className="flex-1">
                   <p className={`text-sm font-medium ${hasAnyNonHostReady ? 'text-green-700' : 'text-gray-700'}`}>
                     참여자 1명 이상 출쳌
