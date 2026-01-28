@@ -128,8 +128,87 @@ export async function GET(
       return NextResponse.json({ message: '모임을 찾을 수 없습니다' }, { status: 404 })
     }
 
+    // 자동 취소 체크: 시작시간으로부터 3시간이 지났고 아직 시작/완료/취소되지 않은 모임
+    const now = new Date()
+    const meetingDate = new Date(meeting.meetingDate)
+    const threeHoursAfterMeeting = new Date(meetingDate.getTime() + 3 * 60 * 60 * 1000)
+
+    if (
+      now > threeHoursAfterMeeting &&
+      meeting.status !== 'PLAYING' &&
+      meeting.status !== 'COMPLETED' &&
+      meeting.status !== 'CANCELLED'
+    ) {
+      // 모임 상태를 CANCELLED로 변경
+      await prisma.meeting.update({
+        where: { id },
+        data: { status: 'CANCELLED' },
+      })
+
+      // 업데이트된 모임 정보 다시 조회
+      meeting = await prisma.meeting.findUnique({
+        where: { id },
+        include: {
+          host: {
+            select: {
+              id: true,
+              nickname: true,
+              profileImage: true,
+              level: true,
+              meetingCount: true,
+              hostCount: true,
+              likeReceived: true,
+              representativeBadge: true,
+              representativeBadge2: true,
+            },
+          },
+          participants: {
+            where: {
+              status: {
+                not: 'CANCELLED',
+              },
+            },
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  nickname: true,
+                  profileImage: true,
+                  level: true,
+                  representativeBadge: true,
+                  representativeBadge2: true,
+                },
+              },
+            },
+          },
+          gameRoles: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  nickname: true,
+                  profileImage: true,
+                },
+              },
+            },
+          },
+          _count: {
+            select: {
+              participants: {
+                where: {
+                  status: {
+                    not: 'CANCELLED',
+                  },
+                },
+              },
+            },
+          },
+        },
+      })
+    }
+
     // 자동 종료 체크: PLAYING 상태이고 시작 후 5시간이 지났으면 자동 종료
-    if (meeting.status === 'PLAYING' && meeting.gameStartedAt) {
+    if (meeting && meeting.status === 'PLAYING' && meeting.gameStartedAt) {
       const fiveHoursInMs = 5 * 60 * 60 * 1000
       const autoEndTime = new Date(meeting.gameStartedAt.getTime() + fiveHoursInMs)
 
@@ -351,6 +430,11 @@ export async function DELETE(
     // 완료된 모임은 삭제 불가
     if (meeting.status === 'COMPLETED') {
       return NextResponse.json({ message: '완료된 모임은 삭제할 수 없습니다' }, { status: 400 })
+    }
+
+    // 취소된 모임은 삭제 불가
+    if (meeting.status === 'CANCELLED') {
+      return NextResponse.json({ message: '취소된 모임은 삭제할 수 없습니다' }, { status: 400 })
     }
 
     // 트랜잭션으로 모임 삭제 및 hostCount 차감

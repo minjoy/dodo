@@ -70,6 +70,12 @@ export async function POST(
         { status: 400 }
       )
     }
+    if (meeting.status === 'CANCELLED') {
+      return NextResponse.json(
+        { message: '취소된 모임에는 참여할 수 없습니다' },
+        { status: 400 }
+      )
+    }
     if (meeting.status !== 'RECRUITING') {
       return NextResponse.json(
         { message: '모집이 마감된 모임입니다' },
@@ -201,6 +207,13 @@ export async function DELETE(
     if (meeting.status === 'COMPLETED') {
       return NextResponse.json(
         { message: '완료된 모임은 참여를 취소할 수 없습니다' },
+        { status: 400 }
+      )
+    }
+
+    if (meeting.status === 'CANCELLED') {
+      return NextResponse.json(
+        { message: '취소된 모임은 참여를 취소할 수 없습니다' },
         { status: 400 }
       )
     }
