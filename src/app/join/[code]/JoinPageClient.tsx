@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSession, signIn } from 'next-auth/react'
+import { useSession } from 'next-auth/react'
 import {
   formatDate,
   formatTime,
@@ -10,6 +10,7 @@ import {
   getGameTypeEmoji,
 } from '@/lib/utils'
 import { fetchWithAuth } from '@/lib/fetchWithAuth'
+import LoginRequiredModal from '@/components/common/LoginRequiredModal'
 
 interface Meeting {
   id: string
@@ -41,6 +42,7 @@ export default function JoinPageClient({ code }: JoinPageClientProps) {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isJoining, setIsJoining] = useState(false)
+  const [showLoginModal, setShowLoginModal] = useState(false)
 
   // 뒤로가기 시 홈으로 이동
   useEffect(() => {
@@ -87,19 +89,29 @@ export default function JoinPageClient({ code }: JoinPageClientProps) {
     }
   }
 
-  const handleJoin = async () => {
+  // 로그인 체크 공통 함수
+  const requireLogin = (): boolean => {
     if (!session) {
-      // 로그인 후 이 페이지로 돌아오기
-      signIn('kakao', { callbackUrl: `/join/${code}` })
-      return
+      setShowLoginModal(true)
+      return false
     }
-
-    // 프로필 설정이 안되어 있으면 온보딩으로
     if (!session.user?.region) {
       router.push(`/onboarding?callbackUrl=/join/${code}`)
-      return
+      return false
     }
+    return true
+  }
 
+  // 비밀번호 없는 모임: 모임 상세 페이지로 이동
+  const handleGoToDetail = () => {
+    if (!requireLogin()) return
+    if (!meeting) return
+    router.push(`/meeting/${meeting.id}`)
+  }
+
+  // 비밀번호 있는 모임: 참여하기
+  const handleJoin = async () => {
+    if (!requireLogin()) return
     if (!meeting) return
 
     setIsJoining(true)
@@ -239,21 +251,6 @@ export default function JoinPageClient({ code }: JoinPageClientProps) {
       <div className="px-4 pt-4 pb-8 bg-white border-t border-gray-100 safe-bottom">
         {status === 'loading' ? (
           <div className="py-4 text-center text-gray-500">로딩 중...</div>
-        ) : !session ? (
-          <button
-            onClick={() => signIn('kakao', { callbackUrl: `/join/${code}` })}
-            className="w-full py-4 bg-[#FEE500] text-[#191919] font-semibold rounded-xl flex items-center justify-center gap-2"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path
-                fillRule="evenodd"
-                clipRule="evenodd"
-                d="M12 3C6.477 3 2 6.463 2 10.691c0 2.726 1.818 5.122 4.546 6.485-.145.522-.93 3.36-.964 3.594 0 0-.02.163.086.225.106.062.23.014.23.014.303-.042 3.506-2.296 4.06-2.685.672.096 1.364.147 2.042.147 5.523 0 10-3.463 10-7.78C22 6.463 17.523 3 12 3Z"
-                fill="#191919"
-              />
-            </svg>
-            카카오 로그인 후 입장하기
-          </button>
         ) : isFull ? (
           <button
             disabled
@@ -261,12 +258,19 @@ export default function JoinPageClient({ code }: JoinPageClientProps) {
           >
             모집 마감
           </button>
+        ) : !meeting.hasPassword ? (
+          <button
+            onClick={handleGoToDetail}
+            className="w-full py-4 font-semibold rounded-xl transition-colors bg-primary text-white active:bg-primary-dark"
+          >
+            모임 상세 보기
+          </button>
         ) : (
           <button
             onClick={handleJoin}
-            disabled={isJoining || (meeting.hasPassword && !password)}
+            disabled={isJoining || !password}
             className={`w-full py-4 font-semibold rounded-xl transition-colors ${
-              isJoining || (meeting.hasPassword && !password)
+              isJoining || !password
                 ? 'bg-gray-200 text-gray-400'
                 : 'bg-primary text-white active:bg-primary-dark'
             }`}
@@ -275,6 +279,14 @@ export default function JoinPageClient({ code }: JoinPageClientProps) {
           </button>
         )}
       </div>
+
+      {/* 로그인 필요 모달 */}
+      <LoginRequiredModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        message="모임에 참여하려면 로그인이 필요합니다"
+        callbackUrl={`/join/${code}`}
+      />
     </div>
   )
 }

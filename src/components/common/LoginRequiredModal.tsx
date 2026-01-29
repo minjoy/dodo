@@ -6,17 +6,19 @@ interface LoginRequiredModalProps {
   isOpen: boolean
   onClose: () => void
   message?: string
+  callbackUrl?: string
 }
 
 export default function LoginRequiredModal({
   isOpen,
   onClose,
-  message = '이 기능을 사용하려면 로그인이 필요합니다'
+  message = '이 기능을 사용하려면 로그인이 필요합니다',
+  callbackUrl = '/onboarding'
 }: LoginRequiredModalProps) {
   if (!isOpen) return null
 
   const handleLogin = () => {
-    signIn('kakao', { callbackUrl: '/onboarding' })
+    signIn('kakao', { callbackUrl })
   }
 
   return (
