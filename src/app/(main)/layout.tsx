@@ -22,11 +22,13 @@ export default function MainLayout({
   useEffect(() => {
     // 공개 경로가 아닌 경우에만 로그인 체크
     if (!isPublicPath && status === 'unauthenticated') {
-      router.push('/')
+      // 현재 경로를 보존하여 로그인 후 복귀할 수 있도록 함
+      router.push(`/?redirectTo=${encodeURIComponent(pathname)}`)
     } else if (status === 'authenticated' && !session?.user?.region) {
-      router.push('/onboarding')
+      // 온보딩 미완료 시 현재 경로를 callbackUrl로 전달
+      router.push(`/onboarding?callbackUrl=${encodeURIComponent(pathname)}`)
     }
-  }, [session, status, router, isPublicPath])
+  }, [session, status, router, isPublicPath, pathname])
 
   if (status === 'loading') {
     return (

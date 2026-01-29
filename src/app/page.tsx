@@ -33,11 +33,16 @@ function LandingContent() {
 
   useEffect(() => {
     if (status === 'authenticated' && session?.user?.region) {
-      router.push('/home')
+      // 로그인 완료 + 온보딩 완료: 원래 목표 페이지 또는 홈으로 이동
+      router.push(redirectTo || '/home')
     } else if (status === 'authenticated' && !session?.user?.region) {
-      router.push('/onboarding')
+      // 로그인 완료 + 온보딩 미완료: 온보딩으로 이동 (redirectTo 보존)
+      const onboardingUrl = redirectTo
+        ? `/onboarding?callbackUrl=${encodeURIComponent(redirectTo)}`
+        : '/onboarding'
+      router.push(onboardingUrl)
     }
-  }, [session, status, router])
+  }, [session, status, router, redirectTo])
 
   if (status === 'loading' || !mounted) {
     return (
