@@ -26,6 +26,14 @@ export function formatDateTime(date: Date | string): string {
   return `${formatDate(d)} ${formatTime(d)}`
 }
 
+export function isToday(date: Date | string): boolean {
+  const d = new Date(date)
+  const now = new Date()
+  return d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate()
+}
+
 export function getRelativeTime(date: Date | string): string {
   const d = new Date(date)
   const now = new Date()

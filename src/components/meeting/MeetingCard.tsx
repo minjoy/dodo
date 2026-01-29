@@ -4,6 +4,7 @@ import Link from 'next/link'
 import {
   formatDate,
   formatTime,
+  isToday,
   getGameTypeName,
   getGameTypeEmoji,
 } from '@/lib/utils'
@@ -74,6 +75,9 @@ export default function MeetingCard({ meeting, isAuthenticated = true, onLoginRe
               </svg>
             )}
             <span className={isOverdue ? 'font-medium' : ''}>{formatDate(meeting.meetingDate)} {formatTime(meeting.meetingDate)}</span>
+            {isToday(meeting.meetingDate) && !isOverdue && (
+              <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-bold">오늘</span>
+            )}
             {isOverdue && <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-medium">시작시간 초과</span>}
           </div>
         </div>
