@@ -129,7 +129,7 @@ export default function CommentBoard({ meetingId, isParticipant, isHost }: Comme
   if (!isParticipant) return null
 
   return (
-    <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+    <div className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 overflow-hidden">
       <div className="flex items-center gap-2 mb-4">
         <span className="text-lg">💬</span>
         <h3 className="font-bold text-gray-900">참여자 게시판</h3>
@@ -144,7 +144,7 @@ export default function CommentBoard({ meetingId, isParticipant, isHost }: Comme
             value={newComment}
             onChange={(e) => setNewComment(e.target.value.slice(0, 200))}
             placeholder="한마디 남기기..."
-            className="flex-1 px-4 py-3 bg-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
+            className="flex-1 min-w-0 px-3 py-2 text-sm bg-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault()
@@ -155,7 +155,7 @@ export default function CommentBoard({ meetingId, isParticipant, isHost }: Comme
           <button
             onClick={handleSubmit}
             disabled={!newComment.trim() || isSubmitting}
-            className={`px-4 py-3 rounded-xl font-medium transition-all ${
+            className={`shrink-0 px-3 py-2 text-sm rounded-xl font-medium transition-all ${
               newComment.trim() && !isSubmitting
                 ? 'bg-primary text-white'
                 : 'bg-gray-200 text-gray-400'
