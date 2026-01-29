@@ -925,7 +925,9 @@ function MeetingDetailContent() {
                           <span className="ml-1">
                             ({Math.floor(timeUntilReady / (1000 * 60 * 60)) > 0
                               ? `${Math.floor(timeUntilReady / (1000 * 60 * 60))}시간 ${Math.floor((timeUntilReady % (1000 * 60 * 60)) / (1000 * 60))}분 후`
-                              : `${Math.floor((timeUntilReady % (1000 * 60 * 60)) / (1000 * 60))}분 후`
+                              : Math.floor((timeUntilReady % (1000 * 60 * 60)) / (1000 * 60)) > 0
+                                ? `${Math.floor((timeUntilReady % (1000 * 60 * 60)) / (1000 * 60))}분 후`
+                                : '1분 미만'
                             })
                           </span>
                         )}
@@ -1689,7 +1691,7 @@ function MeetingDetailContent() {
                     모임 시작 1시간 전
                   </p>
                   <p className="text-xs text-gray-500">
-                    {canReady ? '조건 충족!' : `${Math.floor(timeUntilReady / (1000 * 60 * 60)) > 0 ? `${Math.floor(timeUntilReady / (1000 * 60 * 60))}시간 ` : ''}${Math.floor((timeUntilReady % (1000 * 60 * 60)) / (1000 * 60))}분 후 가능`}
+                    {canReady ? '조건 충족!' : Math.floor(timeUntilReady / (1000 * 60 * 60)) > 0 ? `${Math.floor(timeUntilReady / (1000 * 60 * 60))}시간 ${Math.floor((timeUntilReady % (1000 * 60 * 60)) / (1000 * 60))}분 후 가능` : Math.floor((timeUntilReady % (1000 * 60 * 60)) / (1000 * 60)) > 0 ? `${Math.floor((timeUntilReady % (1000 * 60 * 60)) / (1000 * 60))}분 후 가능` : '1분 미만'}
                   </p>
                 </div>
               </div>
