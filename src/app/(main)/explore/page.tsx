@@ -274,10 +274,6 @@ export default function ExplorePage() {
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-500">
                     <span>📍 {user.region}</span>
-                    <span>•</span>
-                    <span>모임 {user.meetingCount}회</span>
-                    <span>•</span>
-                    <span>❤️ {user.likeReceived}</span>
                   </div>
                 </div>
 
