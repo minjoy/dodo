@@ -120,6 +120,26 @@ export default function CreateMeetingPage() {
         </div>
       </header>
 
+      {/* 내 동네 표시 */}
+      {session?.user?.region && (
+        <div className="mx-4 mt-4 px-4 py-3 bg-white rounded-xl border border-gray-200 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-gray-700">
+            <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+            </svg>
+            <span className="text-sm font-medium">내 동네</span>
+            <span className="text-sm font-bold text-gray-900">{session.user.region}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => router.push('/my')}
+            className="text-xs text-primary font-semibold"
+          >
+            변경하기
+          </button>
+        </div>
+      )}
+
       {/* 폼 */}
       <form onSubmit={handleSubmit} className="px-4 py-6 space-y-6">
         {/* 게임 종류 */}
