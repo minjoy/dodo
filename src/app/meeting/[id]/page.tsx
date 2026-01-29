@@ -884,6 +884,14 @@ function MeetingDetailContent() {
             <div className="flex items-center gap-2 mb-3">
               <span className="text-lg">⭐</span>
               <h3 className="font-bold text-gray-900">참여 조건</h3>
+              {(isHost || isParticipant) && (
+                <button
+                  onClick={() => isHost ? setShowHostGuideModal(true) : setShowParticipantGuideModal(true)}
+                  className="ml-auto text-xs text-primary font-semibold bg-primary/10 px-3 py-1 rounded-full hover:bg-primary/20 transition-colors"
+                >
+                  {isHost ? '모임장 가이드' : '참여자 가이드'}
+                </button>
+              )}
             </div>
             <div className="inline-flex items-center gap-2 bg-accent/20 px-4 py-2 rounded-xl">
               <span className="text-lg">{LEVEL_EMOJIS[meeting.minLevel - 1]}</span>
