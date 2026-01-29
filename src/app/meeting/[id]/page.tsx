@@ -857,19 +857,18 @@ function MeetingDetailContent() {
 
           {/* 호스트 노쇼 투표 버튼 (참가자이고, 호스트가 아닐 때 - 시작시간 전에도 표시) */}
           {!isHost && isParticipant && !isPlaying && meeting.status !== 'COMPLETED' && meeting.status !== 'CANCELLED' && (
-            <div className="mt-4 pt-4 border-t border-gray-100">
+            <div className="mt-3 text-center">
               {hasVotedNoShow ? (
-                <div className="text-center text-sm text-gray-500">
-                  호스트 노쇼 투표 완료
-                  {noShowVoteInfo && ` (${noShowVoteInfo.currentVotes}/${noShowVoteInfo.totalVoters}명, ${noShowVoteInfo.votePercentage}%)`}
-                </div>
+                <span className="text-xs text-gray-400">
+                  노쇼 투표 완료
+                  {noShowVoteInfo && ` (${noShowVoteInfo.currentVotes}/${noShowVoteInfo.totalVoters}명)`}
+                </span>
               ) : (
                 <button
                   onClick={() => setShowHostNoShowModal(true)}
-                  className="w-full py-2.5 px-4 rounded-xl text-sm font-medium text-red-500 bg-red-50 hover:bg-red-100 transition-colors flex items-center justify-center gap-2"
+                  className="text-xs text-gray-400 underline underline-offset-2 hover:text-gray-500 transition-colors"
                 >
-                  <span>🚫</span>
-                  호스트 노쇼 투표
+                  호스트가 안 오셨나요?
                 </button>
               )}
             </div>
