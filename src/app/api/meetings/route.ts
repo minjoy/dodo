@@ -136,6 +136,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // 이용 가능한 동네인지 확인
+    if (region && region !== '전체') {
+      const disabledSetting = await (prisma as any).regionSetting.findFirst({
+        where: { region, enabled: false },
+      })
+      if (disabledSetting) {
+        return NextResponse.json(
+          { message: '현재 이용할 수 없는 동네입니다. 동네를 변경해주세요.' },
+          { status: 400 }
+        )
+      }
+    }
+
     // 고유한 공유 코드 생성
     let shareCode = generateShareCode()
     let attempts = 0

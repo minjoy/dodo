@@ -410,6 +410,15 @@ model RegionHistory {
   @@index([rank])
 }
 
+// 동네 설정 (관리자가 on/off 관리)
+model RegionSetting {
+  id        String    @id @default(cuid())
+  region    String    @unique  // 동네 이름 (예: "성수동")
+  enabled   Boolean   @default(true)  // 이용 가능 여부
+
+  updatedAt DateTime  @updatedAt
+}
+
 // 공지사항
 model Announcement {
   id          String    @id @default(cuid())

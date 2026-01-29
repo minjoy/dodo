@@ -6,7 +6,7 @@ import { useSession } from 'next-auth/react'
 import { validateNickname } from '@/lib/nickname'
 import { fetchWithAuth } from '@/lib/fetchWithAuth'
 import ImageCropper from '@/components/ImageCropper'
-import { getAllRegions, searchRegions } from '@/data/regions'
+import { getAllRegions, searchRegions, type RegionData } from '@/data/regions'
 
 export default function OnboardingPage() {
   return (
@@ -36,11 +36,29 @@ function OnboardingContent() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [showCropper, setShowCropper] = useState(false)
   const [regionSearch, setRegionSearch] = useState('')
+  const [enabledRegionNames, setEnabledRegionNames] = useState<Set<string> | null>(null)
+
+  // 이용 가능한 동네 목록 조회
+  useEffect(() => {
+    fetch('/api/regions/enabled')
+      .then((res) => res.json())
+      .then((data: string[]) => setEnabledRegionNames(new Set(data)))
+      .catch(() => setEnabledRegionNames(null))
+  }, [])
 
   const filteredRegions = useMemo(() => {
-    if (!regionSearch.trim()) return getAllRegions()
-    return searchRegions(regionSearch)
-  }, [regionSearch])
+    let regions: RegionData[]
+    if (!regionSearch.trim()) {
+      regions = getAllRegions()
+    } else {
+      regions = searchRegions(regionSearch)
+    }
+    // 이용 가능한 동네만 필터링
+    if (enabledRegionNames) {
+      regions = regions.filter((r) => enabledRegionNames.has(r.name))
+    }
+    return regions
+  }, [regionSearch, enabledRegionNames])
 
   // 인기지역과 나머지 분리
   const popularRegions = useMemo(() => filteredRegions.filter((r) => r.popular), [filteredRegions])

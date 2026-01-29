@@ -129,6 +129,16 @@ export async function PUT(request: NextRequest) {
       }
     }
 
+    // 동네 변경 시 이용 가능한 동네인지 확인
+    if (region && region !== '전체') {
+      const disabledSetting = await (prisma as any).regionSetting.findFirst({
+        where: { region, enabled: false },
+      })
+      if (disabledSetting) {
+        return NextResponse.json({ message: '현재 이용할 수 없는 동네입니다' }, { status: 400 })
+      }
+    }
+
     // 대표 뱃지 설정 시 본인 소유 뱃지인지 확인
     if (representativeBadgeId) {
       const userBadge = await prisma.userBadge.findFirst({

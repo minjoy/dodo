@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { fetchWithAuth } from '@/lib/fetchWithAuth'
-import { getAllRegions, searchRegions } from '@/data/regions'
+import { getAllRegions, searchRegions, type RegionData } from '@/data/regions'
 
 export default function RegionChangePage() {
   const router = useRouter()
@@ -13,11 +13,29 @@ export default function RegionChangePage() {
   const [isLoading, setIsLoading] = useState(false)
   const [showToast, setShowToast] = useState(false)
   const [regionSearch, setRegionSearch] = useState('')
+  const [enabledRegionNames, setEnabledRegionNames] = useState<Set<string> | null>(null)
+
+  // 이용 가능한 동네 목록 조회
+  useEffect(() => {
+    fetch('/api/regions/enabled')
+      .then((res) => res.json())
+      .then((data: string[]) => setEnabledRegionNames(new Set(data)))
+      .catch(() => setEnabledRegionNames(null))
+  }, [])
 
   const filteredRegions = useMemo(() => {
-    if (!regionSearch.trim()) return getAllRegions()
-    return searchRegions(regionSearch)
-  }, [regionSearch])
+    let regions: RegionData[]
+    if (!regionSearch.trim()) {
+      regions = getAllRegions()
+    } else {
+      regions = searchRegions(regionSearch)
+    }
+    // 이용 가능한 동네만 필터링
+    if (enabledRegionNames) {
+      regions = regions.filter((r) => enabledRegionNames.has(r.name))
+    }
+    return regions
+  }, [regionSearch, enabledRegionNames])
 
   const popularRegions = useMemo(() => filteredRegions.filter((r) => r.popular), [filteredRegions])
   const otherRegions = useMemo(() => filteredRegions.filter((r) => !r.popular), [filteredRegions])
