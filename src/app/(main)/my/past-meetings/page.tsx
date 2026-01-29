@@ -72,7 +72,7 @@ export default function PastMeetingsPage() {
           <div className="space-y-3">
             {meetings.map((meeting) => (
               <div key={meeting.id} className="relative">
-                <MeetingCard meeting={meeting} />
+                <MeetingCard meeting={meeting} hideSpotsLeft />
                 {/* 미평가 알림 뱃지 */}
                 {meeting.hasUnreviewed && (
                   <div className="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full animate-pulse" />

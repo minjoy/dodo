@@ -17,9 +17,10 @@ interface MeetingCardProps {
   }
   isAuthenticated?: boolean
   onLoginRequired?: () => void
+  hideSpotsLeft?: boolean
 }
 
-export default function MeetingCard({ meeting, isAuthenticated = true, onLoginRequired }: MeetingCardProps) {
+export default function MeetingCard({ meeting, isAuthenticated = true, onLoginRequired, hideSpotsLeft = false }: MeetingCardProps) {
   // 참여자 수에 호스트 포함 (+1)
   const totalParticipants = meeting._count.participants + 1
   const isFull = totalParticipants >= meeting.maxParticipants
@@ -48,9 +49,11 @@ export default function MeetingCard({ meeting, isAuthenticated = true, onLoginRe
               {getGameTypeName(meeting.gameType)}
             </span>
           </div>
-          <div className={`text-sm font-bold ${isFull ? 'text-orange-500' : 'text-primary'}`}>
-            {isFull ? '마감' : `${spotsLeft}자리 남음`}
-          </div>
+          {!hideSpotsLeft && (
+            <div className={`text-sm font-bold ${isFull ? 'text-orange-500' : 'text-primary'}`}>
+              {isFull ? '마감' : `${spotsLeft}자리 남음`}
+            </div>
+          )}
         </div>
 
         {/* 제목 */}
