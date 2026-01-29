@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next'
+import Script from 'next/script'
 import './globals.css'
 import AuthProvider from '@/components/providers/AuthProvider'
 
@@ -59,6 +60,20 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
+      <head>
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-7YY3RHYBWP"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-7YY3RHYBWP');
+          `}
+        </Script>
+      </head>
       <body className="antialiased bg-gray-100">
         <AuthProvider>
           <main className="min-h-screen bg-gray-50 max-w-[1000px] mx-auto shadow-sm">{children}</main>
