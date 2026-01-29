@@ -49,7 +49,11 @@ function OnboardingContent() {
   // 로그인 상태 및 온보딩 완료 여부 체크
   useEffect(() => {
     if (status === 'unauthenticated') {
-      router.push('/')
+      // 미인증 시 로그인 페이지로 이동하되, callbackUrl이 있으면 보존
+      const redirectTo = callbackUrl
+        ? `/login?redirectTo=${encodeURIComponent(callbackUrl)}`
+        : '/login'
+      router.push(redirectTo)
     } else if (status === 'authenticated' && session?.user?.region) {
       // 이미 온보딩을 완료한 사용자는 callbackUrl 또는 홈으로 리다이렉트
       router.replace(callbackUrl || '/home')

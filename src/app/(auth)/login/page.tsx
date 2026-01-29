@@ -7,9 +7,13 @@ import { Suspense } from 'react'
 function LoginContent() {
   const searchParams = useSearchParams()
   const error = searchParams.get('error')
+  const redirectTo = searchParams.get('redirectTo')
 
   const handleKakaoLogin = () => {
-    signIn('kakao', { callbackUrl: '/onboarding' })
+    const callbackUrl = redirectTo
+      ? `/onboarding?callbackUrl=${encodeURIComponent(redirectTo)}`
+      : '/onboarding'
+    signIn('kakao', { callbackUrl })
   }
 
   const getErrorMessage = () => {

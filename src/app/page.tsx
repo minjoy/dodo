@@ -1,13 +1,30 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useSession, signIn } from 'next-auth/react'
 import Link from 'next/link'
 
 export default function LandingPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="text-center">
+          <div className="text-5xl mb-4">🏃</div>
+          <div className="text-2xl font-bold text-gray-900">경도</div>
+        </div>
+      </div>
+    }>
+      <LandingContent />
+    </Suspense>
+  )
+}
+
+function LandingContent() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get('redirectTo')
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -69,7 +86,12 @@ export default function LandingPage() {
       {/* 하단 버튼 */}
       <div className="px-6 pb-10 safe-bottom">
         <button
-          onClick={() => signIn('kakao', { callbackUrl: '/onboarding' })}
+          onClick={() => {
+            const callbackUrl = redirectTo
+              ? `/onboarding?callbackUrl=${encodeURIComponent(redirectTo)}`
+              : '/onboarding'
+            signIn('kakao', { callbackUrl })
+          }}
           className="w-full bg-[#FEE500] text-[#191919] font-bold py-4 rounded-xl flex items-center justify-center gap-3 active:bg-[#FDD835] transition-colors"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
