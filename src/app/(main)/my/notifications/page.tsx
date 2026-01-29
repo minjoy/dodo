@@ -124,7 +124,7 @@ export default function NotificationSettingsPage() {
                   <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
                     <div className="flex items-center gap-2 mb-3">
                       <span className="text-2xl">📱</span>
-                      <p className="font-semibold text-blue-900">홈 화면에 앱 설치가 필요해요</p>
+                      <p className="font-semibold text-blue-900">홈 화면에 추가가 필요해요</p>
                     </div>
                     <p className="text-sm text-blue-700 mb-4">
                       iPhone은 Safari에서 홈 화면에 추가한 후에만 알림을 받을 수 있어요.
@@ -161,7 +161,7 @@ export default function NotificationSettingsPage() {
                 <div className="p-4 bg-green-50 rounded-xl border border-green-100">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-2xl">✅</span>
-                    <p className="font-semibold text-green-900">앱 설치 완료!</p>
+                    <p className="font-semibold text-green-900">홈 화면 추가 완료!</p>
                   </div>
                   <p className="text-sm text-green-700">
                     위의 푸시 알림 토글을 켜면 알림을 받을 수 있어요.
