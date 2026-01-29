@@ -18,6 +18,7 @@ import {
   formatDistance,
 } from '@/lib/utils'
 import { fetchWithAuth } from '@/lib/fetchWithAuth'
+import { getLocationGuide } from '@/lib/location'
 import MeetingGuideModal from '@/components/common/MeetingGuideModal'
 import type { MeetingWithDetails } from '@/types'
 
@@ -83,6 +84,9 @@ function MeetingDetailContent() {
 
   // 위치 정보 오류 팝업 상태 (GPS 신호 약함)
   const [showLocationErrorModal, setShowLocationErrorModal] = useState(false)
+
+  // 위치 권한 거부 시 가이드 팝업 상태
+  const [showLocationPermissionGuide, setShowLocationPermissionGuide] = useState(false)
 
   // 가이드 팝업 상태
   const [showHostGuideModal, setShowHostGuideModal] = useState(false)
@@ -300,15 +304,21 @@ function MeetingDetailContent() {
           })
           latitude = position.coords.latitude
           longitude = position.coords.longitude
-        } catch {
-          // 위치 정보를 가져오지 못한 경우 (GPS 신호 약함, 권한 거부 등)
-          setShowLocationErrorModal(true)
+        } catch (error) {
+          const geoError = error as GeolocationPositionError
+          if (geoError?.code === 1) {
+            // PERMISSION_DENIED: 위치 권한 거부 시 가이드 팝업 표시
+            setShowLocationPermissionGuide(true)
+          } else {
+            // POSITION_UNAVAILABLE, TIMEOUT 등: GPS 신호 약함 팝업 표시
+            setShowLocationErrorModal(true)
+          }
           setIsReadying(false)
           return
         }
       } else {
         // geolocation API를 지원하지 않는 경우
-        setShowLocationErrorModal(true)
+        setShowLocationPermissionGuide(true)
         setIsReadying(false)
         return
       }
@@ -1893,6 +1903,68 @@ function MeetingDetailContent() {
           </div>
         </div>
       )}
+
+      {/* 위치 권한 거부 시 설정 가이드 팝업 */}
+      {showLocationPermissionGuide && (() => {
+        const guide = getLocationGuide()
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div className="bg-white rounded-2xl p-6 mx-4 w-full max-w-sm max-h-[80vh] overflow-y-auto">
+              <div className="text-center mb-4">
+                <div className="w-16 h-16 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-orange-500/30">
+                  <span className="text-3xl">📍</span>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  위치 권한이 필요해요
+                </h3>
+                <p className="text-sm text-gray-500">
+                  출쳌을 위해 위치 정보 접근을 허용해주세요
+                </p>
+              </div>
+
+              <div className="bg-gray-50 rounded-xl p-4 mb-4">
+                <p className="text-sm font-medium text-gray-700 mb-3">
+                  {guide.title}
+                </p>
+                <ol className="space-y-2 text-sm text-gray-600">
+                  {guide.steps.map((step, index) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <span className="flex-shrink-0 w-5 h-5 bg-primary rounded-full flex items-center justify-center text-xs font-bold text-white mt-0.5">
+                        {index + 1}
+                      </span>
+                      <span>{step}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+
+              <div className="bg-orange-50 rounded-xl p-4 mb-4">
+                <p className="text-sm text-orange-700">
+                  설정을 변경한 후 아래 버튼을 눌러 다시 시도해주세요.
+                </p>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowLocationPermissionGuide(false)}
+                  className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl"
+                >
+                  닫기
+                </button>
+                <button
+                  onClick={() => {
+                    setShowLocationPermissionGuide(false)
+                    handleReady()
+                  }}
+                  className="flex-1 py-3 bg-gradient-to-r from-primary to-primary-dark text-white font-bold rounded-xl shadow-lg shadow-primary/30"
+                >
+                  다시 시도
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* 모임장 가이드 팝업 */}
       {showHostGuideModal && (
