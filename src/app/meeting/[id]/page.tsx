@@ -956,13 +956,13 @@ function MeetingDetailContent() {
 
           {/* 참여자 목록 */}
           <div>
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
                 <span className="text-lg">👥</span>
                 <h3 className="font-bold text-gray-900">참여자</h3>
               </div>
-              <span className={`text-sm font-bold px-3 py-1 rounded-lg ${
-                isFull ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-600'
+              <span className={`text-sm font-bold ${
+                isFull ? 'text-orange-600' : 'text-gray-600'
               }`}>
                 {totalParticipants}/{meeting.maxParticipants}명
               </span>
