@@ -50,6 +50,8 @@ export default function EditMeetingPage() {
     meetingTime: '',
     maxParticipants: 8,
     status: 'RECRUITING',
+    isPrivate: false,
+    password: '',
   })
 
   useEffect(() => {
@@ -79,6 +81,8 @@ export default function EditMeetingPage() {
           meetingTime: meetingDate.toTimeString().slice(0, 5),
           maxParticipants: data.maxParticipants,
           status: data.status,
+          isPrivate: !!data.password,
+          password: data.password || '',
         })
 
         // 장소 정보 초기화
@@ -137,6 +141,7 @@ export default function EditMeetingPage() {
           longitude: selectedPlace.longitude,
           maxParticipants: formData.maxParticipants,
           status: formData.status,
+          password: formData.isPrivate ? (formData.password || null) : null,
         }),
       })
 
@@ -348,6 +353,57 @@ export default function EditMeetingPage() {
             </button>
           </div>
         </div>
+
+        {/* 공개/비공개 설정 */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            공개 설정
+          </label>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => setFormData(prev => ({ ...prev, isPrivate: false, password: '' }))}
+              className={`flex-1 py-3 rounded-xl font-semibold text-sm transition-colors ${
+                !formData.isPrivate
+                  ? 'bg-primary text-white'
+                  : 'bg-gray-100 text-gray-500'
+              }`}
+            >
+              공개
+            </button>
+            <button
+              type="button"
+              onClick={() => setFormData(prev => ({ ...prev, isPrivate: true }))}
+              className={`flex-1 py-3 rounded-xl font-semibold text-sm transition-colors ${
+                formData.isPrivate
+                  ? 'bg-primary text-white'
+                  : 'bg-gray-100 text-gray-500'
+              }`}
+            >
+              비공개
+            </button>
+          </div>
+        </div>
+
+        {/* 비밀번호 (비공개 모임인 경우) */}
+        {formData.isPrivate && (
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              비밀번호
+            </label>
+            <input
+              type="text"
+              name="password"
+              value={formData.password}
+              onChange={handleInputChange}
+              placeholder="비공개 모임 비밀번호 입력"
+              className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+            />
+            <p className="mt-1 text-xs text-gray-400">
+              비밀번호를 설정하면 링크 공유 시 비밀번호 입력이 필요합니다
+            </p>
+          </div>
+        )}
 
         {/* 상세 설명 */}
         <div>

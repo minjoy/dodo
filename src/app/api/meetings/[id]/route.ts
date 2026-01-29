@@ -340,6 +340,7 @@ export async function PUT(
         maxParticipants: body.maxParticipants,
         minLevel: body.minLevel,
         status: body.status,
+        ...(body.password !== undefined && { password: body.password }),
       },
       include: {
         participants: {
