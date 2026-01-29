@@ -14,6 +14,7 @@ export default function RegionChangePage() {
   const [showToast, setShowToast] = useState(false)
   const [regionSearch, setRegionSearch] = useState('')
   const [enabledRegionNames, setEnabledRegionNames] = useState<Set<string> | null>(null)
+  const [regionNotice, setRegionNotice] = useState('')
 
   // 이용 가능한 동네 목록 조회
   useEffect(() => {
@@ -21,6 +22,12 @@ export default function RegionChangePage() {
       .then((res) => res.json())
       .then((data: string[]) => setEnabledRegionNames(new Set(data)))
       .catch(() => setEnabledRegionNames(null))
+
+    // 동네 공지사항 조회
+    fetch('/api/region-notice')
+      .then((res) => res.json())
+      .then((data) => setRegionNotice(data.notice || ''))
+      .catch(() => setRegionNotice(''))
   }, [])
 
   const filteredRegions = useMemo(() => {
@@ -92,6 +99,18 @@ export default function RegionChangePage() {
           <div className="w-10" />
         </div>
       </header>
+
+      {/* 한줄 공지사항 */}
+      {regionNotice && (
+        <div className="px-4 pt-4">
+          <div className="flex items-center gap-2 px-4 py-3 bg-blue-50 rounded-xl border border-blue-200">
+            <svg className="w-4 h-4 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+            </svg>
+            <p className="text-sm text-blue-700">{regionNotice}</p>
+          </div>
+        </div>
+      )}
 
       {/* 현재 동네 */}
       <div className="px-4 py-6">

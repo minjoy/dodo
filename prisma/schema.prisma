@@ -419,6 +419,14 @@ model RegionSetting {
   updatedAt DateTime  @updatedAt
 }
 
+// 사이트 설정 (key-value 저장)
+model SiteSetting {
+  key       String    @id          // 설정 키 (예: "region_notice")
+  value     String    @db.Text     // 설정 값
+
+  updatedAt DateTime  @updatedAt
+}
+
 // 공지사항
 model Announcement {
   id          String    @id @default(cuid())

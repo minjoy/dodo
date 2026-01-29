@@ -21,6 +21,9 @@ export default function AdminRegionsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [togglingRegion, setTogglingRegion] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+  const [notice, setNotice] = useState('')
+  const [savedNotice, setSavedNotice] = useState('')
+  const [isSavingNotice, setIsSavingNotice] = useState(false)
 
   const allRegions = useMemo(() => getAllRegions(), [])
   const regionsMap = useMemo(() => {
@@ -57,10 +60,41 @@ export default function AdminRegionsPage() {
         const data = await res.json()
         setSettings(data)
       }
+      // 공지사항 조회
+      const noticeRes = await fetch('/api/admin/region-notice')
+      if (noticeRes.ok) {
+        const noticeData = await noticeRes.json()
+        setNotice(noticeData.notice || '')
+        setSavedNotice(noticeData.notice || '')
+      }
     } catch (error) {
       console.error('Failed to fetch region settings:', error)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleSaveNotice = async () => {
+    setIsSavingNotice(true)
+    try {
+      const res = await fetch('/api/admin/region-notice', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notice }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setSavedNotice(data.notice)
+        setNotice(data.notice)
+      } else {
+        const error = await res.json()
+        alert(error.message || '공지사항 저장에 실패했습니다')
+      }
+    } catch (error) {
+      console.error('Failed to save notice:', error)
+      alert('공지사항 저장에 실패했습니다')
+    } finally {
+      setIsSavingNotice(false)
     }
   }
 
@@ -164,6 +198,44 @@ export default function AdminRegionsPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
+          )}
+        </div>
+      </div>
+
+      {/* 한줄 공지사항 */}
+      <div className="px-4 mb-4">
+        <div className="bg-white rounded-2xl border border-gray-100 p-4">
+          <label className="text-sm font-semibold text-gray-700 mb-2 block">
+            동네 한줄 공지사항
+          </label>
+          <p className="text-xs text-gray-400 mb-2">
+            사용자 동네 설정 화면 상단에 노출됩니다. 비워두면 숨김 처리됩니다.
+          </p>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={notice}
+              onChange={(e) => setNotice(e.target.value)}
+              placeholder="예: 강남구, 성북구 지역만 오픈되었습니다."
+              maxLength={100}
+              className="flex-1 px-3 py-2.5 bg-gray-50 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary transition-colors"
+            />
+            <button
+              onClick={handleSaveNotice}
+              disabled={isSavingNotice || notice === savedNotice}
+              className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-colors whitespace-nowrap ${
+                notice !== savedNotice && !isSavingNotice
+                  ? 'bg-primary text-white'
+                  : 'bg-gray-200 text-gray-400'
+              }`}
+            >
+              {isSavingNotice ? '저장중...' : '저장'}
+            </button>
+          </div>
+          {savedNotice && (
+            <p className="text-xs text-green-600 mt-2">
+              현재 공지: {savedNotice}
+            </p>
           )}
         </div>
       </div>
