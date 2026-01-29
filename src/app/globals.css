@@ -47,3 +47,95 @@ button, a {
 .safe-top {
   padding-top: env(safe-area-inset-top);
 }
+
+/* 진행중인 모임 알림 애니메이션 */
+@keyframes nav-ping {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes nav-glow {
+  0%, 100% {
+    box-shadow: 0 0 4px 1px rgba(99, 102, 241, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 12px 4px rgba(99, 102, 241, 0.8);
+  }
+}
+
+@keyframes live-border {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.8);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+.animate-nav-ping {
+  animation: nav-ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.animate-nav-glow {
+  animation: nav-glow 2s ease-in-out infinite;
+}
+
+.animate-live-border {
+  background-size: 300% 300%;
+  animation: live-border 3s ease infinite;
+}
+
+.animate-shimmer {
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+}
+
+.animate-float {
+  animation: float 2s ease-in-out infinite;
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

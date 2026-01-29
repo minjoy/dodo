@@ -352,35 +352,67 @@ export default function MyPage() {
 
         {/* 진행중인 모임 */}
         {playingMeetings.length > 0 && (
-          <div className="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-3xl p-5 shadow-xl">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-2xl animate-pulse">🎮</span>
-              <h2 className="text-lg font-bold text-white">진행중인 모임</h2>
-              <span className="bg-white/20 text-white text-xs font-bold px-2 py-1 rounded-full">
-                {playingMeetings.length}
-              </span>
-            </div>
-            <div className="space-y-3">
-              {playingMeetings.map((meeting) => (
-                <Link
-                  key={meeting.id}
-                  href={`/meeting/${meeting.id}`}
-                  className="block bg-white/95 rounded-2xl p-4 hover:bg-white transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-xl flex items-center justify-center">
-                      <span className="text-2xl">🏃</span>
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-bold text-gray-900">{meeting.title}</h3>
-                      <p className="text-sm text-gray-500">{meeting.placeName}</p>
-                    </div>
-                    <div className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-bold">
-                      진행중
-                    </div>
+          <div className="relative">
+            {/* 배경 글로우 */}
+            <div className="absolute -inset-1 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 rounded-[28px] opacity-75 blur-md animate-live-border" />
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 rounded-[26px] opacity-90 animate-live-border" />
+            <div className="relative bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 rounded-3xl p-5 shadow-2xl overflow-hidden">
+              {/* 배경 장식 */}
+              <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+                <div className="absolute -top-4 -right-4 w-24 h-24 bg-white/10 rounded-full animate-float" />
+                <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-white/5 rounded-full animate-float" style={{ animationDelay: '1s' }} />
+                <div className="absolute top-1/2 right-1/4 w-16 h-16 bg-white/5 rounded-full animate-float" style={{ animationDelay: '0.5s' }} />
+                {/* 시머 오버레이 */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" />
+              </div>
+
+              <div className="relative">
+                {/* 헤더 */}
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="relative">
+                    <span className="text-3xl animate-bounce">🎮</span>
+                    <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500" />
+                    </span>
                   </div>
-                </Link>
-              ))}
+                  <h2 className="text-xl font-extrabold text-white tracking-tight">진행중인 모임</h2>
+                  <span className="relative flex items-center">
+                    <span className="absolute inset-0 bg-white/40 rounded-full animate-ping" />
+                    <span className="relative bg-white text-indigo-700 text-xs font-extrabold px-2.5 py-1 rounded-full shadow-lg">
+                      LIVE {playingMeetings.length}
+                    </span>
+                  </span>
+                </div>
+
+                {/* 모임 목록 */}
+                <div className="space-y-3">
+                  {playingMeetings.map((meeting) => (
+                    <Link
+                      key={meeting.id}
+                      href={`/meeting/${meeting.id}`}
+                      className="block bg-white rounded-2xl p-4 hover:scale-[1.02] transition-all duration-200 shadow-lg hover:shadow-xl"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="relative w-12 h-12 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                          <span className="text-2xl animate-float">🏃</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-bold text-gray-900 truncate">{meeting.title}</h3>
+                          <p className="text-sm text-gray-500 truncate">{meeting.placeName}</p>
+                        </div>
+                        <div className="flex items-center gap-1.5 bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-3 py-1.5 rounded-full text-sm font-bold shadow-md flex-shrink-0">
+                          <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
+                          </span>
+                          진행중
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         )}

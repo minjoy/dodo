@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
@@ -59,8 +59,30 @@ export default function BottomNav() {
   const { status } = useSession()
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [loginMessage, setLoginMessage] = useState('')
+  const [hasPlayingMeetings, setHasPlayingMeetings] = useState(false)
 
   const isAuthenticated = status === 'authenticated'
+
+  useEffect(() => {
+    if (!isAuthenticated) return
+
+    const checkPlayingMeetings = async () => {
+      try {
+        const res = await fetch('/api/users/me/meetings')
+        if (res.ok) {
+          const meetings = await res.json()
+          const playing = meetings.some((m: { status: string }) => m.status === 'PLAYING')
+          setHasPlayingMeetings(playing)
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    checkPlayingMeetings()
+    const interval = setInterval(checkPlayingMeetings, 30000)
+    return () => clearInterval(interval)
+  }, [isAuthenticated])
 
   const handleNavClick = (item: typeof navItems[0], e: React.MouseEvent) => {
     if (item.requiresAuth && !isAuthenticated) {
@@ -78,23 +100,57 @@ export default function BottomNav() {
           <div className="flex items-stretch h-16">
           {navItems.map((item) => {
             const isActive = pathname.startsWith(item.href)
+            const isMyTab = item.href === '/my'
+            const showLiveIndicator = isMyTab && hasPlayingMeetings
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={(e) => handleNavClick(item, e)}
-                className="flex-1 flex flex-col items-center justify-center gap-1"
+                className={`flex-1 flex flex-col items-center justify-center gap-1 relative ${
+                  showLiveIndicator ? 'z-10' : ''
+                }`}
               >
-                <svg
-                  className={`w-6 h-6 ${isActive ? 'text-primary' : 'text-gray-400'}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  {item.icon}
-                </svg>
-                <span className={`text-xs ${isActive ? 'text-primary font-semibold' : 'text-gray-400'}`}>
-                  {item.label}
+                <div className="relative">
+                  {showLiveIndicator && (
+                    <>
+                      {/* 바깥쪽 펄스 링 */}
+                      <span className="absolute inset-0 -m-2 rounded-full bg-red-400/30 animate-pulse-ring" />
+                      {/* 글로우 효과 */}
+                      <span className="absolute inset-0 -m-1 rounded-full animate-nav-glow" />
+                    </>
+                  )}
+                  <svg
+                    className={`w-6 h-6 relative ${
+                      showLiveIndicator
+                        ? 'text-indigo-500 drop-shadow-[0_0_6px_rgba(99,102,241,0.6)]'
+                        : isActive
+                          ? 'text-primary'
+                          : 'text-gray-400'
+                    }`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    {item.icon}
+                  </svg>
+                  {showLiveIndicator && (
+                    <span className="absolute -top-1 -right-1.5 flex items-center justify-center">
+                      <span className="absolute w-4 h-4 rounded-full bg-red-400 animate-nav-ping" />
+                      <span className="relative w-3 h-3 rounded-full bg-red-500 shadow-lg shadow-red-500/50 flex items-center justify-center">
+                        <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                      </span>
+                    </span>
+                  )}
+                </div>
+                <span className={`text-xs ${
+                  showLiveIndicator
+                    ? 'text-indigo-600 font-bold'
+                    : isActive
+                      ? 'text-primary font-semibold'
+                      : 'text-gray-400'
+                }`}>
+                  {showLiveIndicator ? 'LIVE' : item.label}
                 </span>
               </Link>
             )
