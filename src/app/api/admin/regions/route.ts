@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
+import { cookies } from 'next/headers'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getAllRegionNames } from '@/data/regions'
@@ -7,16 +8,33 @@ import { getAllRegionNames } from '@/data/regions'
 // 관리자 이메일 목록
 const ADMIN_EMAILS = ['admin@gyeongdo.com', process.env.ADMIN_EMAIL].filter(Boolean)
 
+const ADMIN_COOKIE_KEY = 'mng_auth_x7k9'
+const ADMIN_PASSWORD = 'care'
+
 const isAdmin = (email?: string | null) => {
   if (!email) return false
   return ADMIN_EMAILS.includes(email)
 }
 
+const isAdminAuthenticated = async () => {
+  // NextAuth 세션 확인
+  const session = await getServerSession(authOptions)
+  if (session?.user?.email && isAdmin(session.user.email)) {
+    return true
+  }
+  // 관리자 쿠키 확인
+  const cookieStore = await cookies()
+  const adminCookie = cookieStore.get(ADMIN_COOKIE_KEY)
+  if (adminCookie?.value === ADMIN_PASSWORD) {
+    return true
+  }
+  return false
+}
+
 // GET /api/admin/regions - 전체 동네 설정 목록 조회
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.email || !isAdmin(session.user.email)) {
+    if (!(await isAdminAuthenticated())) {
       return NextResponse.json({ message: '관리자 권한이 필요합니다' }, { status: 403 })
     }
 
@@ -49,8 +67,7 @@ export async function GET() {
 // PATCH /api/admin/regions - 동네 on/off 토글
 export async function PATCH(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.email || !isAdmin(session.user.email)) {
+    if (!(await isAdminAuthenticated())) {
       return NextResponse.json({ message: '관리자 권한이 필요합니다' }, { status: 403 })
     }
 

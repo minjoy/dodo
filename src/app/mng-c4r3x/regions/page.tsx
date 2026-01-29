@@ -1,11 +1,13 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { fetchWithAuth } from '@/lib/fetchWithAuth'
+import Cookies from 'js-cookie'
 import { getAllRegions } from '@/data/regions'
 import type { RegionData } from '@/data/regions'
+
+const ADMIN_COOKIE_KEY = 'mng_auth_x7k9'
+const ADMIN_PASSWORD = 'care'
 
 interface RegionSetting {
   region: string
@@ -13,8 +15,8 @@ interface RegionSetting {
 }
 
 export default function AdminRegionsPage() {
-  const { status } = useSession()
   const router = useRouter()
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [settings, setSettings] = useState<RegionSetting[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [togglingRegion, setTogglingRegion] = useState<string | null>(null)
@@ -34,19 +36,21 @@ export default function AdminRegionsPage() {
   }, [settings])
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login')
-    } else if (status === 'authenticated') {
+    const savedAuth = Cookies.get(ADMIN_COOKIE_KEY)
+    if (savedAuth === ADMIN_PASSWORD) {
+      setIsAuthenticated(true)
       fetchSettings()
+    } else {
+      router.push('/mng-c4r3x')
     }
-  }, [status, router])
+  }, [router])
 
   const fetchSettings = async () => {
     try {
-      const res = await fetchWithAuth('/api/admin/regions')
+      const res = await fetch('/api/admin/regions')
       if (res.status === 403) {
         alert('관리자 권한이 필요합니다')
-        router.push('/')
+        router.push('/mng-c4r3x')
         return
       }
       if (res.ok) {
@@ -63,7 +67,7 @@ export default function AdminRegionsPage() {
   const handleToggle = async (region: string, currentEnabled: boolean) => {
     setTogglingRegion(region)
     try {
-      const res = await fetchWithAuth('/api/admin/regions', {
+      const res = await fetch('/api/admin/regions', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ region, enabled: !currentEnabled }),
@@ -102,7 +106,7 @@ export default function AdminRegionsPage() {
   const enabledCount = settings.filter((s) => s.enabled).length
   const disabledCount = settings.filter((s) => !s.enabled).length
 
-  if (status === 'loading' || isLoading) {
+  if (!isAuthenticated || isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
