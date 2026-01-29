@@ -117,7 +117,7 @@ export default function AdminRegionsPage() {
         <div className="px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => router.back()}
+              onClick={() => router.push('/mng-c4r3x')}
               className="p-2 -ml-2 hover:bg-gray-100 rounded-xl transition-colors"
             >
               <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

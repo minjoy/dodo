@@ -233,6 +233,12 @@ export default function AdminPage() {
           <h1 className="text-xl font-bold">경도 관리자</h1>
           <div className="flex items-center gap-4">
             <button
+              onClick={() => window.location.href = '/mng-c4r3x/regions'}
+              className="px-4 py-2 bg-emerald-600/20 text-emerald-400 rounded-lg text-sm hover:bg-emerald-600/30 transition-colors"
+            >
+              동네 관리
+            </button>
+            <button
               onClick={fetchStats}
               className="px-4 py-2 bg-gray-700 rounded-lg text-sm hover:bg-gray-600 transition-colors"
             >
