@@ -1,24 +1,12 @@
 'use client'
 
-import { useState, useEffect, useRef, Suspense } from 'react'
+import { useState, useEffect, useRef, useMemo, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { validateNickname } from '@/lib/nickname'
 import { fetchWithAuth } from '@/lib/fetchWithAuth'
 import ImageCropper from '@/components/ImageCropper'
-
-const POPULAR_REGIONS = [
-  { name: '성수동', emoji: '🏭' },
-  { name: '홍대', emoji: '🎸' },
-  { name: '강남', emoji: '💼' },
-  { name: '신촌', emoji: '🎓' },
-  { name: '이태원', emoji: '🌍' },
-  { name: '건대', emoji: '🎪' },
-  { name: '잠실', emoji: '🏟️' },
-  { name: '여의도', emoji: '🌆' },
-  { name: '망원동', emoji: '☕' },
-  { name: '연남동', emoji: '🌳' },
-]
+import { getAllRegions, searchRegions } from '@/data/regions'
 
 export default function OnboardingPage() {
   return (
@@ -47,6 +35,16 @@ function OnboardingContent() {
   const [profileImage, setProfileImage] = useState<string | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [showCropper, setShowCropper] = useState(false)
+  const [regionSearch, setRegionSearch] = useState('')
+
+  const filteredRegions = useMemo(() => {
+    if (!regionSearch.trim()) return getAllRegions()
+    return searchRegions(regionSearch)
+  }, [regionSearch])
+
+  // 인기지역과 나머지 분리
+  const popularRegions = useMemo(() => filteredRegions.filter((r) => r.popular), [filteredRegions])
+  const otherRegions = useMemo(() => filteredRegions.filter((r) => !r.popular), [filteredRegions])
 
   // 로그인 상태 및 온보딩 완료 여부 체크
   useEffect(() => {
@@ -278,23 +276,94 @@ function OnboardingContent() {
         <main className="flex-1 px-4 pb-32 overflow-y-auto">
           <p className="text-sm text-gray-500 mb-4">동네를 선택하면 해당 지역 모임을 볼 수 있어요</p>
 
-          <div className="grid grid-cols-2 gap-2">
-            {POPULAR_REGIONS.map((region) => (
+          {/* 검색 */}
+          <div className="relative mb-4">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              value={regionSearch}
+              onChange={(e) => setRegionSearch(e.target.value)}
+              placeholder="동네 이름 또는 구 이름으로 검색"
+              className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary transition-colors"
+            />
+            {regionSearch && (
               <button
-                key={region.name}
-                onClick={() => setSelectedRegion(region.name)}
-                disabled={isLoading}
-                className={`flex items-center gap-2 p-4 rounded-xl text-left transition-colors ${
-                  selectedRegion === region.name
-                    ? 'bg-primary text-white'
-                    : 'bg-gray-50 text-gray-700 active:bg-gray-100'
-                }`}
+                onClick={() => setRegionSearch('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 bg-gray-300 rounded-full flex items-center justify-center"
               >
-                <span className="text-xl">{region.emoji}</span>
-                <span className="font-medium">{region.name}</span>
+                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
-            ))}
+            )}
           </div>
+
+          {filteredRegions.length === 0 ? (
+            <div className="text-center py-12 text-gray-400">
+              <p className="text-4xl mb-2">🔍</p>
+              <p className="font-medium">검색 결과가 없어요</p>
+              <p className="text-sm mt-1">다른 이름으로 검색해보세요</p>
+            </div>
+          ) : (
+            <>
+              {/* 인기 지역 */}
+              {popularRegions.length > 0 && (
+                <>
+                  {!regionSearch && (
+                    <h3 className="text-xs font-semibold text-gray-400 mb-2">인기 지역</h3>
+                  )}
+                  <div className="grid grid-cols-2 gap-2">
+                    {popularRegions.map((region) => (
+                      <button
+                        key={region.name}
+                        onClick={() => setSelectedRegion(region.name)}
+                        disabled={isLoading}
+                        className={`flex items-center gap-2 p-4 rounded-xl text-left transition-colors ${
+                          selectedRegion === region.name
+                            ? 'bg-primary text-white'
+                            : 'bg-gray-50 text-gray-700 active:bg-gray-100'
+                        }`}
+                      >
+                        <span className="text-xl">{region.emoji}</span>
+                        <span className="font-medium">{region.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* 기타 지역 */}
+              {otherRegions.length > 0 && (
+                <>
+                  <h3 className="text-xs font-semibold text-gray-400 mb-2 mt-4">
+                    {regionSearch ? '검색 결과' : '서울 전체'}
+                  </h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {otherRegions.map((region) => (
+                      <button
+                        key={region.name}
+                        onClick={() => setSelectedRegion(region.name)}
+                        disabled={isLoading}
+                        className={`flex items-center gap-2 p-4 rounded-xl text-left transition-colors ${
+                          selectedRegion === region.name
+                            ? 'bg-primary text-white'
+                            : 'bg-gray-50 text-gray-700 active:bg-gray-100'
+                        }`}
+                      >
+                        <span className="text-xl">{region.emoji}</span>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{region.name}</span>
+                          <span className={`text-xs ${selectedRegion === region.name ? 'text-white/70' : 'text-gray-400'}`}>{region.district}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </>
+          )}
 
           <button
             onClick={() => handleSubmit('전체')}
