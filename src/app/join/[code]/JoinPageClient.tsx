@@ -43,6 +43,7 @@ export default function JoinPageClient({ code }: JoinPageClientProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [isJoining, setIsJoining] = useState(false)
   const [showLoginModal, setShowLoginModal] = useState(false)
+  const [loginCallbackUrl, setLoginCallbackUrl] = useState(`/join/${code}`)
 
   // 뒤로가기 시 홈으로 이동
   useEffect(() => {
@@ -90,13 +91,14 @@ export default function JoinPageClient({ code }: JoinPageClientProps) {
   }
 
   // 로그인 체크 공통 함수
-  const requireLogin = (): boolean => {
+  const requireLogin = (redirectUrl: string): boolean => {
     if (!session) {
+      setLoginCallbackUrl(`/onboarding?callbackUrl=${redirectUrl}`)
       setShowLoginModal(true)
       return false
     }
     if (!session.user?.region) {
-      router.push(`/onboarding?callbackUrl=/join/${code}`)
+      router.push(`/onboarding?callbackUrl=${redirectUrl}`)
       return false
     }
     return true
@@ -104,14 +106,14 @@ export default function JoinPageClient({ code }: JoinPageClientProps) {
 
   // 비밀번호 없는 모임: 모임 상세 페이지로 이동
   const handleGoToDetail = () => {
-    if (!requireLogin()) return
     if (!meeting) return
+    if (!requireLogin(`/meeting/${meeting.id}`)) return
     router.push(`/meeting/${meeting.id}`)
   }
 
   // 비밀번호 있는 모임: 참여하기
   const handleJoin = async () => {
-    if (!requireLogin()) return
+    if (!requireLogin(`/join/${code}`)) return
     if (!meeting) return
 
     setIsJoining(true)
@@ -285,7 +287,7 @@ export default function JoinPageClient({ code }: JoinPageClientProps) {
         isOpen={showLoginModal}
         onClose={() => setShowLoginModal(false)}
         message="모임에 참여하려면 로그인이 필요합니다"
-        callbackUrl={`/join/${code}`}
+        callbackUrl={loginCallbackUrl}
       />
     </div>
   )
