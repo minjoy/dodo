@@ -18,6 +18,7 @@ import {
   formatDistance,
 } from '@/lib/utils'
 import { fetchWithAuth } from '@/lib/fetchWithAuth'
+import MeetingGuideModal from '@/components/common/MeetingGuideModal'
 import type { MeetingWithDetails } from '@/types'
 
 const LEVEL_EMOJIS = ['🌱', '👋', '⭐', '👑', '🏆']
@@ -83,6 +84,10 @@ function MeetingDetailContent() {
   // 위치 정보 오류 팝업 상태 (GPS 신호 약함)
   const [showLocationErrorModal, setShowLocationErrorModal] = useState(false)
 
+  // 가이드 팝업 상태
+  const [showHostGuideModal, setShowHostGuideModal] = useState(false)
+  const [showParticipantGuideModal, setShowParticipantGuideModal] = useState(false)
+
   const meetingId = params.id as string
   const joinedFromInvite = searchParams.get('joined') === 'true'
   const fromInviteLink = searchParams.get('fromInvite') === 'true'
@@ -106,6 +111,16 @@ function MeetingDetailContent() {
       return () => window.removeEventListener('popstate', handlePopState)
     }
   }, [shouldRedirectToHome, router])
+
+  // 모임 생성/참여 시 가이드 팝업 표시
+  useEffect(() => {
+    if (fromCreate) {
+      setShowHostGuideModal(true)
+    }
+    if (joinedFromInvite) {
+      setShowParticipantGuideModal(true)
+    }
+  }, [fromCreate, joinedFromInvite])
 
   useEffect(() => {
     fetchMeeting()
@@ -228,9 +243,7 @@ function MeetingDetailContent() {
         method: 'POST',
       })
       if (res.ok) {
-        setToastMessage('모임에 참여했습니다!')
-        setShowToast(true)
-        setTimeout(() => setShowToast(false), 3000)
+        setShowParticipantGuideModal(true)
         fetchMeeting()
       }
     } catch (error) {
@@ -1869,6 +1882,16 @@ function MeetingDetailContent() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* 모임장 가이드 팝업 */}
+      {showHostGuideModal && (
+        <MeetingGuideModal type="host" onClose={() => setShowHostGuideModal(false)} />
+      )}
+
+      {/* 참여자 가이드 팝업 */}
+      {showParticipantGuideModal && (
+        <MeetingGuideModal type="participant" onClose={() => setShowParticipantGuideModal(false)} />
       )}
 
       {/* 토스트 메시지 */}
