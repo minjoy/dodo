@@ -1194,17 +1194,7 @@ function MeetingDetailContent() {
                               >
                                 {isReadying ? '...' : participant.isReady ? '✓ 출쳌' : '출쳌'}
                               </button>
-                              {/* 테스트용 출쳌 버튼 (거리 무관) */}
-                              {!participant.isReady && (
-                                <button
-                                  onClick={handleReadyTest}
-                                  disabled={isReadying}
-                                  className="px-2 py-2 rounded-lg font-semibold text-xs bg-orange-200 text-orange-700 hover:bg-orange-300 transition-all"
-                                  title="테스트용 출쳌 (거리 무관)"
-                                >
-                                  출t
-                                </button>
-                              )}
+                              {/* 테스트용 출쳌 버튼 (거리 무관) - 테스트 완료로 숨김 처리 */}
                             </div>
                           ) : !isPlaying && (
                             <div className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
