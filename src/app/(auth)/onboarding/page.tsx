@@ -384,7 +384,7 @@ function OnboardingContent() {
               )}
             </>
           ) : (
-            /* 비검색 모드: 인기 + 서울 + 지방 아코디언 */
+            /* 비검색 모드: 인기 + 서울 + 지역 아코디언 */
             <>
               {/* 인기 지역 */}
               {popularRegions.length > 0 && (
@@ -437,10 +437,10 @@ function OnboardingContent() {
                 </>
               )}
 
-              {/* 지방 (시/도별 아코디언) */}
+              {/* 지역 (시/도별 아코디언) */}
               {nonSeoulGrouped.length > 0 && (
                 <>
-                  <h3 className="text-xs font-semibold text-gray-400 mb-2 mt-4">지방</h3>
+                  <h3 className="text-xs font-semibold text-gray-400 mb-2 mt-4">지역</h3>
                   <div className="space-y-2">
                     {nonSeoulGrouped.map((group) => (
                       <div key={group.district} className="bg-gray-50 rounded-2xl overflow-hidden">

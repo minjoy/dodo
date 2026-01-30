@@ -137,7 +137,7 @@ export default function AdminRegionsPage() {
     })
   }, [search, settings, regionsMap])
 
-  // 그룹화: 인기 / 서울 / 지방(시·도별)
+  // 그룹화: 인기 / 서울 / 지역(시·도별)
   const groupedSections = useMemo(() => {
     const list = filteredSettings
     const sections: { label: string; items: RegionSetting[] }[] = []
@@ -157,7 +157,7 @@ export default function AdminRegionsPage() {
       sections.push({ label: '서울', items: seoul })
     }
 
-    // 지방 (district가 '구'로 끝나지 않는 것) → 시·도별 그룹
+    // 지역 (district가 '구'로 끝나지 않는 것) → 시·도별 그룹
     const nonSeoul = list.filter((s) => {
       const r = regionsMap.get(s.region)
       return r && !r.popular && !r.district.endsWith('구')

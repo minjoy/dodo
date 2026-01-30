@@ -233,7 +233,7 @@ export default function RegionChangePage() {
             )}
           </>
         ) : (
-          /* 비검색 모드: 인기 + 서울 + 지방 아코디언 */
+          /* 비검색 모드: 인기 + 서울 + 지역 아코디언 */
           <>
             {/* 인기 지역 */}
             {popularRegions.length > 0 && (
@@ -306,10 +306,10 @@ export default function RegionChangePage() {
               </>
             )}
 
-            {/* 지방 (시/도별 아코디언) */}
+            {/* 지역 (시/도별 아코디언) */}
             {nonSeoulGrouped.length > 0 && (
               <>
-                <h2 className="text-sm font-semibold text-gray-500 mb-3 mt-4">지방</h2>
+                <h2 className="text-sm font-semibold text-gray-500 mb-3 mt-4">지역</h2>
                 <div className="space-y-2">
                   {nonSeoulGrouped.map((group) => (
                     <div key={group.district} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">

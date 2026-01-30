@@ -304,34 +304,6 @@ const ALL_REGIONS: RegionData[] = [
   { name: '동안구', emoji: '🏢', district: '경기도 안양시' },
 
   // ============================================================
-  // 경기도 (나머지 시·군)
-  // ============================================================
-  { name: '화성시', emoji: '🏗️', district: '경기도' },
-  { name: '남양주시', emoji: '🌄', district: '경기도' },
-  { name: '평택시', emoji: '⚓', district: '경기도' },
-  { name: '의정부시', emoji: '🎵', district: '경기도' },
-  { name: '시흥시', emoji: '🌊', district: '경기도' },
-  { name: '파주시', emoji: '📚', district: '경기도' },
-  { name: '김포시', emoji: '✈️', district: '경기도' },
-  { name: '광명시', emoji: '🛒', district: '경기도' },
-  { name: '광주시', emoji: '🌿', district: '경기도' },
-  { name: '군포시', emoji: '🏘️', district: '경기도' },
-  { name: '하남시', emoji: '🏙️', district: '경기도' },
-  { name: '오산시', emoji: '🏫', district: '경기도' },
-  { name: '이천시', emoji: '🍚', district: '경기도' },
-  { name: '양주시', emoji: '🌳', district: '경기도' },
-  { name: '구리시', emoji: '🌉', district: '경기도' },
-  { name: '안성시', emoji: '🎭', district: '경기도' },
-  { name: '포천시', emoji: '🏔️', district: '경기도' },
-  { name: '의왕시', emoji: '🚂', district: '경기도' },
-  { name: '여주시', emoji: '🏺', district: '경기도' },
-  { name: '동두천시', emoji: '⛰️', district: '경기도' },
-  { name: '과천시', emoji: '🎠', district: '경기도' },
-  { name: '가평군', emoji: '🏕️', district: '경기도' },
-  { name: '양평군', emoji: '🌾', district: '경기도' },
-  { name: '연천군', emoji: '🏰', district: '경기도' },
-
-  // ============================================================
   // 강원특별자치도 (시·군 단위)
   // ============================================================
   { name: '춘천시', emoji: '🍗', district: '강원' },
