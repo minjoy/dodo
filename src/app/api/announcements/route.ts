@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 // 관리자 이메일 목록
-const ADMIN_EMAILS = ['admin@gyeongdo.com', process.env.ADMIN_EMAIL].filter(Boolean)
+const ADMIN_EMAILS = ['miniface.ai@gmail.com', process.env.ADMIN_EMAIL].filter(Boolean)
 
 const isAdmin = (email?: string | null) => {
   if (!email) return false

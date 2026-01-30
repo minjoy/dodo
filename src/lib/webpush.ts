@@ -5,7 +5,7 @@ const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || 'BDpHJl-RTB
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || '62uh-l2SFrecNEpk2-9FfCBfJVQo38t_kEtu-RHVwlY'
 
 webpush.setVapidDetails(
-  'mailto:support@gyeongdo.kr',
+  'mailto:miniface.ai@gmail.com',
   VAPID_PUBLIC_KEY,
   VAPID_PRIVATE_KEY
 )

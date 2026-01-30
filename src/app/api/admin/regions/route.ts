@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma'
 import { getAllRegionNames } from '@/data/regions'
 
 // 관리자 이메일 목록
-const ADMIN_EMAILS = ['admin@gyeongdo.com', process.env.ADMIN_EMAIL].filter(Boolean)
+const ADMIN_EMAILS = ['miniface.ai@gmail.com', process.env.ADMIN_EMAIL].filter(Boolean)
 
 const ADMIN_COOKIE_KEY = 'mng_auth_x7k9'
 const ADMIN_PASSWORD = 'care'
