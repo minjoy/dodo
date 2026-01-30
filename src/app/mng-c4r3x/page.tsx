@@ -59,6 +59,19 @@ interface PushStats {
   uniqueUsers: number
 }
 
+interface ErrorLogEntry {
+  id: string
+  timestamp: string
+  source: string
+  message: string
+  stack?: string
+}
+
+interface ErrorLogsResponse {
+  count: number
+  errors: ErrorLogEntry[]
+}
+
 interface AdminUser {
   id: string
   nickname: string
@@ -125,8 +138,10 @@ export default function AdminPage() {
   const [error, setError] = useState('')
   const [stats, setStats] = useState<Stats | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'meetings' | 'push'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'meetings' | 'push' | 'errors'>('overview')
   const [pushStats, setPushStats] = useState<PushStats | null>(null)
+  const [errorLogs, setErrorLogs] = useState<ErrorLogsResponse | null>(null)
+  const [isLoadingErrors, setIsLoadingErrors] = useState(false)
   const [pushTitle, setPushTitle] = useState('')
   const [pushMessage, setPushMessage] = useState('')
   const [pushUrl, setPushUrl] = useState('/home')
@@ -197,6 +212,30 @@ export default function AdminPage() {
       }
     } catch (error) {
       console.error('Failed to fetch push stats:', error)
+    }
+  }
+
+  const fetchErrorLogs = async () => {
+    setIsLoadingErrors(true)
+    try {
+      const res = await fetch('/api/admin/errors')
+      if (res.ok) {
+        const data = await res.json()
+        setErrorLogs(data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch error logs:', error)
+    } finally {
+      setIsLoadingErrors(false)
+    }
+  }
+
+  const clearErrorLogs = async () => {
+    try {
+      await fetch('/api/admin/errors', { method: 'DELETE' })
+      setErrorLogs({ count: 0, errors: [] })
+    } catch (error) {
+      console.error('Failed to clear error logs:', error)
     }
   }
 
@@ -282,6 +321,13 @@ export default function AdminPage() {
   useEffect(() => {
     if (activeTab === 'users' && isAuthenticated && !adminUsers) {
       fetchAdminUsers()
+    }
+  }, [activeTab, isAuthenticated])
+
+  // 에러 로그 탭 활성화 시 데이터 로드
+  useEffect(() => {
+    if (activeTab === 'errors' && isAuthenticated) {
+      fetchErrorLogs()
     }
   }, [activeTab, isAuthenticated])
 
@@ -405,6 +451,7 @@ export default function AdminPage() {
             { key: 'users', label: '사용자' },
             { key: 'meetings', label: '모임' },
             { key: 'push', label: '푸시' },
+            { key: 'errors', label: '에러 로그' },
           ].map((tab) => (
             <button
               key={tab.key}
@@ -1168,6 +1215,76 @@ export default function AdminPage() {
                 <li>• iOS: PWA로 설치 후 알림 허용 필요 (iOS 16.4+)</li>
                 <li>• Android: 브라우저에서 알림 허용 필요</li>
                 <li>• 만료된 구독은 발송 시 자동으로 제거됩니다</li>
+              </ul>
+            </div>
+          </div>
+        )}
+
+        {/* 에러 로그 탭 */}
+        {activeTab === 'errors' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold">
+                서버 에러 로그
+                {errorLogs && (
+                  <span className="text-sm font-normal text-gray-400 ml-2">
+                    {errorLogs.count}건 (서버 재시작 후 누적)
+                  </span>
+                )}
+              </h2>
+              <div className="flex gap-2">
+                <button
+                  onClick={fetchErrorLogs}
+                  className="px-3 py-1 bg-gray-700 rounded-lg text-xs hover:bg-gray-600 transition-colors"
+                >
+                  새로고침
+                </button>
+                <button
+                  onClick={clearErrorLogs}
+                  className="px-3 py-1 bg-red-600/20 text-red-400 rounded-lg text-xs hover:bg-red-600/30 transition-colors"
+                >
+                  전체 삭제
+                </button>
+              </div>
+            </div>
+
+            {isLoadingErrors ? (
+              <div className="text-center py-8 text-gray-400">로딩 중...</div>
+            ) : errorLogs && errorLogs.errors.length > 0 ? (
+              <div className="space-y-3">
+                {errorLogs.errors.map((log) => (
+                  <div key={log.id} className="bg-gray-800 rounded-xl p-4 border border-gray-700">
+                    <div className="flex items-start justify-between mb-2">
+                      <span className="px-2 py-0.5 bg-red-500/20 text-red-400 rounded text-xs font-medium">
+                        {log.source}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {new Date(log.timestamp).toLocaleString('ko-KR')}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-200 mb-1">{log.message}</p>
+                    {log.stack && (
+                      <pre className="text-xs text-gray-500 mt-2 overflow-x-auto whitespace-pre-wrap break-all bg-gray-900/50 rounded p-2">
+                        {log.stack}
+                      </pre>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-gray-800 rounded-2xl p-12 text-center">
+                <div className="text-4xl mb-3 text-gray-600">&#10003;</div>
+                <p className="text-gray-400">에러가 없습니다</p>
+                <p className="text-xs text-gray-500 mt-1">서버 재시작 이후 기록된 에러가 없습니다</p>
+              </div>
+            )}
+
+            <div className="bg-gray-800/50 rounded-2xl p-5 border border-gray-700">
+              <h4 className="font-medium mb-2 text-gray-300">에러 로그 안내</h4>
+              <ul className="text-sm text-gray-400 space-y-1">
+                <li>• 인메모리 저장: 서버(PM2) 재시작 시 초기화됩니다</li>
+                <li>• 최대 100건까지 보관됩니다 (초과 시 오래된 것부터 삭제)</li>
+                <li>• 인증, 모임, 크론, 사용자 관련 주요 API 에러가 기록됩니다</li>
               </ul>
             </div>
           </div>

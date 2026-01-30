@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { generateShareCode } from '@/lib/nickname'
 import { checkAndAwardBadges } from '@/lib/badges'
+import { errorLogger } from '@/lib/error-logger'
 
 // GET /api/meetings - 모임 목록 조회
 export async function GET(request: NextRequest) {
@@ -74,7 +75,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(meetings)
   } catch (error) {
-    console.error('Failed to fetch meetings:', error)
+    errorLogger.capture('Meetings/list', error)
     return NextResponse.json(
       { message: '모임 목록을 불러오는데 실패했습니다' },
       { status: 500 }
@@ -227,7 +228,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(meeting, { status: 201 })
   } catch (error) {
-    console.error('Failed to create meeting:', error)
+    errorLogger.capture('Meetings/create', error)
     return NextResponse.json(
       { message: '모임 생성에 실패했습니다' },
       { status: 500 }

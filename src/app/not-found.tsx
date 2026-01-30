@@ -51,10 +51,10 @@ export default function NotFound() {
           문제가 계속되면 고객센터로 문의해주세요.
         </p>
         <a
-          href="mailto:miniface.ai@gmail.com"
+          href="mailto:support@supercost.co.kr"
           className="text-sm text-primary font-medium hover:underline"
         >
-          miniface.ai@gmail.com
+          support@supercost.co.kr
         </a>
       </div>
     </div>

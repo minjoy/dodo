@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { webpush } from '@/lib/webpush'
+import { errorLogger } from '@/lib/error-logger'
 
 // GET /api/cron/daily-meeting-reminder
 // 매일 오전 10시에 호출 - 오늘 모임이 있는 사용자에게 푸시 발송
 export async function GET(request: NextRequest) {
   // 간단한 인증 (cron에서 호출 시 사용)
   const authHeader = request.headers.get('authorization')
-  const cronSecret = process.env.CRON_SECRET || 'gyeongdo-cron-secret'
-
-  if (authHeader !== `Bearer ${cronSecret}`) {
+  const cronSecret = process.env.CRON_SECRET
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
   }
 
@@ -114,7 +114,7 @@ export async function GET(request: NextRequest) {
       expiredRemoved,
     })
   } catch (error) {
-    console.error('Failed to send daily meeting reminder:', error)
+    errorLogger.capture('Cron/dailyReminder', error)
     return NextResponse.json(
       { message: '푸시 발송 중 오류가 발생했습니다' },
       { status: 500 }

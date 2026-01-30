@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { validateNickname } from '@/lib/nickname'
+import { errorLogger } from '@/lib/error-logger'
 
 // GET /api/users/me - 내 정보 조회
 export async function GET() {
@@ -34,7 +35,7 @@ export async function GET() {
 
     return NextResponse.json(user)
   } catch (error) {
-    console.error('Failed to fetch user:', error)
+    errorLogger.capture('Users/me/get', error)
     return NextResponse.json(
       { message: '사용자 정보를 불러오는데 실패했습니다' },
       { status: 500 }
@@ -91,7 +92,7 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({ message: '수정할 항목이 없습니다' }, { status: 400 })
   } catch (error) {
-    console.error('Failed to patch user:', error)
+    errorLogger.capture('Users/me/patch', error)
     return NextResponse.json(
       { message: '사용자 정보 수정에 실패했습니다' },
       { status: 500 }
@@ -170,7 +171,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json(updatedUser)
   } catch (error) {
-    console.error('Failed to update user:', error)
+    errorLogger.capture('Users/me/put', error)
     return NextResponse.json(
       { message: '사용자 정보 수정에 실패했습니다' },
       { status: 500 }

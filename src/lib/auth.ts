@@ -1,6 +1,7 @@
 import { NextAuthOptions } from 'next-auth'
 import KakaoProvider from 'next-auth/providers/kakao'
 import { prisma } from './prisma'
+import { errorLogger } from './error-logger'
 
 // 성인 최소 나이
 const ADULT_MIN_AGE = 20
@@ -98,7 +99,7 @@ export const authOptions: NextAuthOptions = {
             })
           }
         } catch (error) {
-          console.error('[Auth] signIn callback error:', error)
+          errorLogger.capture('Auth/signIn', error)
           // DB 에러 시에도 로그인은 허용 (세션에서 처리)
         }
       }
@@ -167,7 +168,7 @@ export const authOptions: NextAuthOptions = {
             }
           }
         } catch (error) {
-          console.error('[Auth] session callback error:', error)
+          errorLogger.capture('Auth/session', error)
         }
       }
       return session

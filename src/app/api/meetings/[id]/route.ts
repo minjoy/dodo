@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { checkAndAwardBadges } from '@/lib/badges'
 import { calculateLevel } from '@/lib/utils'
+import { errorLogger } from '@/lib/error-logger'
 
 // 자동 종료 처리 헬퍼 함수
 async function autoEndMeeting(meetingId: string, hostId: string, participantUserIds: string[]) {
@@ -282,7 +283,7 @@ export async function GET(
 
     return NextResponse.json(meeting)
   } catch (error) {
-    console.error('Failed to fetch meeting:', error)
+    errorLogger.capture('Meetings/detail', error)
     return NextResponse.json(
       { message: '모임을 불러오는데 실패했습니다' },
       { status: 500 }
@@ -395,7 +396,7 @@ export async function PUT(
 
     return NextResponse.json(updatedMeeting)
   } catch (error) {
-    console.error('Failed to update meeting:', error)
+    errorLogger.capture('Meetings/update', error)
     return NextResponse.json(
       { message: '모임 수정에 실패했습니다' },
       { status: 500 }
@@ -461,7 +462,7 @@ export async function DELETE(
 
     return NextResponse.json({ message: '모임이 삭제되었습니다' })
   } catch (error) {
-    console.error('Failed to delete meeting:', error)
+    errorLogger.capture('Meetings/delete', error)
     return NextResponse.json(
       { message: '모임 삭제에 실패했습니다' },
       { status: 500 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { errorLogger } from '@/lib/error-logger'
 
 // POST /api/meetings/[id]/join - 모임 참여
 export async function POST(
@@ -149,7 +150,7 @@ export async function POST(
 
     return NextResponse.json({ message: '참여가 완료되었습니다' })
   } catch (error) {
-    console.error('Failed to join meeting:', error)
+    errorLogger.capture('Meetings/join', error)
     return NextResponse.json(
       { message: '참여 처리에 실패했습니다' },
       { status: 500 }
@@ -232,7 +233,7 @@ export async function DELETE(
 
     return NextResponse.json({ message: '참여가 취소되었습니다' })
   } catch (error) {
-    console.error('Failed to leave meeting:', error)
+    errorLogger.capture('Meetings/leave', error)
     return NextResponse.json(
       { message: '참여 취소에 실패했습니다' },
       { status: 500 }
