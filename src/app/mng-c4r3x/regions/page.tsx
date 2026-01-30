@@ -148,19 +148,19 @@ export default function AdminRegionsPage() {
       sections.push({ label: '인기 지역', items: popular })
     }
 
-    // 서울 (인기 제외, district가 '구'로 끝나는 것)
+    // 서울 (인기 제외, district가 '구'로 끝나는 것, 단 '대구' 제외)
     const seoul = list.filter((s) => {
       const r = regionsMap.get(s.region)
-      return r && !r.popular && r.district.endsWith('구')
+      return r && !r.popular && r.district.endsWith('구') && r.district !== '대구'
     })
     if (seoul.length > 0) {
       sections.push({ label: '서울', items: seoul })
     }
 
-    // 지역 (district가 '구'로 끝나지 않는 것) → 시·도별 그룹
+    // 지역 (district가 '구'로 끝나지 않거나 '대구'인 것) → 시·도별 그룹
     const nonSeoul = list.filter((s) => {
       const r = regionsMap.get(s.region)
-      return r && !r.popular && !r.district.endsWith('구')
+      return r && !r.popular && (!r.district.endsWith('구') || r.district === '대구')
     })
     const districtMap = new Map<string, RegionSetting[]>()
     nonSeoul.forEach((s) => {

@@ -50,12 +50,12 @@ export default function RegionChangePage() {
   const [openDistricts, setOpenDistricts] = useState<Set<string>>(new Set())
 
   const seoulRegions = useMemo(
-    () => otherRegions.filter((r) => r.district.endsWith('구')),
+    () => otherRegions.filter((r) => r.district.endsWith('구') && r.district !== '대구'),
     [otherRegions]
   )
 
   const nonSeoulGrouped = useMemo(() => {
-    const regions = otherRegions.filter((r) => !r.district.endsWith('구'))
+    const regions = otherRegions.filter((r) => !r.district.endsWith('구') || r.district === '대구')
     const map = new Map<string, RegionData[]>()
     regions.forEach((r) => {
       if (!map.has(r.district)) map.set(r.district, [])
