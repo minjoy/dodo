@@ -186,7 +186,7 @@ export default function AdminRegionsPage() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="동네 이름 또는 구 이름으로 검색"
+            placeholder="동네 이름 또는 지역명으로 검색"
             className="w-full pl-10 pr-10 py-3 bg-white border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary transition-colors"
           />
           {search && (

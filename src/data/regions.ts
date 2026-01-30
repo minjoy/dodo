@@ -1,10 +1,11 @@
-// 서울 전체 동네 데이터 (공유 데이터 소스)
+// 전국 동네 데이터 (공유 데이터 소스)
+// 서울: 동 단위 / 지방(광역시·도): 시·군·구 단위
 // popular: true → 인기지역 (상단 표시)
 
 export interface RegionData {
   name: string
   emoji: string
-  district: string // 구 단위
+  district: string // 서울: 구 단위, 광역시: 시 단위, 도: 도 단위
   popular?: boolean
 }
 
@@ -32,6 +33,10 @@ const POPULAR: RegionData[] = [
 const ALL_REGIONS: RegionData[] = [
   // === 인기 지역 (상단) ===
   ...POPULAR,
+
+  // ============================================================
+  // 서울특별시 (동 단위)
+  // ============================================================
 
   // === 강남구 ===
   { name: '역삼', emoji: '💻', district: '강남구' },
@@ -185,9 +190,276 @@ const ALL_REGIONS: RegionData[] = [
   { name: '상봉', emoji: '🚉', district: '중랑구' },
   { name: '면목', emoji: '🏘️', district: '중랑구' },
   { name: '망우', emoji: '🌄', district: '중랑구' },
+
+  // ============================================================
+  // 부산광역시 (구·군 단위)
+  // ============================================================
+  { name: '해운대구', emoji: '🏖️', district: '부산' },
+  { name: '수영구', emoji: '🏊', district: '부산' },
+  { name: '부산진구', emoji: '🏙️', district: '부산' },
+  { name: '부산 남구', emoji: '⛵', district: '부산' },
+  { name: '동래구', emoji: '♨️', district: '부산' },
+  { name: '연제구', emoji: '🏢', district: '부산' },
+  { name: '사하구', emoji: '🏘️', district: '부산' },
+  { name: '부산 북구', emoji: '🌿', district: '부산' },
+  { name: '부산 강서구', emoji: '✈️', district: '부산' },
+  { name: '금정구', emoji: '⛰️', district: '부산' },
+  { name: '사상구', emoji: '🏭', district: '부산' },
+  { name: '부산 중구', emoji: '🛍️', district: '부산' },
+  { name: '부산 서구', emoji: '🌊', district: '부산' },
+  { name: '영도구', emoji: '🌉', district: '부산' },
+  { name: '부산 동구', emoji: '⚓', district: '부산' },
+  { name: '기장군', emoji: '🐟', district: '부산' },
+
+  // ============================================================
+  // 대구광역시 (구·군 단위)
+  // ============================================================
+  { name: '수성구', emoji: '🏞️', district: '대구' },
+  { name: '달서구', emoji: '🏙️', district: '대구' },
+  { name: '대구 북구', emoji: '🏢', district: '대구' },
+  { name: '대구 동구', emoji: '🌄', district: '대구' },
+  { name: '대구 중구', emoji: '🛍️', district: '대구' },
+  { name: '대구 서구', emoji: '🏘️', district: '대구' },
+  { name: '대구 남구', emoji: '🎓', district: '대구' },
+  { name: '달성군', emoji: '🌾', district: '대구' },
+  { name: '군위군', emoji: '⛰️', district: '대구' },
+
+  // ============================================================
+  // 인천광역시 (구·군 단위)
+  // ============================================================
+  { name: '남동구', emoji: '🏢', district: '인천' },
+  { name: '부평구', emoji: '🎪', district: '인천' },
+  { name: '인천 서구', emoji: '🏙️', district: '인천' },
+  { name: '연수구', emoji: '📚', district: '인천' },
+  { name: '미추홀구', emoji: '🏘️', district: '인천' },
+  { name: '계양구', emoji: '⛰️', district: '인천' },
+  { name: '인천 중구', emoji: '✈️', district: '인천' },
+  { name: '인천 동구', emoji: '🏛️', district: '인천' },
+  { name: '강화군', emoji: '🏰', district: '인천' },
+  { name: '옹진군', emoji: '🏝️', district: '인천' },
+
+  // ============================================================
+  // 광주광역시 (구 단위)
+  // ============================================================
+  { name: '광주 서구', emoji: '🏢', district: '광주' },
+  { name: '광주 북구', emoji: '🎨', district: '광주' },
+  { name: '광주 남구', emoji: '🎓', district: '광주' },
+  { name: '광산구', emoji: '🏭', district: '광주' },
+  { name: '광주 동구', emoji: '🏛️', district: '광주' },
+
+  // ============================================================
+  // 대전광역시 (구 단위)
+  // ============================================================
+  { name: '유성구', emoji: '🔬', district: '대전' },
+  { name: '대전 서구', emoji: '🏢', district: '대전' },
+  { name: '대전 중구', emoji: '🛍️', district: '대전' },
+  { name: '대전 동구', emoji: '🚂', district: '대전' },
+  { name: '대덕구', emoji: '🧪', district: '대전' },
+
+  // ============================================================
+  // 울산광역시 (구·군 단위)
+  // ============================================================
+  { name: '울산 남구', emoji: '🏢', district: '울산' },
+  { name: '울산 중구', emoji: '🛍️', district: '울산' },
+  { name: '울산 북구', emoji: '🏘️', district: '울산' },
+  { name: '울산 동구', emoji: '🚢', district: '울산' },
+  { name: '울주군', emoji: '🌊', district: '울산' },
+
+  // ============================================================
+  // 세종특별자치시
+  // ============================================================
+  { name: '세종시', emoji: '🏛️', district: '세종' },
+
+  // ============================================================
+  // 경기도 (시·군 단위)
+  // ============================================================
+  { name: '수원시', emoji: '🏯', district: '경기' },
+  { name: '성남시', emoji: '💻', district: '경기' },
+  { name: '용인시', emoji: '🎢', district: '경기' },
+  { name: '고양시', emoji: '🌸', district: '경기' },
+  { name: '화성시', emoji: '🏗️', district: '경기' },
+  { name: '안산시', emoji: '🏭', district: '경기' },
+  { name: '남양주시', emoji: '🌄', district: '경기' },
+  { name: '안양시', emoji: '🏢', district: '경기' },
+  { name: '평택시', emoji: '⚓', district: '경기' },
+  { name: '의정부시', emoji: '🎵', district: '경기' },
+  { name: '시흥시', emoji: '🌊', district: '경기' },
+  { name: '파주시', emoji: '📚', district: '경기' },
+  { name: '김포시', emoji: '✈️', district: '경기' },
+  { name: '광명시', emoji: '🛒', district: '경기' },
+  { name: '광주시', emoji: '🌿', district: '경기' },
+  { name: '군포시', emoji: '🏘️', district: '경기' },
+  { name: '하남시', emoji: '🏙️', district: '경기' },
+  { name: '오산시', emoji: '🏫', district: '경기' },
+  { name: '이천시', emoji: '🍚', district: '경기' },
+  { name: '양주시', emoji: '🌳', district: '경기' },
+  { name: '구리시', emoji: '🌉', district: '경기' },
+  { name: '안성시', emoji: '🎭', district: '경기' },
+  { name: '포천시', emoji: '🏔️', district: '경기' },
+  { name: '의왕시', emoji: '🚂', district: '경기' },
+  { name: '여주시', emoji: '🏺', district: '경기' },
+  { name: '동두천시', emoji: '⛰️', district: '경기' },
+  { name: '과천시', emoji: '🎠', district: '경기' },
+  { name: '가평군', emoji: '🏕️', district: '경기' },
+  { name: '양평군', emoji: '🌾', district: '경기' },
+  { name: '연천군', emoji: '🏰', district: '경기' },
+
+  // ============================================================
+  // 강원특별자치도 (시·군 단위)
+  // ============================================================
+  { name: '춘천시', emoji: '🍗', district: '강원' },
+  { name: '원주시', emoji: '🏥', district: '강원' },
+  { name: '강릉시', emoji: '☕', district: '강원' },
+  { name: '속초시', emoji: '🏖️', district: '강원' },
+  { name: '동해시', emoji: '🌊', district: '강원' },
+  { name: '태백시', emoji: '⛷️', district: '강원' },
+  { name: '삼척시', emoji: '🌊', district: '강원' },
+  { name: '홍천군', emoji: '🌲', district: '강원' },
+  { name: '횡성군', emoji: '🐄', district: '강원' },
+  { name: '영월군', emoji: '⛰️', district: '강원' },
+  { name: '평창군', emoji: '🎿', district: '강원' },
+  { name: '정선군', emoji: '🎰', district: '강원' },
+  { name: '철원군', emoji: '🦅', district: '강원' },
+  { name: '화천군', emoji: '🐟', district: '강원' },
+  { name: '양구군', emoji: '🌿', district: '강원' },
+  { name: '인제군', emoji: '🏔️', district: '강원' },
+  { name: '강원 고성군', emoji: '🏖️', district: '강원' },
+  { name: '양양군', emoji: '🏄', district: '강원' },
+
+  // ============================================================
+  // 충청북도 (시·군 단위)
+  // ============================================================
+  { name: '청주시', emoji: '🏢', district: '충북' },
+  { name: '충주시', emoji: '💧', district: '충북' },
+  { name: '제천시', emoji: '🌿', district: '충북' },
+  { name: '보은군', emoji: '⛰️', district: '충북' },
+  { name: '옥천군', emoji: '🏘️', district: '충북' },
+  { name: '영동군', emoji: '🍇', district: '충북' },
+  { name: '증평군', emoji: '🌾', district: '충북' },
+  { name: '진천군', emoji: '🏭', district: '충북' },
+  { name: '괴산군', emoji: '🌶️', district: '충북' },
+  { name: '음성군', emoji: '🏢', district: '충북' },
+  { name: '단양군', emoji: '🏞️', district: '충북' },
+
+  // ============================================================
+  // 충청남도 (시·군 단위)
+  // ============================================================
+  { name: '천안시', emoji: '🏙️', district: '충남' },
+  { name: '아산시', emoji: '♨️', district: '충남' },
+  { name: '서산시', emoji: '🌅', district: '충남' },
+  { name: '논산시', emoji: '🎖️', district: '충남' },
+  { name: '당진시', emoji: '🏭', district: '충남' },
+  { name: '공주시', emoji: '🏛️', district: '충남' },
+  { name: '보령시', emoji: '🏖️', district: '충남' },
+  { name: '계룡시', emoji: '🏛️', district: '충남' },
+  { name: '홍성군', emoji: '🐄', district: '충남' },
+  { name: '예산군', emoji: '🍎', district: '충남' },
+  { name: '태안군', emoji: '🌊', district: '충남' },
+  { name: '금산군', emoji: '🌿', district: '충남' },
+  { name: '부여군', emoji: '🏯', district: '충남' },
+  { name: '서천군', emoji: '🌾', district: '충남' },
+  { name: '청양군', emoji: '🌶️', district: '충남' },
+
+  // ============================================================
+  // 전북특별자치도 (시·군 단위)
+  // ============================================================
+  { name: '전주시', emoji: '🍚', district: '전북' },
+  { name: '익산시', emoji: '💎', district: '전북' },
+  { name: '군산시', emoji: '🏭', district: '전북' },
+  { name: '정읍시', emoji: '🌸', district: '전북' },
+  { name: '남원시', emoji: '💕', district: '전북' },
+  { name: '김제시', emoji: '🌾', district: '전북' },
+  { name: '완주군', emoji: '🏔️', district: '전북' },
+  { name: '진안군', emoji: '🌿', district: '전북' },
+  { name: '무주군', emoji: '🎿', district: '전북' },
+  { name: '장수군', emoji: '⛰️', district: '전북' },
+  { name: '임실군', emoji: '🧀', district: '전북' },
+  { name: '순창군', emoji: '🫘', district: '전북' },
+  { name: '고창군', emoji: '🏰', district: '전북' },
+  { name: '부안군', emoji: '🌊', district: '전북' },
+
+  // ============================================================
+  // 전라남도 (시·군 단위)
+  // ============================================================
+  { name: '목포시', emoji: '🌊', district: '전남' },
+  { name: '여수시', emoji: '🌉', district: '전남' },
+  { name: '순천시', emoji: '🌿', district: '전남' },
+  { name: '나주시', emoji: '🍐', district: '전남' },
+  { name: '광양시', emoji: '🏭', district: '전남' },
+  { name: '담양군', emoji: '🎋', district: '전남' },
+  { name: '곡성군', emoji: '🚂', district: '전남' },
+  { name: '구례군', emoji: '🌸', district: '전남' },
+  { name: '고흥군', emoji: '🚀', district: '전남' },
+  { name: '보성군', emoji: '🍵', district: '전남' },
+  { name: '화순군', emoji: '⛰️', district: '전남' },
+  { name: '장흥군', emoji: '🐄', district: '전남' },
+  { name: '강진군', emoji: '🏺', district: '전남' },
+  { name: '해남군', emoji: '🌅', district: '전남' },
+  { name: '영암군', emoji: '🏎️', district: '전남' },
+  { name: '무안군', emoji: '✈️', district: '전남' },
+  { name: '함평군', emoji: '🦋', district: '전남' },
+  { name: '영광군', emoji: '🐟', district: '전남' },
+  { name: '장성군', emoji: '📚', district: '전남' },
+  { name: '완도군', emoji: '🏝️', district: '전남' },
+  { name: '진도군', emoji: '🌊', district: '전남' },
+  { name: '신안군', emoji: '🏝️', district: '전남' },
+
+  // ============================================================
+  // 경상북도 (시·군 단위)
+  // ============================================================
+  { name: '포항시', emoji: '🐟', district: '경북' },
+  { name: '경주시', emoji: '🏛️', district: '경북' },
+  { name: '구미시', emoji: '📱', district: '경북' },
+  { name: '김천시', emoji: '🍇', district: '경북' },
+  { name: '안동시', emoji: '🏘️', district: '경북' },
+  { name: '영주시', emoji: '🏔️', district: '경북' },
+  { name: '영천시', emoji: '♨️', district: '경북' },
+  { name: '상주시', emoji: '🍑', district: '경북' },
+  { name: '문경시', emoji: '⛰️', district: '경북' },
+  { name: '경산시', emoji: '🎓', district: '경북' },
+  { name: '의성군', emoji: '🧄', district: '경북' },
+  { name: '청송군', emoji: '🍎', district: '경북' },
+  { name: '영양군', emoji: '🌶️', district: '경북' },
+  { name: '영덕군', emoji: '🦀', district: '경북' },
+  { name: '청도군', emoji: '🐂', district: '경북' },
+  { name: '고령군', emoji: '🏺', district: '경북' },
+  { name: '성주군', emoji: '🍈', district: '경북' },
+  { name: '칠곡군', emoji: '🏘️', district: '경북' },
+  { name: '예천군', emoji: '🌳', district: '경북' },
+  { name: '봉화군', emoji: '🌲', district: '경북' },
+  { name: '울진군', emoji: '🌊', district: '경북' },
+  { name: '울릉군', emoji: '🏝️', district: '경북' },
+
+  // ============================================================
+  // 경상남도 (시·군 단위)
+  // ============================================================
+  { name: '창원시', emoji: '🏙️', district: '경남' },
+  { name: '진주시', emoji: '🏯', district: '경남' },
+  { name: '통영시', emoji: '🎨', district: '경남' },
+  { name: '사천시', emoji: '✈️', district: '경남' },
+  { name: '김해시', emoji: '🏛️', district: '경남' },
+  { name: '밀양시', emoji: '🌊', district: '경남' },
+  { name: '거제시', emoji: '🚢', district: '경남' },
+  { name: '양산시', emoji: '⛰️', district: '경남' },
+  { name: '의령군', emoji: '🌾', district: '경남' },
+  { name: '함안군', emoji: '🌸', district: '경남' },
+  { name: '창녕군', emoji: '🐦', district: '경남' },
+  { name: '경남 고성군', emoji: '🦕', district: '경남' },
+  { name: '남해군', emoji: '🏝️', district: '경남' },
+  { name: '하동군', emoji: '🍵', district: '경남' },
+  { name: '산청군', emoji: '🌿', district: '경남' },
+  { name: '함양군', emoji: '⛰️', district: '경남' },
+  { name: '거창군', emoji: '🏔️', district: '경남' },
+  { name: '합천군', emoji: '🏛️', district: '경남' },
+
+  // ============================================================
+  // 제주특별자치도 (시 단위)
+  // ============================================================
+  { name: '제주시', emoji: '🏝️', district: '제주' },
+  { name: '서귀포시', emoji: '🍊', district: '제주' },
 ]
 
-// 인접 동네 매핑
+// 인접 동네 매핑 (서울)
 export const NEARBY_REGIONS_MAP: Record<string, string[]> = {
   '성수동': ['건대', '왕십리', '서울숲', '잠실', '금호', '옥수'],
   '홍대': ['합정', '신촌', '연남동', '망원동', '상수'],
@@ -332,7 +604,7 @@ export function getAllRegionNames(): string[] {
 }
 
 /**
- * 동네 검색 (이름 또는 구 이름으로 검색, 인기지역 우선)
+ * 동네 검색 (이름 또는 지역명으로 검색, 인기지역 우선)
  */
 export function searchRegions(query: string): RegionData[] {
   if (!query.trim()) return ALL_REGIONS

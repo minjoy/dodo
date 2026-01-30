@@ -140,7 +140,7 @@ export default function RegionChangePage() {
             type="text"
             value={regionSearch}
             onChange={(e) => setRegionSearch(e.target.value)}
-            placeholder="동네 이름 또는 구 이름으로 검색"
+            placeholder="동네 이름 또는 지역명으로 검색"
             className="w-full pl-10 pr-10 py-3 bg-white border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary transition-colors"
           />
           {regionSearch && (
@@ -203,7 +203,7 @@ export default function RegionChangePage() {
             {otherRegions.length > 0 && (
               <>
                 <h2 className="text-sm font-semibold text-gray-500 mb-3 mt-4">
-                  {regionSearch ? '검색 결과' : '서울 전체'}
+                  {regionSearch ? '검색 결과' : '전체 지역'}
                 </h2>
                 <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
                   <div className="grid grid-cols-2 gap-2">

@@ -307,7 +307,7 @@ function OnboardingContent() {
               type="text"
               value={regionSearch}
               onChange={(e) => setRegionSearch(e.target.value)}
-              placeholder="동네 이름 또는 구 이름으로 검색"
+              placeholder="동네 이름 또는 지역명으로 검색"
               className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary transition-colors"
             />
             {regionSearch && (
@@ -360,7 +360,7 @@ function OnboardingContent() {
               {otherRegions.length > 0 && (
                 <>
                   <h3 className="text-xs font-semibold text-gray-400 mb-2 mt-4">
-                    {regionSearch ? '검색 결과' : '서울 전체'}
+                    {regionSearch ? '검색 결과' : '전체 지역'}
                   </h3>
                   <div className="grid grid-cols-2 gap-2">
                     {otherRegions.map((region) => (
