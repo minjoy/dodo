@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import Script from 'next/script'
 import './globals.css'
 import AuthProvider from '@/components/providers/AuthProvider'
+import OfflineDetector from '@/components/common/OfflineDetector'
 
 const SITE_URL = 'https://www.supercost.co.kr'
 
@@ -76,6 +77,7 @@ export default function RootLayout({
       </head>
       <body className="antialiased bg-gray-100">
         <AuthProvider>
+          <OfflineDetector />
           <main className="min-h-screen bg-gray-50 max-w-[1000px] mx-auto shadow-sm">{children}</main>
         </AuthProvider>
       </body>
