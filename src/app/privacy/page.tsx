@@ -1,8 +1,11 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: '개인정보처리방침 - 경도',
-  description: '경도 개인정보처리방침',
+  title: '개인정보처리방침',
+  description: '경도 개인정보처리방침입니다. 와하공방은 이용자의 개인정보를 안전하게 보호합니다.',
+  alternates: {
+    canonical: '/privacy',
+  },
 }
 
 export default function PrivacyPage() {

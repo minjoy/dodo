@@ -1,8 +1,11 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: '서비스 이용약관 - 경도',
-  description: '경도 서비스 이용약관',
+  title: '서비스 이용약관',
+  description: '경도 서비스 이용약관입니다. 경도는 동네 기반 오프라인 게임 모임 플랫폼입니다.',
+  alternates: {
+    canonical: '/terms',
+  },
 }
 
 export default function TermsPage() {
