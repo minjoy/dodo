@@ -271,38 +271,65 @@ const ALL_REGIONS: RegionData[] = [
   { name: '세종시', emoji: '🏛️', district: '세종' },
 
   // ============================================================
-  // 경기도 (시·군 단위)
+  // 경기도 (구가 있는 시 → 구 단위)
   // ============================================================
-  { name: '수원시', emoji: '🏯', district: '경기' },
-  { name: '성남시', emoji: '💻', district: '경기' },
-  { name: '용인시', emoji: '🎢', district: '경기' },
-  { name: '고양시', emoji: '🌸', district: '경기' },
-  { name: '화성시', emoji: '🏗️', district: '경기' },
-  { name: '안산시', emoji: '🏭', district: '경기' },
-  { name: '남양주시', emoji: '🌄', district: '경기' },
-  { name: '안양시', emoji: '🏢', district: '경기' },
-  { name: '평택시', emoji: '⚓', district: '경기' },
-  { name: '의정부시', emoji: '🎵', district: '경기' },
-  { name: '시흥시', emoji: '🌊', district: '경기' },
-  { name: '파주시', emoji: '📚', district: '경기' },
-  { name: '김포시', emoji: '✈️', district: '경기' },
-  { name: '광명시', emoji: '🛒', district: '경기' },
-  { name: '광주시', emoji: '🌿', district: '경기' },
-  { name: '군포시', emoji: '🏘️', district: '경기' },
-  { name: '하남시', emoji: '🏙️', district: '경기' },
-  { name: '오산시', emoji: '🏫', district: '경기' },
-  { name: '이천시', emoji: '🍚', district: '경기' },
-  { name: '양주시', emoji: '🌳', district: '경기' },
-  { name: '구리시', emoji: '🌉', district: '경기' },
-  { name: '안성시', emoji: '🎭', district: '경기' },
-  { name: '포천시', emoji: '🏔️', district: '경기' },
-  { name: '의왕시', emoji: '🚂', district: '경기' },
-  { name: '여주시', emoji: '🏺', district: '경기' },
-  { name: '동두천시', emoji: '⛰️', district: '경기' },
-  { name: '과천시', emoji: '🎠', district: '경기' },
-  { name: '가평군', emoji: '🏕️', district: '경기' },
-  { name: '양평군', emoji: '🌾', district: '경기' },
-  { name: '연천군', emoji: '🏰', district: '경기' },
+
+  // === 경기도 수원시 ===
+  { name: '장안구', emoji: '🏯', district: '경기도 수원시' },
+  { name: '권선구', emoji: '🏘️', district: '경기도 수원시' },
+  { name: '팔달구', emoji: '🏪', district: '경기도 수원시' },
+  { name: '영통구', emoji: '💻', district: '경기도 수원시' },
+
+  // === 경기도 성남시 ===
+  { name: '수정구', emoji: '⛰️', district: '경기도 성남시' },
+  { name: '중원구', emoji: '🏢', district: '경기도 성남시' },
+  { name: '분당구', emoji: '💻', district: '경기도 성남시' },
+
+  // === 경기도 용인시 ===
+  { name: '처인구', emoji: '🌿', district: '경기도 용인시' },
+  { name: '기흥구', emoji: '🏢', district: '경기도 용인시' },
+  { name: '수지구', emoji: '🏡', district: '경기도 용인시' },
+
+  // === 경기도 고양시 ===
+  { name: '덕양구', emoji: '🌳', district: '경기도 고양시' },
+  { name: '일산동구', emoji: '🏙️', district: '경기도 고양시' },
+  { name: '일산서구', emoji: '🌸', district: '경기도 고양시' },
+
+  // === 경기도 안산시 ===
+  { name: '상록구', emoji: '🌲', district: '경기도 안산시' },
+  { name: '단원구', emoji: '🎨', district: '경기도 안산시' },
+
+  // === 경기도 안양시 ===
+  { name: '만안구', emoji: '🏘️', district: '경기도 안양시' },
+  { name: '동안구', emoji: '🏢', district: '경기도 안양시' },
+
+  // ============================================================
+  // 경기도 (나머지 시·군)
+  // ============================================================
+  { name: '화성시', emoji: '🏗️', district: '경기도' },
+  { name: '남양주시', emoji: '🌄', district: '경기도' },
+  { name: '평택시', emoji: '⚓', district: '경기도' },
+  { name: '의정부시', emoji: '🎵', district: '경기도' },
+  { name: '시흥시', emoji: '🌊', district: '경기도' },
+  { name: '파주시', emoji: '📚', district: '경기도' },
+  { name: '김포시', emoji: '✈️', district: '경기도' },
+  { name: '광명시', emoji: '🛒', district: '경기도' },
+  { name: '광주시', emoji: '🌿', district: '경기도' },
+  { name: '군포시', emoji: '🏘️', district: '경기도' },
+  { name: '하남시', emoji: '🏙️', district: '경기도' },
+  { name: '오산시', emoji: '🏫', district: '경기도' },
+  { name: '이천시', emoji: '🍚', district: '경기도' },
+  { name: '양주시', emoji: '🌳', district: '경기도' },
+  { name: '구리시', emoji: '🌉', district: '경기도' },
+  { name: '안성시', emoji: '🎭', district: '경기도' },
+  { name: '포천시', emoji: '🏔️', district: '경기도' },
+  { name: '의왕시', emoji: '🚂', district: '경기도' },
+  { name: '여주시', emoji: '🏺', district: '경기도' },
+  { name: '동두천시', emoji: '⛰️', district: '경기도' },
+  { name: '과천시', emoji: '🎠', district: '경기도' },
+  { name: '가평군', emoji: '🏕️', district: '경기도' },
+  { name: '양평군', emoji: '🌾', district: '경기도' },
+  { name: '연천군', emoji: '🏰', district: '경기도' },
 
   // ============================================================
   // 강원특별자치도 (시·군 단위)
