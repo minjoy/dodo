@@ -137,6 +137,45 @@ export default function AdminRegionsPage() {
     })
   }, [search, settings, regionsMap])
 
+  // 그룹화: 인기 / 서울 / 지방(시·도별)
+  const groupedSections = useMemo(() => {
+    const list = filteredSettings
+    const sections: { label: string; items: RegionSetting[] }[] = []
+
+    // 인기 지역
+    const popular = list.filter((s) => regionsMap.get(s.region)?.popular)
+    if (popular.length > 0) {
+      sections.push({ label: '인기 지역', items: popular })
+    }
+
+    // 서울 (인기 제외, district가 '구'로 끝나는 것)
+    const seoul = list.filter((s) => {
+      const r = regionsMap.get(s.region)
+      return r && !r.popular && r.district.endsWith('구')
+    })
+    if (seoul.length > 0) {
+      sections.push({ label: '서울', items: seoul })
+    }
+
+    // 지방 (district가 '구'로 끝나지 않는 것) → 시·도별 그룹
+    const nonSeoul = list.filter((s) => {
+      const r = regionsMap.get(s.region)
+      return r && !r.popular && !r.district.endsWith('구')
+    })
+    const districtMap = new Map<string, RegionSetting[]>()
+    nonSeoul.forEach((s) => {
+      const r = regionsMap.get(s.region)
+      const district = r?.district || '기타'
+      if (!districtMap.has(district)) districtMap.set(district, [])
+      districtMap.get(district)!.push(s)
+    })
+    districtMap.forEach((items, district) => {
+      sections.push({ label: district, items })
+    })
+
+    return sections
+  }, [filteredSettings, regionsMap])
+
   const enabledCount = settings.filter((s) => s.enabled).length
   const disabledCount = settings.filter((s) => !s.enabled).length
 
@@ -257,48 +296,58 @@ export default function AdminRegionsPage() {
             <p className="mt-2 text-gray-500">검색 결과가 없습니다</p>
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-            {filteredSettings.map((setting, index) => {
-              const regionData = regionsMap.get(setting.region)
-              return (
-                <div
-                  key={setting.region}
-                  className={`flex items-center justify-between px-4 py-3 ${
-                    index < filteredSettings.length - 1 ? 'border-b border-gray-50' : ''
-                  } ${!setting.enabled ? 'bg-gray-50' : ''}`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl w-8 text-center">{regionData?.emoji || '📍'}</span>
-                    <div>
-                      <span className={`font-medium ${setting.enabled ? 'text-gray-900' : 'text-gray-400'}`}>
-                        {setting.region}
-                      </span>
-                      <span className={`ml-2 text-xs ${setting.enabled ? 'text-gray-400' : 'text-gray-300'}`}>
-                        {regionData?.district}
-                      </span>
-                      {regionData?.popular && (
-                        <span className="ml-2 px-1.5 py-0.5 bg-primary/10 text-primary text-xs font-medium rounded">
-                          인기
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handleToggle(setting.region, setting.enabled)}
-                    disabled={togglingRegion === setting.region}
-                    className={`relative w-12 h-7 rounded-full transition-colors ${
-                      setting.enabled ? 'bg-green-500' : 'bg-gray-300'
-                    } ${togglingRegion === setting.region ? 'opacity-50' : ''}`}
-                  >
-                    <span
-                      className={`absolute top-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform ${
-                        setting.enabled ? 'left-[22px]' : 'left-0.5'
-                      }`}
-                    />
-                  </button>
+          <div className="space-y-4">
+            {groupedSections.map((section) => (
+              <div key={section.label}>
+                <div className="flex items-center gap-2 mb-2">
+                  <h3 className="text-sm font-semibold text-gray-500">{section.label}</h3>
+                  <span className="text-xs text-gray-400">{section.items.length}개</span>
                 </div>
-              )
-            })}
+                <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                  {section.items.map((setting, index) => {
+                    const regionData = regionsMap.get(setting.region)
+                    return (
+                      <div
+                        key={setting.region}
+                        className={`flex items-center justify-between px-4 py-3 ${
+                          index < section.items.length - 1 ? 'border-b border-gray-50' : ''
+                        } ${!setting.enabled ? 'bg-gray-50' : ''}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-xl w-8 text-center">{regionData?.emoji || '📍'}</span>
+                          <div>
+                            <span className={`font-medium ${setting.enabled ? 'text-gray-900' : 'text-gray-400'}`}>
+                              {setting.region}
+                            </span>
+                            <span className={`ml-2 text-xs ${setting.enabled ? 'text-gray-400' : 'text-gray-300'}`}>
+                              {regionData?.district}
+                            </span>
+                            {regionData?.popular && (
+                              <span className="ml-2 px-1.5 py-0.5 bg-primary/10 text-primary text-xs font-medium rounded">
+                                인기
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleToggle(setting.region, setting.enabled)}
+                          disabled={togglingRegion === setting.region}
+                          className={`relative w-12 h-7 rounded-full transition-colors ${
+                            setting.enabled ? 'bg-green-500' : 'bg-gray-300'
+                          } ${togglingRegion === setting.region ? 'opacity-50' : ''}`}
+                        >
+                          <span
+                            className={`absolute top-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform ${
+                              setting.enabled ? 'left-[22px]' : 'left-0.5'
+                            }`}
+                          />
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
