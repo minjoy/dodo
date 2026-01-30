@@ -47,6 +47,32 @@ export default function RegionChangePage() {
   const popularRegions = useMemo(() => filteredRegions.filter((r) => r.popular), [filteredRegions])
   const otherRegions = useMemo(() => filteredRegions.filter((r) => !r.popular), [filteredRegions])
 
+  const [openDistricts, setOpenDistricts] = useState<Set<string>>(new Set())
+
+  const seoulRegions = useMemo(
+    () => otherRegions.filter((r) => r.district.endsWith('구')),
+    [otherRegions]
+  )
+
+  const nonSeoulGrouped = useMemo(() => {
+    const regions = otherRegions.filter((r) => !r.district.endsWith('구'))
+    const map = new Map<string, RegionData[]>()
+    regions.forEach((r) => {
+      if (!map.has(r.district)) map.set(r.district, [])
+      map.get(r.district)!.push(r)
+    })
+    return Array.from(map.entries()).map(([district, regions]) => ({ district, regions }))
+  }, [otherRegions])
+
+  const toggleDistrict = (district: string) => {
+    setOpenDistricts((prev) => {
+      const next = new Set(prev)
+      if (next.has(district)) next.delete(district)
+      else next.add(district)
+      return next
+    })
+  }
+
   const handleRegionChange = async () => {
     if (!selectedRegion) return
 
@@ -156,7 +182,7 @@ export default function RegionChangePage() {
         </div>
       </div>
 
-      {/* 서울 지역 선택 */}
+      {/* 지역 선택 */}
       <div className="px-4">
         {filteredRegions.length === 0 ? (
           <div className="text-center py-12 text-gray-400">
@@ -164,50 +190,15 @@ export default function RegionChangePage() {
             <p className="font-medium">검색 결과가 없어요</p>
             <p className="text-sm mt-1">다른 이름으로 검색해보세요</p>
           </div>
-        ) : (
+        ) : regionSearch ? (
+          /* 검색 모드: 플랫 리스트 */
           <>
-            {/* 인기 지역 */}
-            {popularRegions.length > 0 && (
+            {filteredRegions.length > 0 && (
               <>
-                {!regionSearch && (
-                  <h2 className="text-sm font-semibold text-gray-500 mb-3">인기 지역</h2>
-                )}
+                <h2 className="text-sm font-semibold text-gray-500 mb-3">검색 결과</h2>
                 <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
                   <div className="grid grid-cols-2 gap-2">
-                    {popularRegions.map((region) => (
-                      <button
-                        key={region.name}
-                        onClick={() => setSelectedRegion(region.name)}
-                        disabled={isLoading}
-                        className={`flex items-center gap-2 p-4 rounded-xl text-left transition-all ${
-                          selectedRegion === region.name
-                            ? 'bg-primary text-white shadow-md shadow-primary/30'
-                            : region.name === currentRegion
-                              ? 'bg-green-50 text-green-700 border-2 border-green-200'
-                              : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-                        }`}
-                      >
-                        <span className="text-xl">{region.emoji}</span>
-                        <span className="font-medium">{region.name}</span>
-                        {region.name === currentRegion && selectedRegion !== region.name && (
-                          <span className="ml-auto text-xs text-green-600">현재</span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* 기타 지역 */}
-            {otherRegions.length > 0 && (
-              <>
-                <h2 className="text-sm font-semibold text-gray-500 mb-3 mt-4">
-                  {regionSearch ? '검색 결과' : '전체 지역'}
-                </h2>
-                <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-                  <div className="grid grid-cols-2 gap-2">
-                    {otherRegions.map((region) => (
+                    {filteredRegions.map((region) => (
                       <button
                         key={region.name}
                         onClick={() => setSelectedRegion(region.name)}
@@ -237,6 +228,134 @@ export default function RegionChangePage() {
                       </button>
                     ))}
                   </div>
+                </div>
+              </>
+            )}
+          </>
+        ) : (
+          /* 비검색 모드: 인기 + 서울 + 지방 아코디언 */
+          <>
+            {/* 인기 지역 */}
+            {popularRegions.length > 0 && (
+              <>
+                <h2 className="text-sm font-semibold text-gray-500 mb-3">인기 지역</h2>
+                <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                  <div className="grid grid-cols-2 gap-2">
+                    {popularRegions.map((region) => (
+                      <button
+                        key={region.name}
+                        onClick={() => setSelectedRegion(region.name)}
+                        disabled={isLoading}
+                        className={`flex items-center gap-2 p-4 rounded-xl text-left transition-all ${
+                          selectedRegion === region.name
+                            ? 'bg-primary text-white shadow-md shadow-primary/30'
+                            : region.name === currentRegion
+                              ? 'bg-green-50 text-green-700 border-2 border-green-200'
+                              : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                        }`}
+                      >
+                        <span className="text-xl">{region.emoji}</span>
+                        <span className="font-medium">{region.name}</span>
+                        {region.name === currentRegion && selectedRegion !== region.name && (
+                          <span className="ml-auto text-xs text-green-600">현재</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* 서울 */}
+            {seoulRegions.length > 0 && (
+              <>
+                <h2 className="text-sm font-semibold text-gray-500 mb-3 mt-4">서울</h2>
+                <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                  <div className="grid grid-cols-2 gap-2">
+                    {seoulRegions.map((region) => (
+                      <button
+                        key={region.name}
+                        onClick={() => setSelectedRegion(region.name)}
+                        disabled={isLoading}
+                        className={`flex items-center gap-2 p-4 rounded-xl text-left transition-all ${
+                          selectedRegion === region.name
+                            ? 'bg-primary text-white shadow-md shadow-primary/30'
+                            : region.name === currentRegion
+                              ? 'bg-green-50 text-green-700 border-2 border-green-200'
+                              : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                        }`}
+                      >
+                        <span className="text-xl">{region.emoji}</span>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{region.name}</span>
+                          <span className={`text-xs ${
+                            selectedRegion === region.name
+                              ? 'text-white/70'
+                              : region.name === currentRegion
+                                ? 'text-green-500'
+                                : 'text-gray-400'
+                          }`}>{region.district}</span>
+                        </div>
+                        {region.name === currentRegion && selectedRegion !== region.name && (
+                          <span className="ml-auto text-xs text-green-600">현재</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* 지방 (시/도별 아코디언) */}
+            {nonSeoulGrouped.length > 0 && (
+              <>
+                <h2 className="text-sm font-semibold text-gray-500 mb-3 mt-4">지방</h2>
+                <div className="space-y-2">
+                  {nonSeoulGrouped.map((group) => (
+                    <div key={group.district} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                      <button
+                        onClick={() => toggleDistrict(group.district)}
+                        className="w-full flex items-center justify-between px-4 py-3.5"
+                      >
+                        <span className="font-medium text-gray-900">{group.district}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-400">{group.regions.length}개</span>
+                          <svg
+                            className={`w-4 h-4 text-gray-400 transition-transform ${openDistricts.has(group.district) ? 'rotate-180' : ''}`}
+                            fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
+                      </button>
+                      {openDistricts.has(group.district) && (
+                        <div className="px-4 pb-4">
+                          <div className="grid grid-cols-2 gap-2">
+                            {group.regions.map((region) => (
+                              <button
+                                key={region.name}
+                                onClick={() => setSelectedRegion(region.name)}
+                                disabled={isLoading}
+                                className={`flex items-center gap-2 p-4 rounded-xl text-left transition-all ${
+                                  selectedRegion === region.name
+                                    ? 'bg-primary text-white shadow-md shadow-primary/30'
+                                    : region.name === currentRegion
+                                      ? 'bg-green-50 text-green-700 border-2 border-green-200'
+                                      : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                                }`}
+                              >
+                                <span className="text-xl">{region.emoji}</span>
+                                <span className="font-medium">{region.name}</span>
+                                {region.name === currentRegion && selectedRegion !== region.name && (
+                                  <span className="ml-auto text-xs text-green-600">현재</span>
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </>
             )}

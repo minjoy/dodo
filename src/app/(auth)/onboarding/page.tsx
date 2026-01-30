@@ -64,6 +64,32 @@ function OnboardingContent() {
   const popularRegions = useMemo(() => filteredRegions.filter((r) => r.popular), [filteredRegions])
   const otherRegions = useMemo(() => filteredRegions.filter((r) => !r.popular), [filteredRegions])
 
+  const [openDistricts, setOpenDistricts] = useState<Set<string>>(new Set())
+
+  const seoulRegions = useMemo(
+    () => otherRegions.filter((r) => r.district.endsWith('구')),
+    [otherRegions]
+  )
+
+  const nonSeoulGrouped = useMemo(() => {
+    const regions = otherRegions.filter((r) => !r.district.endsWith('구'))
+    const map = new Map<string, RegionData[]>()
+    regions.forEach((r) => {
+      if (!map.has(r.district)) map.set(r.district, [])
+      map.get(r.district)!.push(r)
+    })
+    return Array.from(map.entries()).map(([district, regions]) => ({ district, regions }))
+  }, [otherRegions])
+
+  const toggleDistrict = (district: string) => {
+    setOpenDistricts((prev) => {
+      const next = new Set(prev)
+      if (next.has(district)) next.delete(district)
+      else next.add(district)
+      return next
+    })
+  }
+
   // 로그인 상태 및 온보딩 완료 여부 체크
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -328,14 +354,42 @@ function OnboardingContent() {
               <p className="font-medium">검색 결과가 없어요</p>
               <p className="text-sm mt-1">다른 이름으로 검색해보세요</p>
             </div>
+          ) : regionSearch ? (
+            /* 검색 모드: 플랫 리스트 */
+            <>
+              {filteredRegions.length > 0 && (
+                <>
+                  <h3 className="text-xs font-semibold text-gray-400 mb-2">검색 결과</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {filteredRegions.map((region) => (
+                      <button
+                        key={region.name}
+                        onClick={() => setSelectedRegion(region.name)}
+                        disabled={isLoading}
+                        className={`flex items-center gap-2 p-4 rounded-xl text-left transition-colors ${
+                          selectedRegion === region.name
+                            ? 'bg-primary text-white'
+                            : 'bg-gray-50 text-gray-700 active:bg-gray-100'
+                        }`}
+                      >
+                        <span className="text-xl">{region.emoji}</span>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{region.name}</span>
+                          <span className={`text-xs ${selectedRegion === region.name ? 'text-white/70' : 'text-gray-400'}`}>{region.district}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </>
           ) : (
+            /* 비검색 모드: 인기 + 서울 + 지방 아코디언 */
             <>
               {/* 인기 지역 */}
               {popularRegions.length > 0 && (
                 <>
-                  {!regionSearch && (
-                    <h3 className="text-xs font-semibold text-gray-400 mb-2">인기 지역</h3>
-                  )}
+                  <h3 className="text-xs font-semibold text-gray-400 mb-2">인기 지역</h3>
                   <div className="grid grid-cols-2 gap-2">
                     {popularRegions.map((region) => (
                       <button
@@ -356,14 +410,12 @@ function OnboardingContent() {
                 </>
               )}
 
-              {/* 기타 지역 */}
-              {otherRegions.length > 0 && (
+              {/* 서울 */}
+              {seoulRegions.length > 0 && (
                 <>
-                  <h3 className="text-xs font-semibold text-gray-400 mb-2 mt-4">
-                    {regionSearch ? '검색 결과' : '전체 지역'}
-                  </h3>
+                  <h3 className="text-xs font-semibold text-gray-400 mb-2 mt-4">서울</h3>
                   <div className="grid grid-cols-2 gap-2">
-                    {otherRegions.map((region) => (
+                    {seoulRegions.map((region) => (
                       <button
                         key={region.name}
                         onClick={() => setSelectedRegion(region.name)}
@@ -380,6 +432,55 @@ function OnboardingContent() {
                           <span className={`text-xs ${selectedRegion === region.name ? 'text-white/70' : 'text-gray-400'}`}>{region.district}</span>
                         </div>
                       </button>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* 지방 (시/도별 아코디언) */}
+              {nonSeoulGrouped.length > 0 && (
+                <>
+                  <h3 className="text-xs font-semibold text-gray-400 mb-2 mt-4">지방</h3>
+                  <div className="space-y-2">
+                    {nonSeoulGrouped.map((group) => (
+                      <div key={group.district} className="bg-gray-50 rounded-2xl overflow-hidden">
+                        <button
+                          onClick={() => toggleDistrict(group.district)}
+                          className="w-full flex items-center justify-between px-4 py-3.5"
+                        >
+                          <span className="font-medium text-gray-900">{group.district}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-400">{group.regions.length}개</span>
+                            <svg
+                              className={`w-4 h-4 text-gray-400 transition-transform ${openDistricts.has(group.district) ? 'rotate-180' : ''}`}
+                              fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </div>
+                        </button>
+                        {openDistricts.has(group.district) && (
+                          <div className="px-4 pb-4">
+                            <div className="grid grid-cols-2 gap-2">
+                              {group.regions.map((region) => (
+                                <button
+                                  key={region.name}
+                                  onClick={() => setSelectedRegion(region.name)}
+                                  disabled={isLoading}
+                                  className={`flex items-center gap-2 p-4 rounded-xl text-left transition-colors ${
+                                    selectedRegion === region.name
+                                      ? 'bg-primary text-white'
+                                      : 'bg-white text-gray-700 active:bg-gray-100'
+                                  }`}
+                                >
+                                  <span className="text-xl">{region.emoji}</span>
+                                  <span className="font-medium">{region.name}</span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     ))}
                   </div>
                 </>
