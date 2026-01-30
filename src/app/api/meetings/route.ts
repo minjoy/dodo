@@ -90,6 +90,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: '로그인이 필요합니다' }, { status: 401 })
     }
 
+    // 정지된 사용자 확인
+    const currentUser = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { isBanned: true, bannedUntil: true },
+    })
+
+    if (currentUser?.isBanned) {
+      const bannedUntil = currentUser.bannedUntil
+      if (bannedUntil && new Date(bannedUntil) <= new Date()) {
+        // 정지 기간이 만료되었으면 자동 해제
+        await prisma.user.update({
+          where: { id: session.user.id },
+          data: { isBanned: false, bannedAt: null, bannedUntil: null, banReason: null },
+        })
+      } else {
+        const untilStr = bannedUntil
+          ? new Date(bannedUntil).toLocaleDateString('ko-KR')
+          : null
+        const message = untilStr
+          ? `계정이 정지되어 모임을 만들 수 없습니다. (정지 해제일: ${untilStr})`
+          : '계정이 영구 정지되어 모임을 만들 수 없습니다.'
+        return NextResponse.json({ message, bannedUntil: bannedUntil || null }, { status: 403 })
+      }
+    }
+
     const body = await request.json()
     const {
       title,

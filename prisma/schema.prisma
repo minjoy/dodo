@@ -47,6 +47,7 @@ model User {
   // 정지 상태
   isBanned      Boolean   @default(false)
   bannedAt      DateTime?
+  bannedUntil   DateTime?  // 정지 해제 시간 (null이면 영구정지)
   banReason     String?   @db.Text
 
   createdAt     DateTime  @default(now())

@@ -59,6 +59,42 @@ interface PushStats {
   uniqueUsers: number
 }
 
+interface AdminUser {
+  id: string
+  nickname: string
+  email: string | null
+  profileImage: string | null
+  region: string
+  level: number
+  exp: number
+  gender: string | null
+  birthYear: string | null
+  ageRange: string | null
+  hostCount: number
+  meetingCount: number
+  likeReceived: number
+  noShowCount: number
+  isBanned: boolean
+  bannedAt: string | null
+  bannedUntil: string | null
+  banReason: string | null
+  createdAt: string
+  avgRating: number | null
+  reviewCount: number
+  _count: {
+    reportsReceived: number
+    reviewsReceived: number
+    participations: number
+  }
+}
+
+interface AdminUsersResponse {
+  users: AdminUser[]
+  total: number
+  page: number
+  totalPages: number
+}
+
 const ADMIN_COOKIE_KEY = 'mng_auth_x7k9'
 const ADMIN_PASSWORD = 'care'
 
@@ -96,6 +132,18 @@ export default function AdminPage() {
   const [pushUrl, setPushUrl] = useState('/home')
   const [isSendingPush, setIsSendingPush] = useState(false)
   const [pushResult, setPushResult] = useState<string | null>(null)
+
+  // 사용자 관리 상태
+  const [adminUsers, setAdminUsers] = useState<AdminUsersResponse | null>(null)
+  const [userSearch, setUserSearch] = useState('')
+  const [userFilter, setUserFilter] = useState<'all' | 'banned' | 'active'>('all')
+  const [userPage, setUserPage] = useState(1)
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false)
+  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null)
+  const [showSuspendModal, setShowSuspendModal] = useState(false)
+  const [suspendReason, setSuspendReason] = useState('')
+  const [isSuspending, setIsSuspending] = useState(false)
+  const [suspendResult, setSuspendResult] = useState<string | null>(null)
 
   useEffect(() => {
     const savedAuth = Cookies.get(ADMIN_COOKIE_KEY)
@@ -150,6 +198,101 @@ export default function AdminPage() {
     } catch (error) {
       console.error('Failed to fetch push stats:', error)
     }
+  }
+
+  const fetchAdminUsers = async (page = 1, search = userSearch, filter = userFilter) => {
+    setIsLoadingUsers(true)
+    try {
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: '20',
+        filter,
+      })
+      if (search) params.set('search', search)
+
+      const res = await fetch(`/api/admin/users?${params}`)
+      if (res.ok) {
+        const data = await res.json()
+        setAdminUsers(data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch admin users:', error)
+    } finally {
+      setIsLoadingUsers(false)
+    }
+  }
+
+  const handleUserSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    setUserPage(1)
+    fetchAdminUsers(1, userSearch, userFilter)
+  }
+
+  const handleUserFilterChange = (filter: 'all' | 'banned' | 'active') => {
+    setUserFilter(filter)
+    setUserPage(1)
+    fetchAdminUsers(1, userSearch, filter)
+  }
+
+  const handleUserPageChange = (page: number) => {
+    setUserPage(page)
+    fetchAdminUsers(page)
+  }
+
+  const handleSuspendAction = async (action: string) => {
+    if (!selectedUser) return
+    setIsSuspending(true)
+    setSuspendResult(null)
+
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: selectedUser.id,
+          action,
+          reason: suspendReason || undefined,
+        }),
+      })
+
+      const data = await res.json()
+      if (res.ok) {
+        setSuspendResult(data.message)
+        // 목록 새로고침
+        fetchAdminUsers(userPage)
+        // 2초 후 모달 닫기
+        setTimeout(() => {
+          setShowSuspendModal(false)
+          setSelectedUser(null)
+          setSuspendReason('')
+          setSuspendResult(null)
+        }, 1500)
+      } else {
+        setSuspendResult(data.message || '처리에 실패했습니다')
+      }
+    } catch (error) {
+      console.error('Failed to suspend user:', error)
+      setSuspendResult('처리 중 오류가 발생했습니다')
+    } finally {
+      setIsSuspending(false)
+    }
+  }
+
+  // 사용자 탭 활성화 시 데이터 로드
+  useEffect(() => {
+    if (activeTab === 'users' && isAuthenticated && !adminUsers) {
+      fetchAdminUsers()
+    }
+  }, [activeTab, isAuthenticated])
+
+  const formatBanStatus = (user: AdminUser) => {
+    if (!user.isBanned) return null
+    if (!user.bannedUntil) return '영구 정지'
+    const until = new Date(user.bannedUntil)
+    if (until <= new Date()) return '정지 만료'
+    const diffMs = until.getTime() - new Date().getTime()
+    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+    return `${diffDays}일 남음`
   }
 
   const sendPush = async () => {
@@ -428,6 +571,7 @@ export default function AdminPage() {
         {/* 사용자 탭 */}
         {activeTab === 'users' && (
           <div className="space-y-6">
+            {/* 통계 카드 */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <StatCard title="전체 사용자" value={stats.users.total} />
               <StatCard title="오늘 가입" value={stats.users.today} color="green" />
@@ -442,41 +586,181 @@ export default function AdminPage() {
               } color="purple" />
             </div>
 
-            {/* 최근 가입자 */}
+            {/* 검색 및 필터 */}
             <div className="bg-gray-800 rounded-2xl p-5">
-              <h3 className="text-lg font-bold mb-4">최근 가입자</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="text-left text-gray-400 text-sm border-b border-gray-700">
-                      <th className="pb-3">닉네임</th>
-                      <th className="pb-3">이메일</th>
-                      <th className="pb-3">성별</th>
-                      <th className="pb-3">출생연도</th>
-                      <th className="pb-3">지역</th>
-                      <th className="pb-3">레벨</th>
-                      <th className="pb-3">가입일</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-sm">
-                    {stats.users.recent.map((user) => (
-                      <tr key={user.id} className="border-b border-gray-700/50">
-                        <td className="py-3 font-medium">{user.nickname}</td>
-                        <td className="py-3 text-gray-400 max-w-[150px] truncate">{user.email || '-'}</td>
-                        <td className="py-3 text-gray-400">
-                          {user.gender ? GENDER_LABELS[user.gender] || user.gender : '-'}
-                        </td>
-                        <td className="py-3 text-gray-400">{user.birthYear || '-'}</td>
-                        <td className="py-3 text-gray-400">{user.region || '-'}</td>
-                        <td className="py-3">Lv.{user.level}</td>
-                        <td className="py-3 text-gray-400">
-                          {new Date(user.createdAt).toLocaleDateString('ko-KR')}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="flex flex-col md:flex-row gap-4">
+                <form onSubmit={handleUserSearch} className="flex-1 flex gap-2">
+                  <input
+                    type="text"
+                    value={userSearch}
+                    onChange={(e) => setUserSearch(e.target.value)}
+                    placeholder="닉네임 또는 이메일 검색"
+                    className="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 text-sm"
+                  />
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
+                  >
+                    검색
+                  </button>
+                </form>
+                <div className="flex gap-2">
+                  {[
+                    { key: 'all' as const, label: '전체' },
+                    { key: 'active' as const, label: '활성' },
+                    { key: 'banned' as const, label: '정지' },
+                  ].map((f) => (
+                    <button
+                      key={f.key}
+                      onClick={() => handleUserFilterChange(f.key)}
+                      className={`px-3 py-2 rounded-lg text-sm transition-colors ${
+                        userFilter === f.key
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
+                      }`}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
               </div>
+            </div>
+
+            {/* 사용자 목록 */}
+            <div className="bg-gray-800 rounded-2xl p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold">
+                  사용자 목록
+                  {adminUsers && (
+                    <span className="text-sm font-normal text-gray-400 ml-2">
+                      총 {adminUsers.total}명
+                    </span>
+                  )}
+                </h3>
+                <button
+                  onClick={() => fetchAdminUsers(userPage)}
+                  className="px-3 py-1 bg-gray-700 rounded-lg text-xs hover:bg-gray-600 transition-colors"
+                >
+                  새로고침
+                </button>
+              </div>
+
+              {isLoadingUsers ? (
+                <div className="text-center py-8 text-gray-400">로딩 중...</div>
+              ) : adminUsers && adminUsers.users.length > 0 ? (
+                <>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="text-left text-gray-400 text-xs border-b border-gray-700">
+                          <th className="pb-3 pr-3">닉네임</th>
+                          <th className="pb-3 pr-3">지역</th>
+                          <th className="pb-3 pr-3">Lv</th>
+                          <th className="pb-3 pr-3">호스트</th>
+                          <th className="pb-3 pr-3">참여</th>
+                          <th className="pb-3 pr-3">평가</th>
+                          <th className="pb-3 pr-3">신고</th>
+                          <th className="pb-3 pr-3">상태</th>
+                          <th className="pb-3">관리</th>
+                        </tr>
+                      </thead>
+                      <tbody className="text-sm">
+                        {adminUsers.users.map((user) => {
+                          const banStatus = formatBanStatus(user)
+                          return (
+                            <tr key={user.id} className="border-b border-gray-700/50 hover:bg-gray-700/30">
+                              <td className="py-3 pr-3">
+                                <div>
+                                  <span className="font-medium">{user.nickname}</span>
+                                  {user.email && (
+                                    <p className="text-xs text-gray-500 truncate max-w-[120px]">{user.email}</p>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="py-3 pr-3 text-gray-400 text-xs">{user.region || '-'}</td>
+                              <td className="py-3 pr-3">Lv.{user.level}</td>
+                              <td className="py-3 pr-3 text-center">
+                                <span className="text-blue-400">{user.hostCount}</span>
+                              </td>
+                              <td className="py-3 pr-3 text-center">
+                                <span className="text-green-400">{user._count.participations}</span>
+                              </td>
+                              <td className="py-3 pr-3 text-center">
+                                {user.avgRating ? (
+                                  <span className="text-yellow-400">{user.avgRating}</span>
+                                ) : (
+                                  <span className="text-gray-500">-</span>
+                                )}
+                                {user.reviewCount > 0 && (
+                                  <span className="text-xs text-gray-500 ml-1">({user.reviewCount})</span>
+                                )}
+                              </td>
+                              <td className="py-3 pr-3 text-center">
+                                <span className={user._count.reportsReceived > 0 ? 'text-red-400 font-medium' : 'text-gray-500'}>
+                                  {user._count.reportsReceived}
+                                </span>
+                              </td>
+                              <td className="py-3 pr-3">
+                                {banStatus ? (
+                                  <span className={`px-2 py-1 rounded text-xs ${
+                                    banStatus === '영구 정지' ? 'bg-red-500/20 text-red-400' :
+                                    banStatus === '정지 만료' ? 'bg-yellow-500/20 text-yellow-400' :
+                                    'bg-orange-500/20 text-orange-400'
+                                  }`}>
+                                    {banStatus}
+                                  </span>
+                                ) : (
+                                  <span className="px-2 py-1 rounded text-xs bg-green-500/20 text-green-400">활성</span>
+                                )}
+                              </td>
+                              <td className="py-3">
+                                <button
+                                  onClick={() => {
+                                    setSelectedUser(user)
+                                    setShowSuspendModal(true)
+                                    setSuspendReason('')
+                                    setSuspendResult(null)
+                                  }}
+                                  className="px-3 py-1 bg-gray-600 text-white rounded text-xs hover:bg-gray-500 transition-colors"
+                                >
+                                  관리
+                                </button>
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* 페이지네이션 */}
+                  {adminUsers.totalPages > 1 && (
+                    <div className="flex items-center justify-center gap-2 mt-4">
+                      <button
+                        onClick={() => handleUserPageChange(userPage - 1)}
+                        disabled={userPage <= 1}
+                        className="px-3 py-1 bg-gray-700 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-600 transition-colors"
+                      >
+                        이전
+                      </button>
+                      <span className="text-sm text-gray-400">
+                        {userPage} / {adminUsers.totalPages}
+                      </span>
+                      <button
+                        onClick={() => handleUserPageChange(userPage + 1)}
+                        disabled={userPage >= adminUsers.totalPages}
+                        className="px-3 py-1 bg-gray-700 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-600 transition-colors"
+                      >
+                        다음
+                      </button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-8 text-gray-400">
+                  {adminUsers ? '검색 결과가 없습니다' : '사용자 데이터를 불러올 수 없습니다'}
+                </div>
+              )}
             </div>
 
             {/* 레벨별/성별별 분포 */}
@@ -531,6 +815,167 @@ export default function AdminPage() {
                 </div>
               </div>
             </div>
+
+            {/* 사용자 정지 관리 모달 */}
+            {showSuspendModal && selectedUser && (
+              <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+                <div className="bg-gray-800 rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-bold">사용자 관리</h3>
+                    <button
+                      onClick={() => {
+                        setShowSuspendModal(false)
+                        setSelectedUser(null)
+                      }}
+                      className="text-gray-400 hover:text-white"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  {/* 사용자 상세 정보 */}
+                  <div className="bg-gray-700/50 rounded-xl p-4 mb-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-400 text-sm">닉네임</span>
+                      <span className="font-medium">{selectedUser.nickname}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-400 text-sm">지역</span>
+                      <span>{selectedUser.region || '-'}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-400 text-sm">레벨</span>
+                      <span>Lv.{selectedUser.level} (EXP: {selectedUser.exp})</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-400 text-sm">호스트 횟수</span>
+                      <span className="text-blue-400">{selectedUser.hostCount}회</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-400 text-sm">참여 횟수</span>
+                      <span className="text-green-400">{selectedUser._count.participations}회</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-400 text-sm">평균 평가</span>
+                      <span className="text-yellow-400">
+                        {selectedUser.avgRating ? `${selectedUser.avgRating}점 (${selectedUser.reviewCount}개)` : '평가 없음'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-400 text-sm">받은 신고</span>
+                      <span className={selectedUser._count.reportsReceived > 0 ? 'text-red-400 font-medium' : 'text-gray-500'}>
+                        {selectedUser._count.reportsReceived}건
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-400 text-sm">노쇼 횟수</span>
+                      <span className={selectedUser.noShowCount > 0 ? 'text-red-400' : 'text-gray-500'}>
+                        {selectedUser.noShowCount}회
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-400 text-sm">가입일</span>
+                      <span className="text-gray-300">
+                        {new Date(selectedUser.createdAt).toLocaleDateString('ko-KR')}
+                      </span>
+                    </div>
+                    {selectedUser.isBanned && (
+                      <>
+                        <div className="border-t border-gray-600 pt-2 mt-2" />
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-400 text-sm">정지 상태</span>
+                          <span className="text-red-400 font-medium">{formatBanStatus(selectedUser)}</span>
+                        </div>
+                        {selectedUser.bannedAt && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-400 text-sm">정지일</span>
+                            <span className="text-gray-300">
+                              {new Date(selectedUser.bannedAt).toLocaleDateString('ko-KR')}
+                            </span>
+                          </div>
+                        )}
+                        {selectedUser.bannedUntil && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-400 text-sm">정지 해제일</span>
+                            <span className="text-gray-300">
+                              {new Date(selectedUser.bannedUntil).toLocaleDateString('ko-KR')}
+                            </span>
+                          </div>
+                        )}
+                        {selectedUser.banReason && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-400 text-sm">정지 사유</span>
+                            <span className="text-gray-300 text-right max-w-[200px]">{selectedUser.banReason}</span>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+
+                  {/* 정지 사유 입력 */}
+                  <div className="mb-4">
+                    <label className="block text-sm text-gray-400 mb-2">정지 사유 (선택)</label>
+                    <input
+                      type="text"
+                      value={suspendReason}
+                      onChange={(e) => setSuspendReason(e.target.value)}
+                      placeholder="정지 사유를 입력해주세요"
+                      className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 text-sm"
+                    />
+                  </div>
+
+                  {/* 결과 메시지 */}
+                  {suspendResult && (
+                    <div className={`p-3 rounded-lg text-sm mb-4 ${
+                      suspendResult.includes('실패') || suspendResult.includes('오류')
+                        ? 'bg-red-900/30 text-red-400 border border-red-800'
+                        : 'bg-green-900/30 text-green-400 border border-green-800'
+                    }`}>
+                      {suspendResult}
+                    </div>
+                  )}
+
+                  {/* 정지 액션 버튼 */}
+                  <div className="space-y-2">
+                    {selectedUser.isBanned ? (
+                      <button
+                        onClick={() => handleSuspendAction('unban')}
+                        disabled={isSuspending}
+                        className="w-full py-3 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 transition-colors disabled:opacity-50"
+                      >
+                        {isSuspending ? '처리 중...' : '정지 해제'}
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => handleSuspendAction('ban10')}
+                          disabled={isSuspending}
+                          className="w-full py-3 bg-orange-600 text-white font-semibold rounded-xl hover:bg-orange-700 transition-colors disabled:opacity-50"
+                        >
+                          {isSuspending ? '처리 중...' : '10일 정지'}
+                        </button>
+                        <button
+                          onClick={() => handleSuspendAction('ban30')}
+                          disabled={isSuspending}
+                          className="w-full py-3 bg-orange-700 text-white font-semibold rounded-xl hover:bg-orange-800 transition-colors disabled:opacity-50"
+                        >
+                          {isSuspending ? '처리 중...' : '30일 정지'}
+                        </button>
+                        <button
+                          onClick={() => handleSuspendAction('banPermanent')}
+                          disabled={isSuspending}
+                          className="w-full py-3 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50"
+                        >
+                          {isSuspending ? '처리 중...' : '영구 정지'}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

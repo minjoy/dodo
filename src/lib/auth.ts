@@ -54,7 +54,26 @@ export const authOptions: NextAuthOptions = {
         if (existingUser) {
           // 정지된 계정인지 확인
           if (existingUser.isBanned) {
-            return '/login?error=suspended'
+            // 기간 정지인 경우 만료 여부 확인
+            if (existingUser.bannedUntil) {
+              const now = new Date()
+              if (new Date(existingUser.bannedUntil) <= now) {
+                // 정지 기간이 만료되었으면 자동 해제
+                await prisma.user.update({
+                  where: { kakaoId },
+                  data: {
+                    isBanned: false,
+                    bannedAt: null,
+                    bannedUntil: null,
+                    banReason: null,
+                  },
+                })
+              }
+              // 기간 정지 사용자는 로그인 허용 (앱 내에서 제한)
+            } else {
+              // bannedUntil이 null이면 영구 정지 → 로그인 차단
+              return '/login?error=suspended'
+            }
           }
         } else {
           // 3. 신규 가입 시 성인 인증 확인 (출생년도 기준)
@@ -95,12 +114,39 @@ export const authOptions: NextAuthOptions = {
         if (user) {
           // 정지된 계정이면 세션에 표시
           if (user.isBanned) {
-            session.user = {
-              ...session.user,
-              id: user.id,
-              kakaoId: user.kakaoId,
-              nickname: user.nickname,
-              isBanned: true,
+            // 기간 정지의 경우 만료 여부 체크
+            if (user.bannedUntil && new Date(user.bannedUntil) <= new Date()) {
+              // 정지 기간 만료 → 자동 해제
+              await prisma.user.update({
+                where: { id: user.id },
+                data: {
+                  isBanned: false,
+                  bannedAt: null,
+                  bannedUntil: null,
+                  banReason: null,
+                },
+              })
+              session.user = {
+                ...session.user,
+                id: user.id,
+                kakaoId: user.kakaoId,
+                nickname: user.nickname,
+                profileImage: user.profileImage,
+                region: user.region,
+                level: user.level,
+              }
+            } else {
+              session.user = {
+                ...session.user,
+                id: user.id,
+                kakaoId: user.kakaoId,
+                nickname: user.nickname,
+                profileImage: user.profileImage,
+                region: user.region,
+                level: user.level,
+                isBanned: true,
+                bannedUntil: user.bannedUntil?.toISOString() || null,
+              }
             }
           } else {
             session.user = {

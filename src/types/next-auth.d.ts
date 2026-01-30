@@ -10,6 +10,7 @@ declare module 'next-auth' {
       region: string
       level: number
       isBanned?: boolean
+      bannedUntil?: string | null
     } & DefaultSession['user']
   }
 }

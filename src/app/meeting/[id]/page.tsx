@@ -632,6 +632,67 @@ function MeetingDetailContent() {
     return null
   }
 
+  // 정지된 사용자 접근 차단
+  const isBanned = session?.user?.isBanned
+  const bannedUntil = session?.user?.bannedUntil
+  if (isBanned) {
+    const bannedUntilDate = bannedUntil ? new Date(bannedUntil) : null
+    const isExpired = bannedUntilDate && bannedUntilDate <= new Date()
+
+    if (!isExpired) {
+      return (
+        <div className="min-h-screen bg-gray-50 flex flex-col">
+          <header className="bg-white sticky top-0 z-40 shadow-sm">
+            <div className="px-4 py-3 flex items-center gap-4">
+              <button
+                onClick={() => router.push('/home')}
+                className="w-10 h-10 flex items-center justify-center"
+              >
+                <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <h1 className="text-lg font-bold text-gray-900">모임 상세</h1>
+            </div>
+          </header>
+          <div className="flex-1 flex items-center justify-center p-6">
+            <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-200 text-center max-w-sm w-full">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                </svg>
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 mb-2">이용이 제한되었습니다</h2>
+              <p className="text-gray-500 mb-4">
+                계정이 정지되어 모임 상세 페이지에 접근할 수 없습니다.
+              </p>
+              {bannedUntilDate ? (
+                <div className="bg-red-50 rounded-xl p-4 mb-4">
+                  <p className="text-sm text-red-600 font-medium">
+                    정지 해제일: {bannedUntilDate.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}
+                  </p>
+                  <p className="text-xs text-red-400 mt-1">
+                    정지 해제일까지 모임 상세 페이지 접근이 제한됩니다.
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-red-50 rounded-xl p-4 mb-4">
+                  <p className="text-sm text-red-600 font-medium">영구 정지된 계정입니다.</p>
+                </div>
+              )}
+              <button
+                onClick={() => router.push('/home')}
+                className="w-full py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl"
+              >
+                홈으로 돌아가기
+              </button>
+            </div>
+          </div>
+        </div>
+      )
+    }
+  }
+
   const isHost = session?.user?.id === meeting.hostId
   const isParticipant = meeting.participants.some(
     (p) => p.userId === session?.user?.id && p.status !== 'CANCELLED'
