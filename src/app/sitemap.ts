@@ -49,7 +49,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     const meetings = await prisma.meeting.findMany({
       where: {
-        status: { in: ['RECRUITING', 'CONFIRMED'] },
+        status: { in: ['RECRUITING', 'CLOSED', 'READY'] },
         password: null,
       },
       select: {
